@@ -91,6 +91,6 @@ LSD-SLAM is licensed under the GNU General Public License Version 3 (GPLv3), see
 
 # 7. TODOS
 
- * remove dependencies on TCLAP and Pangolin.  Trying to minimize the dependencies/design
- decisions built into this core repo
- and move them to "application" repos.  I will retain g3log for logging and g2o.
+ * remove dependencies on TCLAP and Pangolin?  Trying to minimize the dependencies/design
+ decisions built into this core repo  and move them to "application" repos.  I will retain g3log for logging and g2o.
+ * Make a conan package for g2o.   Rebuilding it everytime I rebuild lsd_slam is already old...
