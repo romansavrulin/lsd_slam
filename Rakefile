@@ -27,7 +27,7 @@ builds.each do |build|
     build_dir = [build_root, build].join('_')
 
     desc "Make lsd_slam for #{build}"
-    task :build => build_dir do
+    task :build  do
       mkdir build_dir unless FileTest.directory? build_dir
       chdir build_dir do
         sh "cmake % s .." % cmake_args
@@ -38,7 +38,7 @@ builds.each do |build|
 
     ## Force make deps
     desc "Force rebuild of the dependencies for #{build}"
-    task :deps => build_dir do
+    task :deps  do
       chdir build_dir do
         sh "cmake", *cmake_args
         FileUtils.rm deps_touchfile
@@ -46,7 +46,7 @@ builds.each do |build|
       end
     end
 
-    task :clean => build_dir do
+    task :clean  do
       chdir build_dir do
         sh "make clean"
       end
