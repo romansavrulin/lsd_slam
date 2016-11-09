@@ -91,7 +91,7 @@ namespace :dependencies do
   task :osx do
     sh "brew update"
     sh "brew tap homebrew/science"
-    sh "brew install homebrew/science/opencv tclap"
+    sh "brew install homebrew/science/opencv tclap glew"
   end
 
   ## Travis-specific depenendcy rules
