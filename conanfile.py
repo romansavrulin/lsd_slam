@@ -2,12 +2,14 @@ from conans import ConanFile, CMake
 
 class LsdSlamConan(ConanFile):
   name = "lsd_slam"
-  version = "0.1"
+  version = "master"
+  license = 'GPLv3'
+  url = 'https://github.com/amarburg/lsd_slam'
   settings = "os", "compiler", "build_type", "arch"
   generators = "cmake"
   options = {"opencv_dir": "ANY"}
   default_options = "opencv_dir=''"
-  exports = ['lib/*', 'include/**', 'test/', 'CMakeLists.txt', 'Rakefile', 'conanfile.py', '.rb/']
+  exports = ['lib/*', 'include/**', 'test/**', 'tools/**', 'cmake/*.cmake','CMakeLists.txt', 'Rakefile', 'conanfile.py', '.rb/', 'thirdparty/**']
   requires = "TCLAP/master@jmmut/testing", \
               "g3log/0.1@amarburg/testing"
 
@@ -27,7 +29,8 @@ class LsdSlamConan(ConanFile):
 
     flag_build_tests = "-DBUILD_UNIT_TESTS=1" if self.scope.dev and self.scope.build_tests else ""
 
-    self.run('cmake "%s" %s %s %s' % (self.conanfile_directory, cmake.command_line, cmake_opts, flag_build_tests))
+    print('cmake_opts')
+    self.run('cmake "%s" %s %s %s -DUSE_CONAN=True' % (self.conanfile_directory, cmake.command_line, cmake_opts, flag_build_tests))
     self.run('make deps')
     self.run('cmake --build . %s' % cmake.build_config)
     if self.scope.dev and self.scope.build_tests:

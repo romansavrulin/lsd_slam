@@ -18,6 +18,8 @@ else()
 
 	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
 	set( EXTERNAL_PROJECTS g3log )
+
+	include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
 endif()
 
 
@@ -123,7 +125,6 @@ if( CUDA_VERSION )
 	find_package( CUDA REQUIRED ${CUDA_VERSION} )
 endif()
 
-include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
 
 ## C++ flags applied to all builds
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
