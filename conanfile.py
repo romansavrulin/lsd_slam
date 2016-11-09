@@ -11,7 +11,8 @@ class LsdSlamConan(ConanFile):
   default_options = "opencv_dir=''"
   exports = ['lib/*', 'include/**', 'test/**', 'tools/**', 'cmake/*.cmake','CMakeLists.txt', 'Rakefile', 'conanfile.py', '.rb/', 'thirdparty/**']
   requires = "TCLAP/master@jmmut/testing", \
-              "g3log/0.1@amarburg/testing"
+              "g3log/0.1@amarburg/testing", \
+              'libactive_object/0.1@amarburg/testing'
 
   def config(self):
     if self.scope.dev and self.scope.build_tests:
