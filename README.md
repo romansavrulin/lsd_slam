@@ -16,24 +16,23 @@ Here is Jakob's original description:
 > example-input datasets, and the generated output as rosbag or .ply point cloud.
 
 This repo contains my experiments with LSD-SLAM, for performance, functionality
-and structure.   As of March 2016, it diverges significantly from either Jakob
+and structure.   As of November 2016, it diverges significantly from either Jakob
 or Thomas's branches in structure (I refactored as a way of learning the code),
 but not significantly in terms of functionality (except for all the ways in which
 I've broken it in the refactoring).   
 
-**master**  is my working / stable-ish branch.   **aaron_dev** is my
-**really unstable** branch.   Other branches are for hardware- or feature-specific
-development.
-In the long run I try to merge those functionalities into master
-and use CMake to turn hardware-specific elements on and off.
+After early development, I'm trying to _reduce_ the number of external dependencies (introduced by myself or previous authors).   At a macro-scale I'm starting to use the [Conan](https://conan.io/) package manager --- building this repo doesn't require Conan.   
+
+As I've reduced the dependencies in this repo, the __tools/LSD__ binary is pretty minimal.   My more dependent work is in [lsd_slam_conan](), which __does__ require Conan.
+
+**master**  is my working / stable-ish branch.   **aaron_dev** is my **really unstable** branch.   
 
 # 1. Quickstart
-
 
 My targeted environments are Ubuntu 14.04.2, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.0](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.11 with [Homebrew](http://brew.sh/).
 
 The most authoritative documentation is stored in the Ruby Rakefile (don't be scared, it's
-pretty readable).   This includes tasks for setting dependencies (in Travis and Docker images for example),
+pretty readable).   This includes tasks for installing dependencies (in Travis and Docker images for example),
 and for automating building and testing.
 
 Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed, then a standard-ish cmake-ish:
@@ -76,7 +75,7 @@ See also [doc/CommonProblems.md](doc/CommonProblems.md)
 Supports directories or sets of raw images. For example, you can download
 any dataset from [here](http://vision.in.tum.de/lsdslam), and run:
 
-    ./LSD --calib datasets/LSD_machine/cameraCalibration.cfg  datasets/LSD_machine/images/
+    ./LSD -c datasets/LSD_machine/cameraCalibration.cfg  datasets/LSD_machine/images/
 
 I've started to document my performance testing in [doc/Performance.md](doc/Performance.md)
 

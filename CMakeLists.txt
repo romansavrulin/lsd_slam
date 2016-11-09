@@ -2,8 +2,25 @@ cmake_minimum_required(VERSION 2.8.7)
 project(lsd_slam)
 include(ExternalProject)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
-set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
+## Enable conan tools
+option (USE_CONAN  "Use the Conan packaging system" OFF)
+if(USE_CONAN)
+  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  conan_basic_setup()
+
+else()
+	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
+	set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+
+	find_package(TCLAP REQUIRED )
+
+	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
+	set( EXTERNAL_PROJECTS g3log )
+endif()
+
+
 
 ## Use ccache if available
 option( USE_CCACHE "Use CCache (if available)" OFF )
@@ -16,16 +33,10 @@ option( USE_CCACHE "Use CCache (if available)" OFF )
 	endif(CCACHE_FOUND)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 find_package(Boost COMPONENTS thread filesystem system REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-find_package(TCLAP REQUIRED )
-
-include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
-
-
-set( EXTERNAL_PROJECTS g3log )
 ## Command used to build the external projects
 set( EXTERNAL_PROJECT_PARALLELISM 4 CACHE STRING "Level of parallelism when making ExternalProjects" )
 set( EXTERNAL_PROJECT_MAKE_COMMAND "make" )
@@ -118,23 +129,35 @@ include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 
-if(APPLE)
-	set( CMAKE_MACOSX_RPATH OFF )
-endif()
-
-## Set global include paths
 set( LSDSLAM_INCLUDE_DIRS
-  ${CMAKE_SOURCE_DIR}/lib
-  ${CMAKE_SOURCE_DIR}/lib/lsd_core
-  ${EIGEN3_INCLUDE_DIR}
-  ${OpenCV_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIR}
-  ${Pangolin_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-  ${G2O_INCLUDE_DIR}
-  ${G3LOG_INCLUDE_DIR}
-	${LIBACTIVE_OBJECT_INCLUDE_DIRS}
-)
+	${CMAKE_SOURCE_DIR}/lib
+	${CMAKE_SOURCE_DIR}/lib/lsd_core
+	${EIGEN3_INCLUDE_DIR}
+	${OpenCV_INCLUDE_DIRS}
+	${Boost_INCLUDE_DIR}
+	${Pangolin_INCLUDE_DIRS}
+	${PROJECT_SOURCE_DIR}/thirdparty/Sophus
+	${G2O_INCLUDE_DIR} )
+
+if( USE_CONAN )
+
+	## Set global include paths
+	list( APPEND LSDSLAM_INCLUDE_DIRS
+	  ${CONAN_INCLUDE_DIRS}
+	)
+
+else()
+
+	if(APPLE)
+		set( CMAKE_MACOSX_RPATH OFF )
+	endif()
+
+	## Set global include paths
+	list( APPEND LSDSLAM_INCLUDE_DIRS
+	  ${G3LOG_INCLUDE_DIR}
+		${LIBACTIVE_OBJECT_INCLUDE_DIRS}
+	)
+endif()
 include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 
 # link_directories( ${ZED_LIBRARY_DIRS}
@@ -146,8 +169,11 @@ add_subdirectory( tools/ )
 option( BUILD_UNIT_TESTS "Build unit tests" ON )
 if( BUILD_UNIT_TESTS )
   ## Build a local copy of gtest (as per the GTest FAQ)
-  include( ${CMAKE_SOURCE_DIR}/cmake/BuildGTestLibraries.cmake )
-	list( APPEND EXTERNAL_PROJECTS gtest )
+	if( NOT USE_CONAN )
+  	include( ${CMAKE_SOURCE_DIR}/cmake/BuildGTestLibraries.cmake )
+		list( APPEND EXTERNAL_PROJECTS gtest )
+	endif()
+
   add_subdirectory( test/unit/ )
 endif()
 

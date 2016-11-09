@@ -2,9 +2,11 @@
 $:.unshift File.dirname(__FILE__) + "/.rb"
 require 'pathname'
 require 'docker'
+require 'conan'
 
 ## Set defaults
 @cmake_opts = ['-DBUILD_UNIT_TESTS:BOOL=True']
+@build_opts = {}
 load 'config.rb' if FileTest::exists? 'config.rb'
 
 build_root = ENV['LSDSLAM_BUILD_DIR'] || "build"
@@ -67,6 +69,9 @@ builds.each do |build|
 end
 
 DockerTasks.new( builds: builds )
+
+## Build tasks for conan
+ConanTasks.new( builds: builds, build_opts: @build_opts )
 
 #
 # Platform-specific tasks for installing dependencies
