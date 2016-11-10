@@ -10,7 +10,10 @@ class ConanTasks
 
   def initialize( opts = {})
     @builds = opts[:builds] || %w( debug release )
-    @build_opts = opts[:build_opts]
+    #@build_opts = opts[:build_opts]
+    @conan_opts = opts[:opts] || {}
+    @conan_scopes = opts[:scopes] || {}
+    @conan_settings = opts[:settings] || {}
     define_tasks
   end
 
@@ -56,7 +59,7 @@ class ConanTasks
 
 
         task :osx => "dependencies:linux" do
-          sh "brew install conan"
+          sh "pip install conan"
         end
       end
     end
