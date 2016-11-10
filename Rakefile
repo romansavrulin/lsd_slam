@@ -6,7 +6,9 @@ require 'conan'
 
 ## Set defaults
 @cmake_opts = ['-DBUILD_UNIT_TESTS:BOOL=True']
-@build_opts = {}
+@conan_opts = {}
+@conan_settings = {}
+@conan_scopes = { build_tests: 'True' }
 load 'config.rb' if FileTest::exists? 'config.rb'
 
 build_root = ENV['LSDSLAM_BUILD_DIR'] || "build"
@@ -92,7 +94,7 @@ namespace :dependencies do
   task :osx do
     sh "brew update"
     sh "brew tap homebrew/science"
-    sh "brew install homebrew/science/opencv tclap eigen glew glm homebrew/x11/freeglut"
+    sh "brew install homebrew/science/opencv homebrew/science/suitesparse tclap eigen glew glm homebrew/x11/freeglut"
   end
 
   ## Travis-specific depenendcy rules
