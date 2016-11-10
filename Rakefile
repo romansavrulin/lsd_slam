@@ -20,8 +20,9 @@ builds.each do |build|
 
   namespace build do
 
-    cmake_args = %W(-DCMAKE_BUILD_TYPE:string=#{build}
-          #{ENV['CMAKE_FLAGS']}
+    cmake_args = %W( -DCMAKE_BUILD_TYPE:string=#{build}
+                  #{ENV['CMAKE_FLAGS']}
+                  #{@cmake_opts.join(' ')}
           -DEXTERNAL_PROJECT_PARALLELISM:string=0 )
 
     build_dir = [build_root, build].join('_')
@@ -30,7 +31,7 @@ builds.each do |build|
     task :build  do
       mkdir build_dir unless FileTest.directory? build_dir
       chdir build_dir do
-        sh "cmake % s .." % cmake_args
+        sh "cmake % s .." % cmake_args.join(' ')
         sh "make deps && touch #{deps_touchfile}" unless File.readable? deps_touchfile
         sh "make"
       end
@@ -91,7 +92,7 @@ namespace :dependencies do
   task :osx do
     sh "brew update"
     sh "brew tap homebrew/science"
-    sh "brew install homebrew/science/opencv tclap glew"
+    sh "brew install homebrew/science/opencv tclap eigen glew glm homebrew/x11/freeglut"
   end
 
   ## Travis-specific depenendcy rules

@@ -26,7 +26,7 @@ class ConanTasks
           task :build do
             FileUtils::mkdir build_dir unless FileTest::directory? build_dir
             opencv_opt = "-o opencv_dir=%s" % @build_opts[:opencv_dir] if @build_opts[:opencv_dir]
-            sh "cd %s && conan install --scope build_tests=True -s build_type=%s %s .. --build=missing" % [build_dir, build_type.capitalize, opencv_opt]
+            sh "cd %s && conan install --scope build_tests=True -s build_type=%s %s .. --build=pangolin" % [build_dir, build_type.capitalize, opencv_opt]
             sh "cd %s && conan build .." % [build_dir]
           end
 
@@ -41,7 +41,17 @@ class ConanTasks
       task :export do
         sh "conan export amarburg/testing"
       end
-      
+
+      namespace :dependencies do
+        task :linux => "dependencies:linux" do
+          sh "pip install conan"
+        end
+
+
+        task :osx => "dependencies:linux" do
+          sh "brew insall conan"
+        end
+      end
     end
 
   end
