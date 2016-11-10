@@ -60,9 +60,9 @@ public:
     for( std::string pathStr : paths ) {
       fs::path p( pathStr );
       if( fs::is_directory( p ) )
-        getdir( p, _paths );
+        getdir( pathStr, _paths );
       else if( fs::is_regular_file( p ) )
-        _paths.push_back( p );
+        _paths.push_back( pathStr );
 
       _hasDepth = false;
       _numImages = 1;
@@ -87,13 +87,13 @@ public:
 
     if( _idx >= _paths.size() ) return -1;
 
-    mat = cv::imread( _paths[_idx].string(), CV_LOAD_IMAGE_GRAYSCALE );
+    mat = cv::imread( _paths[_idx], CV_LOAD_IMAGE_GRAYSCALE );
     return _idx;
   }
 
 protected:
 
-  std::vector<fs::path> _paths;
+  std::vector<std::string> _paths;
   int _idx;
 
 };

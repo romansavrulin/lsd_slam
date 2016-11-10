@@ -10,18 +10,79 @@ if(USE_CONAN)
   include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   conan_basic_setup()
 
+  ## Check for dependencies for Pangolin
+  find_package( GLEW REQUIRED )
+  find_package( GLUT REQUIRED )
+  find_package( GLM REQUIRED )  # n.b. we provide the FindGLM.cmake file
+  find_package( OpenGL REQUIRED )
+  find_package( JPEG REQUIRED )
+  find_package( PNG REQUIRED )
+  find_package( PythonLibs REQUIRED )
+  find_package( OpenEXR QUIET )
+
+  set( Pangolin_LIBRARIES
+        ${OPENGL_LIBRARIES}
+        ${JPEG_LIBRARIES}
+        ${PNG_LIBRARIES}
+        ${PYTHON_LIBRARIES}
+        ${GLEW_LIBRARIES}
+        ${OpenEXR_LIBRARIES} )
+
+  if(APPLE)
+    ## Pangolin prefers FreeGLUT over the GLUT Framework from XCode
+    list( APPEND Pangolin_LIBRARIES glut  )
+  else()
+    list( APPEND Pangolin_LIBRARIES  ${GLUT_LIBRARIES}  )
+  endif()
+
 else()
 	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 	set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-
-	find_package(TCLAP REQUIRED )
 
 	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
 	set( EXTERNAL_PROJECTS g3log )
 
 	include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
+
+  option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
+
+  ##==== Option to build local copy of G2O ============================
+  option( BUILD_LOCAL_G2O "Build a local copy of G2O" ON )
+  if( BUILD_LOCAL_G2O )
+  	set( G2O_USE_OPENMP ${USE_OPENMP} )
+  	list( APPEND EXTERNAL_PROJECTS G2O )
+
+  	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG2O.cmake )
+  elseif()
+  	find_package(G2O REQUIRED)
+
+  	# These are the G2O libraries I use
+  	set( G2O_LIBRARIES
+  		${G2O_CORE_LIBRARY}
+  		${G2O_STUFF_LIBRARY}
+  		${G2O_SOLVER_CSPARSE_EXTENSION}
+  		${G2O_SOLVER_CSPARSE}
+  		${G2O_TYPES_SBA}
+  		${G2O_TYPES_SIM3} )
+  endif()
+
+  ##====  Build local copy of Pangolin? ======================
+  option( BUILD_LOCAL_PANGOLIN "Build a local copy of Pangolin" ON )
+  if( BUILD_LOCAL_PANGOLIN )
+  	list( APPEND EXTERNAL_PROJECTS Pangolin )
+  	include( ${PROJECT_SOURCE_DIR}/cmake/BuildPangolin.cmake )
+  elseif()
+  	find_package(Pangolin 0.1 REQUIRED)
+  endif()
 endif()
 
+## I haven't packaged suitesparse yet...
+find_package(SuiteParse REQUIRED)
+list( APPEND G2O_LIBRARIES
+  ${CSPARSE_LIBRARY} )
+list( APPEND G2O_INCLUDE_DIR
+  ${CSPARSE_INCLUDE_DIR}
+  ${CHOLMOD_INCLUDE_DIR} )
 
 
 ## Use ccache if available
@@ -54,45 +115,11 @@ endif()
 #add_definitions("-DHAVE_FABMAP")
 #set(FABMAP_LIB openFABMAP )
 
-option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
 
-##==== Option to build local copy of G2O ============================
-option( BUILD_LOCAL_G2O "Build a local copy of G2O" ON )
-if( BUILD_LOCAL_G2O )
-	set( G2O_USE_OPENMP ${USE_OPENMP} )
-	list( APPEND EXTERNAL_PROJECTS G2O )
-
-	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG2O.cmake )
-elseif()
-	find_package(G2O REQUIRED)
-
-	# These are the G2O libraries I use
-	set( G2O_LIBRARIES
-		${G2O_CORE_LIBRARY}
-		${G2O_STUFF_LIBRARY}
-		${G2O_SOLVER_CSPARSE_EXTENSION}
-		${G2O_SOLVER_CSPARSE}
-		${G2O_TYPES_SBA}
-		${G2O_TYPES_SIM3} )
-endif()
 
 # To include/link G2O you need to be able to find the Suitesparse libs
-find_package(SuiteParse REQUIRED)
-list( APPEND G2O_LIBRARIES
-	${CSPARSE_LIBRARY} )
-list( APPEND G2O_INCLUDE_DIR
-	${CSPARSE_INCLUDE_DIR}
-	${CHOLMOD_INCLUDE_DIR} )
 
 
-##====  Build local copy of Pangolin? ======================
-option( BUILD_LOCAL_PANGOLIN "Build a local copy of Pangolin" ON )
-if( BUILD_LOCAL_PANGOLIN )
-	list( APPEND EXTERNAL_PROJECTS Pangolin )
-	include( ${PROJECT_SOURCE_DIR}/cmake/BuildPangolin.cmake )
-elseif()
-	find_package(Pangolin 0.1 REQUIRED)
-endif()
 
 ##==== Check and define the architecture
 ## Architecture-specific optimizations

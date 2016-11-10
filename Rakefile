@@ -102,6 +102,7 @@ namespace :dependencies do
 
     task :osx => [:pip_uninstall_numpy, "dependencies:osx"]
 
+    # This installed version conflicts with the version brought in by OpenCV in Homebrew?
     task :pip_uninstall_numpy do
       sh "pip uninstall -y numpy"
     end

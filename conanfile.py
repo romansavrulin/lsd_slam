@@ -12,9 +12,13 @@ class LsdSlamConan(ConanFile):
   exports = ['lib/*', 'include/**', 'test/**', 'tools/**', 'cmake/*.cmake','CMakeLists.txt', 'Rakefile', 'conanfile.py', '.rb/', 'thirdparty/**']
   requires = "TCLAP/master@jmmut/testing", \
               "g3log/0.1@amarburg/testing", \
-              'libactive_object/0.1@amarburg/testing'
+              'libactive_object/0.1@amarburg/testing', \
+              'g2o/master@amarburg/testing', \
+              'pangolin/master@amarburg/testing'
 
   def config(self):
+    self.options['g2o'].build_parallel=True
+    
     if self.scope.dev and self.scope.build_tests:
       self.requires( "gtest/1.8.0@lasote/stable" )
       self.options["gtest"].shared = False

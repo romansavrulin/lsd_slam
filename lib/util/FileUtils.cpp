@@ -19,7 +19,7 @@ std::string &trim(std::string &s) {
         return ltrim(rtrim(s));
 }
 
-int getdir (fs::path dir, std::vector<fs::path> &files)
+int getdir (std::string dir, std::vector<std::string> &files)
 {
     DIR *dp;
     struct dirent *dirp;
@@ -32,7 +32,7 @@ int getdir (fs::path dir, std::vector<fs::path> &files)
     	std::string name = std::string(dirp->d_name);
 
     	if(name != "." && name != "..")
-    		files.push_back( fs::path(name) );
+    		files.push_back( name );
     }
     closedir(dp);
 
@@ -42,8 +42,8 @@ int getdir (fs::path dir, std::vector<fs::path> &files)
     // if(dir.string().at( dir.length() - 1 ) != '/') dir = dir+"/";
 	for(unsigned int i=0;i<files.size();i++)
 	{
-		if(files[i].string().at(0) != '/')
-			files[i] = dir / files[i];
+		if(files[i].at(0) != '/')
+			files[i] = dir + "/" + files[i];
 	}
 
     return files.size();
