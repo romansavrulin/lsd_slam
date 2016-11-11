@@ -6,19 +6,26 @@ require 'conan'
 
 ## Set defaults
 @cmake_opts = ['-DBUILD_UNIT_TESTS:BOOL=True']
-@build_opts = {}
+@conan_opts = {}
+@conan_settings = {}
+@conan_scopes = { build_tests: 'True' }
 load 'config.rb' if FileTest::exists? 'config.rb'
 
+<<<<<<< HEAD
 build_root = ENV['BUILD_ROOT'] || "build"
+=======
+## Build tasks for conan
+build_root = ENV['LSDSLAM_BUILD_DIR'] || "build"
+>>>>>>> 9995974fd336850243be827ae140dbbac664c75e
 
 task :default => "debug:test"
 
-builds = %w( release debug )
+builds = %w( Release Debug )
 builds.each do |build|
 
   deps_touchfile = '.DEPS_MADE'
 
-  namespace build do
+  namespace build.downcase do
 
     cmake_args = %W( -DCMAKE_BUILD_TYPE:string=#{build}
                   #{ENV['CMAKE_FLAGS']}
@@ -69,10 +76,9 @@ builds.each do |build|
 
 end
 
-DockerTasks.new( builds: builds )
+ConanTasks.new( builds: builds, opts: @conan_opts, settings: @conan_settings, scopes: @conan_scopes )
 
-## Build tasks for conan
-ConanTasks.new( builds: builds, build_opts: @build_opts )
+DockerTasks.new( builds: builds )
 
 #
 # Platform-specific tasks for installing dependencies
@@ -92,7 +98,8 @@ namespace :dependencies do
   task :osx do
     sh "brew update"
     sh "brew tap homebrew/science"
-    sh "brew install homebrew/science/opencv tclap eigen glew glm homebrew/x11/freeglut"
+    sh "brew install homebrew/science/opencv homebrew/science/suitesparse \
+            tclap eigen glew glm homebrew/x11/freeglut"
   end
 
   ## Travis-specific depenendcy rules

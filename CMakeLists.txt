@@ -197,7 +197,7 @@ include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 add_subdirectory( lib/ )
 add_subdirectory( tools/ )
 
-option( BUILD_UNIT_TESTS "Build unit tests" ON )
+option( BUILD_UNIT_TESTS "Build unit tests" OFF )
 if( BUILD_UNIT_TESTS )
   ## Build a local copy of gtest (as per the GTest FAQ)
 	if( NOT USE_CONAN )
