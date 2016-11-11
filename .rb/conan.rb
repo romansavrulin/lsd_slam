@@ -24,7 +24,8 @@ class ConanTasks
       @builds.each do |build_type|
 
         namespace build_type.downcase.to_sym do
-          build_dir = ENV['BUILD_DIR'] || "build-conan-#{build_type}"
+          build_root = ENV['BUILD_DIR'] || "build"
+          build_dir  = "#{build_root}-conan-#{build_type}"
 
           @conan_settings[:build_type] = build_type
           conan_opts = @conan_opts.each_pair.map { |key,val| "-o %s=%s" % [key,val] } +
@@ -37,6 +38,7 @@ class ConanTasks
               sh "conan install %s .. --build=missing" % [conan_opts.join(' ')]
               sh "conan build .."
             end
+
           end
 
 
@@ -50,6 +52,10 @@ class ConanTasks
 
       task :export do
         sh "conan export amarburg/testing"
+      end
+
+      task :upload => :export do
+        sh "conan upload lsd_slam/master@amarburg/testing"
       end
 
       namespace :dependencies do

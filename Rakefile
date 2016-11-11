@@ -11,8 +11,12 @@ require 'conan'
 @conan_scopes = { build_tests: 'True' }
 load 'config.rb' if FileTest::exists? 'config.rb'
 
+<<<<<<< HEAD
+build_root = ENV['BUILD_ROOT'] || "build"
+=======
 ## Build tasks for conan
 build_root = ENV['LSDSLAM_BUILD_DIR'] || "build"
+>>>>>>> 9995974fd336850243be827ae140dbbac664c75e
 
 task :default => "debug:test"
 
@@ -28,7 +32,7 @@ builds.each do |build|
                   #{@cmake_opts.join(' ')}
           -DEXTERNAL_PROJECT_PARALLELISM:string=0 )
 
-    build_dir = [build_root, build].join('_')
+    build_dir = [build_root, build].join('-')
 
     desc "Make lsd_slam for #{build}"
     task :build  do
