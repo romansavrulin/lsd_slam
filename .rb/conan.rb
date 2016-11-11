@@ -21,12 +21,13 @@ class ConanTasks
       @builds.each do |build_type|
 
         namespace build_type.downcase.to_sym do
-          build_dir = ENV['BUILD_DIR'] || "build-conan-#{build_type}"
+          build_root = ENV['BUILD_DIR'] || "build"
+          build_dir  = "#{build_root}-conan-#{build_type}"
 
           task :build do
             FileUtils::mkdir build_dir unless FileTest::directory? build_dir
             opencv_opt = "-o opencv_dir=%s" % @build_opts[:opencv_dir] if @build_opts[:opencv_dir]
-            sh "cd %s && conan install --scope build_tests=True -s build_type=%s %s .. --build=pangolin" % [build_dir, build_type.capitalize, opencv_opt]
+            sh "cd %s && conan install --scope build_tests=True -s build_type=%s %s .. --build=missing" % [build_dir, build_type.capitalize, opencv_opt]
             sh "cd %s && conan build .." % [build_dir]
           end
 
