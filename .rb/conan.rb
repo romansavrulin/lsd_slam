@@ -59,14 +59,14 @@ class ConanTasks
       end
 
       namespace :dependencies do
-        task :linux => "dependencies:linux" do
+        task :pip_conan do
           sh "pip install conan"
         end
 
+        task :trusty => ["dependencies:trusty", :pip_conan]
+        task :xenial => ["dependencies:xenial", :pip_conan]
+        task :osx => ["dependencies:osx_brew", :pip_conan]
 
-        task :osx => "dependencies:linux" do
-          sh "pip install conan"
-        end
       end
     end
 

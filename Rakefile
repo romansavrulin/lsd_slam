@@ -82,6 +82,9 @@ DockerTasks.new( builds: builds )
 #
 namespace :dependencies do
 
+  desc "Install dependnecies for Ubuntu Xenial"
+  task :xenial => :trusty
+
   desc "Install dependencies for Ubuntu trusty"
   task :trusty do
     sh "sudo apt-get update &&
@@ -92,7 +95,7 @@ namespace :dependencies do
   end
 
 
-  task :osx do
+  task :osx_brew do
     sh "brew update"
     sh "brew tap homebrew/science"
     sh "brew install homebrew/science/opencv homebrew/science/suitesparse \
@@ -104,7 +107,7 @@ namespace :dependencies do
 
     task :linux => "dependencies:trusty"
 
-    task :osx => [:pip_uninstall_numpy, "dependencies:osx"]
+    task :osx => [:pip_uninstall_numpy, "dependencies:osx_brew"]
 
     # This installed version conflicts with the version brought in by OpenCV in Homebrew?
     task :pip_uninstall_numpy do
