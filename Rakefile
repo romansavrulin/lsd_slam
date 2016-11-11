@@ -11,12 +11,9 @@ require 'conan'
 @conan_scopes = { build_tests: 'True' }
 load 'config.rb' if FileTest::exists? 'config.rb'
 
-<<<<<<< HEAD
+
 build_root = ENV['BUILD_ROOT'] || "build"
-=======
-## Build tasks for conan
-build_root = ENV['LSDSLAM_BUILD_DIR'] || "build"
->>>>>>> 9995974fd336850243be827ae140dbbac664c75e
+
 
 task :default => "debug:test"
 
