@@ -104,8 +104,7 @@ namespace :dependencies do
   namespace :trusty do
     desc "Install GUI and non-GUI dependencies for Ubuntu trust"
     task :gui => 'dependencies:trusty' do
-      "sudo apt-get update &&
-          sudo apt-get install -y \
+      sh "sudo apt-get install -y \
         		libglew-dev libglm-dev freeglut3-dev"
     end
   end
