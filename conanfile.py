@@ -11,7 +11,7 @@ class LsdSlamConan(ConanFile):
   default_options = "opencv_dir=''", "build_parallel=True", "build_gui=False"
   exports = ['lib/*', 'include/**', 'test/**', 'tools/**', 'cmake/*.cmake','CMakeLists.txt', 'Rakefile', 'conanfile.py', '.rb/', 'thirdparty/**']
   requires = "TCLAP/master@jmmut/testing", \
-              "g3log/0.1@amarburg/testing", \
+              "g3log/master@amarburg/testing", \
               'libactive_object/master@amarburg/testing', \
               'g2o/master@amarburg/testing', \
               'pangolin/master@amarburg/testing'
@@ -33,7 +33,7 @@ class LsdSlamConan(ConanFile):
 
     cmake_opts += "-DOpenCV_DIR=%s " % (self.options.opencv_dir) if self.options.opencv_dir else ""
     cmake_opts += "-DBUILD_UNIT_TESTS=1 " if self.scope.dev and self.scope.build_tests else ""
-    cmake_opds += "-DBUILD_GUI:bool=%s" % self.options.build_gui
+    cmake_opts += "-DBUILD_GUI:bool=%s" % self.options.build_gui
 
     build_opts = "-j" if self.options.build_parallel else ""
 
@@ -45,7 +45,9 @@ class LsdSlamConan(ConanFile):
       self.run('make unit_test')
 
   def package(self):
-    self.copy("*.h", dst="")
+    self.copy("*.h", src="lib", dst="include")
+    self.copy("*.hpp", src="thirdparty/Sophus", dst="include")
+
     #if self.options.shared:
     if self.settings.os == "Macos":
         self.copy(pattern="*.dylib", dst="lib", keep_path=False)
