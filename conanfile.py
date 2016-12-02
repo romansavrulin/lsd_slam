@@ -54,7 +54,8 @@ class LsdSlamConan(ConanFile):
     else:
         self.copy(pattern="*.so*", dst="lib", src="lib", keep_path=False)
     #else:
-    #    self.copy(pattern="*.a", dst="lib", src="lib", keep_path=False)
+    
+    self.copy(pattern="*.a", dst="lib", src="lib", keep_path=False)
 
   def package_info(self):
       self.cpp_info.libs = ["lsdslam"]

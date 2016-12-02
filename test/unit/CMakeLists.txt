@@ -7,7 +7,6 @@ add_executable( lsdslam_test
 
 link_directories( ${CONAN_LINK_DIRECTORIES} )
 target_link_libraries( lsdslam_test
-          ${GTEST_BOTH_LIBRARIES}
           ${CONAN_LIBS}
           lsdslam )
 
