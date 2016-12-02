@@ -33,7 +33,7 @@
 #include "util/Configuration.h"
 #include "util/FileUtils.h"
 
-#include "LSD.h"
+#include "LSD_GUI.h"
 
 
 using namespace lsd_slam;
@@ -66,7 +66,7 @@ int main( int argc, char** argv )
 
   Configuration conf;
 
-  //bool doGui = true;
+  bool doGui = true;
 
   std::string calibFile;
 
@@ -116,11 +116,11 @@ int main( int argc, char** argv )
 
 	SlamSystem * system = new SlamSystem(conf);
 
-  // if( doGui ) {
-  //   LOG(INFO) << "Starting GUI thread";
-  //   boost::thread guiThread(runGui, system );
-  //   guiReady.wait();
-  // }
+  if( doGui ) {
+    LOG(INFO) << "Starting GUI thread";
+    boost::thread guiThread(runGui, system );
+    guiReady.wait();
+  }
 
   LOG(INFO) << "Starting input thread.";
   boost::thread inputThread(runInput, system, dataSource, undistorter );

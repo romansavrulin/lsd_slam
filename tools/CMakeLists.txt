@@ -11,6 +11,14 @@ link_directories( ${CONAN_LIB_DIRS} )
 
 # build image node
 add_executable(LSD LSD.cpp
-  LSD/GuiThread.cpp
   LSD/InputThread.cpp)
 target_link_libraries( LSD lsdslam ${CONAN_LIBS} )
+
+if(BUILD_GUI)
+  add_executable(LSD_GUI LSD_GUI.cpp
+    LSD_GUI/GuiThread.cpp
+    LSD_GUI/GUI.cpp
+    LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.cpp
+    LSD/InputThread.cpp)
+  target_link_libraries( LSD_GUI lsdslam ${CONAN_LIBS} ${Pangolin_LIBRARIES} )
+endif()

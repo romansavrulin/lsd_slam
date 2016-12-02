@@ -66,11 +66,11 @@ void runInput(SlamSystem * system, DataSource *dataSource, Undistorter* undistor
               system->trackFrame( frame, fps == 0 );
           }
 
-          if( gui ){
-            gui->pose.assignValue(system->getCurrentPoseEstimateScale());
-            gui->updateFrameNumber( runningIdx );
-            gui->updateLiveImage( image.data );
-          }
+          // if( gui ){
+          //   gui->pose.assignValue(system->getCurrentPoseEstimateScale());
+          //   gui->updateFrameNumber( runningIdx );
+          //   gui->updateLiveImage( image.data );
+          // }
 
           runningIdx++;
           fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
