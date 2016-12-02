@@ -73,7 +73,13 @@ int main( int argc, char** argv )
   if(Parse::arg(argc, argv, "-c", calibFile) > 0)
   {
      undistorter = Undistorter::getUndistorterForFile(calibFile.c_str());
+  } else {
+    printf("Need to specify calibration file with -c option");
+    exit(0);
   }
+
+  CHECK( undistorter != NULL ) << "Could not create undistorter.";
+
   // open image files: first try to open as file.
 	std::string source;
 	if(!(Parse::arg(argc, argv, "-f", source) > 0))
@@ -96,8 +102,6 @@ int main( int argc, char** argv )
   printf("Loading images from %s\n", source.c_str());
   dataSource = new ImagesSource( files );
 
-
-  CHECK( undistorter != NULL ) << "Could not create undistorter.";
   CHECK( dataSource != NULL ) << "Could not create data source.";
 
   // Load the configuration object
