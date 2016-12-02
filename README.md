@@ -4,9 +4,15 @@ CI Status: [![Build Status](https://travis-ci.org/amarburg/lsd_slam.svg)](https:
 
 See my [Development Blog](https://faculty.washington.edu/amarburg/press/category/lsdslam/) for current status.
 
-> __November 2016__ After early development, I'm trying to _reduce_ the number of external dependencies (introduced by myself or previous authors).   At a macro-scale I'm starting to experiment with the [Conan](https://conan.io/) package manager for my development.  However, building this repo __does not__ require Conan (though it will also build with conan)
+> __November/December 2016__ After early development, I'm trying to _reduce_ the number of external dependencies (introduced by myself or previous authors).   At a macro-scale I'm  experimenting with the [Conan](https://conan.io/) package manager.  However, building this repo __does not__ require Conan (though it can also be built with conan)
 
-> As I've reduced the dependencies in this repo, the __tools/LSD__ binary has pretty minimal funtionality.   My more full-fat, high-dependency work is in [lsd_slam_conan](), which __does__ require Conan.
+> One major step is removing the explicit dependency on Pangolin for the GUI.  Rather than introduce a package management nightmare (which I'm already dangerously close to anyway),  I've made the GUI a cmake-selectable option (`BUILD_GUI`).   It is __enabled__ by default in the standard `cmake` build, and __disabled__ by default in the Conan build.
+
+> With `BUILD_GUI=False`, the core LSD-SLAM functionality is built into a library `liblsdslam` and the tool `LSD` is built.   This is a console-only app which spits out many log messages but isn't that exciting to watch.
+
+> With `BUILD_GUI=True`, the current evolution of Tom Whelan's Pangolin GUI is built as `LSD_GUI`, with all of the dependencies that entails.
+
+>  My full-fat, high-dependency work is continuing in [lsd_slam_conan](https://github.com/amarburg/lsd_slam_conan), which requires Conan.
 
 This fork started from [Thomas Whelan's fork](https://github.com/mp3guy/lsd_slam) which "relieves the user of the horrors of a ROS dependency and uses the much nicer lightweight [Pangolin](https://github.com/stevenlovegrove/Pangolin) framework instead."
 
@@ -29,7 +35,7 @@ I've broken it in the refactoring).
 
 # 1. Quickstart
 
-My targeted environments are Ubuntu 14.04.2/16.04, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.0](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.11 with [Homebrew](http://brew.sh/).
+My targeted environments are Ubuntu 14.04/16.04, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.3](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.11 with [Homebrew](http://brew.sh/).
 
 The most authoritative documentation is stored in the Ruby Rakefile (don't be scared, it's
 pretty readable).   This includes tasks for installing dependencies (in Travis and Docker images for example),
@@ -46,8 +52,8 @@ Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed
 
 Or
 
-    rake dependencies:{xenial,trusty, osx}
-    rake test
+    rake dependencies:{xenial,trusty, osx}:gui
+    rake {debug,release}:test
 
 Should work.
 
@@ -59,10 +65,11 @@ For the conan-based build:
 
 In addition to a number of "standard"  dependencies,
 LSD-SLAM uses these "non-standard" dependencies:
- * [Pangolin](https://github.com/stevenlovegrove/Pangolin)
  * [g2o](https://github.com/RainerKuemmerle/g2o)
  * A [custom fork](https://github.com/amarburg/g3log.git) of [g3log](https://github.com/KjellKod/g3log)
  * (Optionally) [Google Test](https://github.com/google/googletest) for unit testing
+
+And  [Pangolin](https://github.com/stevenlovegrove/Pangolin) is the GUI is enabled.
 
 LSD-SLAM will use CMake ExternalProjects to build each of these
 dependencies automatically.  **This no longer happens automatically as part

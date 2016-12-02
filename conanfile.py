@@ -7,8 +7,8 @@ class LsdSlamConan(ConanFile):
   url = 'https://github.com/amarburg/lsd_slam'
   settings = "os", "compiler", "build_type", "arch"
   generators = "cmake"
-  options = {"opencv_dir": "ANY",  "build_parallel": [True, False]}
-  default_options = "opencv_dir=''", "build_parallel=True"
+  options = {"opencv_dir": "ANY",  "build_parallel": [True, False], "build_gui": [True,False]}
+  default_options = "opencv_dir=''", "build_parallel=True", "build_gui=False"
   exports = ['lib/*', 'include/**', 'test/**', 'tools/**', 'cmake/*.cmake','CMakeLists.txt', 'Rakefile', 'conanfile.py', '.rb/', 'thirdparty/**']
   requires = "TCLAP/master@jmmut/testing", \
               "g3log/0.1@amarburg/testing", \
@@ -33,7 +33,7 @@ class LsdSlamConan(ConanFile):
 
     cmake_opts += "-DOpenCV_DIR=%s " % (self.options.opencv_dir) if self.options.opencv_dir else ""
     cmake_opts += "-DBUILD_UNIT_TESTS=1 " if self.scope.dev and self.scope.build_tests else ""
-    cmake_opds += "-DBUILD_GUI:bool=False"
+    cmake_opds += "-DBUILD_GUI:bool=%s" % self.options.build_gui
 
     build_opts = "-j" if self.options.build_parallel else ""
 

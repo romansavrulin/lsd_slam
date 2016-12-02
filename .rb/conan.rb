@@ -27,7 +27,9 @@ class ConanTasks
           build_root = ENV['BUILD_DIR'] || "build"
           build_dir  = "#{build_root}-conan-#{build_type}"
 
-          @conan_settings[:build_type] = build_type
+          @conan_settings[:build_type] = build_type.split('_').first
+          @conan_opts[:build_gui] = true if build_type =~ /_GUI/
+
           conan_opts = @conan_opts.each_pair.map { |key,val| "-o %s=%s" % [key,val] } +
                       @conan_settings.each_pair.map { |key,val| "-s %s=%s" % [key,val] } +
                       @conan_scopes.each_pair.map { |key,val| "--scope %s=%s" % [key,val] }
