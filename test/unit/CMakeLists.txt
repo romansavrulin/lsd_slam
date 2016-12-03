@@ -8,6 +8,7 @@ add_executable( lsdslam_test
 link_directories( ${CONAN_LINK_DIRECTORIES} )
 target_link_libraries( lsdslam_test
           ${CONAN_LIBS}
+          ${GTEST_BOTH_LIBRARIES}
           lsdslam )
 
 # # Don't use ctest, instead just execture the Google test binaries
