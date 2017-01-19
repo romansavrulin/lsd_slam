@@ -11,20 +11,22 @@ require 'conan'
 @conan_scopes = { build_tests: 'True' }
 load 'config.rb' if FileTest::exists? 'config.rb'
 
-
 build_root = ENV['BUILD_ROOT'] || "build"
 
 
 task :default => "debug:test"
 
-builds = %w( Release Debug )
+builds = %w( Release Debug Debug_NoGUI )
 builds.each do |build|
 
   deps_touchfile = '.DEPS_MADE'
 
   namespace build.downcase do
 
-    cmake_args = %W( -DCMAKE_BUILD_TYPE:string=#{build}
+    build_type = build.split('_').first
+    @cmake_opts << '-DBUILD_GUI:bool=False' if( build =~ /NoGUI/  )
+
+    cmake_args = %W( -DCMAKE_BUILD_TYPE:string=#{build_type}
                   #{ENV['CMAKE_FLAGS']}
                   #{@cmake_opts.join(' ')}
           -DEXTERNAL_PROJECT_PARALLELISM:string=0 )
@@ -36,8 +38,8 @@ builds.each do |build|
       mkdir build_dir unless FileTest.directory? build_dir
       chdir build_dir do
         sh "cmake % s .." % cmake_args.join(' ')
-        sh "make deps && touch #{deps_touchfile}" unless File.readable? deps_touchfile
-        sh "make"
+        sh "VERBOSE=1 make deps && touch #{deps_touchfile}" unless File.readable? deps_touchfile
+        sh "VERBOSE=1 make"
       end
     end
 
@@ -73,7 +75,8 @@ builds.each do |build|
 
 end
 
-ConanTasks.new( builds: builds, opts: @conan_opts, settings: @conan_settings, scopes: @conan_scopes )
+# Conan builds default to no GUI
+ConanTasks.new( builds: %w( Release Debug Debug_GUI ), opts: @conan_opts, settings: @conan_settings, scopes: @conan_scopes )
 
 DockerTasks.new( builds: builds )
 
@@ -82,32 +85,57 @@ DockerTasks.new( builds: builds )
 #
 namespace :dependencies do
 
-  desc "Install dependnecies for Ubuntu Xenial"
+  desc "Install non-GUI dependencies for Ubuntu Xenial"
   task :xenial => :trusty
+  namespace :xenial do
+    desc "Install GUI and non-GUI dependencies for Ubuntu Xenial"
+    task :gui=> 'dependencies:trusty:gui'
+  end
 
-  desc "Install dependencies for Ubuntu trusty"
+  desc "Install non-GUI dependencies for Ubuntu trusty"
   task :trusty do
     sh "sudo apt-get update &&
         sudo apt-get install -y cmake \
-      		libopencv-dev libboost-all-dev libeigen3-dev \
-      		libtclap-dev libgomp1 libsuitesparse-dev git \
-      		libglew-dev libglm-dev autoconf libtool freeglut3-dev"
+          libopencv-dev libboost-all-dev libeigen3-dev \
+          libgomp1 libsuitesparse-dev git \
+          autoconf libtool"
   end
 
+  namespace :trusty do
+    desc "Install GUI and non-GUI dependencies for Ubuntu trust"
+    task :gui => 'dependencies:trusty' do
+      sh "sudo apt-get install -y \
+        		libglew-dev libglm-dev freeglut3-dev"
+    end
+  end
 
+  desc "Install non-GUI depenencies on OSX using Brew"
   task :osx_brew do
     sh "brew update"
     sh "brew tap homebrew/science"
     sh "brew install homebrew/science/opencv homebrew/science/suitesparse \
-            tclap eigen glew glm homebrew/x11/freeglut"
+            eigen"
+  end
+
+  namespace :osx_brew do
+    desc "Install GUI and non-GUI dependencies on OSX using Brew"
+    task :gui => 'dependencies:osx_brew' do
+      sh "brew install glew glm homebrew/x11/freeglut"
+    end
   end
 
   ## Travis-specific depenendcy rules
   namespace :travis do
 
-    task :linux => "dependencies:trusty"
+    task :linux => 'dependencies:trusty'
+    namespace :linux do
+      task :gui => 'dependencies:trusty:gui'
+    end
 
-    task :osx => [:pip_uninstall_numpy, "dependencies:osx_brew"]
+    task :osx => [:pip_uninstall_numpy, 'dependencies:osx_brew']
+    namespace :osx do
+      task :gui => [:pip_uninstall_numpy, 'dependencies:osx_brew:gui']
+    end
 
     # This installed version conflicts with the version brought in by OpenCV in Homebrew?
     task :pip_uninstall_numpy do

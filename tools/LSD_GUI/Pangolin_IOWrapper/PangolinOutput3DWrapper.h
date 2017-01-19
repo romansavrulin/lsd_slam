@@ -9,7 +9,7 @@
 
 #include "IOWrapper/Output3DWrapper.h"
 #include "Keyframe.h"
-#include "GUI.h"
+#include "LSD_GUI/GUI.h"
 #include "util/Configuration.h"
 
 namespace lsd_slam

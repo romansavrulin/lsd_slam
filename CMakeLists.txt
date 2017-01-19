@@ -4,35 +4,39 @@ include(ExternalProject)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
+option(BUILD_GUI "Build Pangolin-based GUI" ON)
+
 ## Enable conan tools
-option (USE_CONAN  "Use the Conan packaging system" OFF)
+option(USE_CONAN  "Use the Conan packaging system" OFF)
 if(USE_CONAN)
   include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
   conan_basic_setup()
 
-  ## Check for dependencies for Pangolin
-  find_package( GLEW REQUIRED )
-  find_package( GLUT REQUIRED )
-  find_package( GLM REQUIRED )  # n.b. we provide the FindGLM.cmake file
-  find_package( OpenGL REQUIRED )
-  find_package( JPEG REQUIRED )
-  find_package( PNG REQUIRED )
-  find_package( PythonLibs REQUIRED )
-  find_package( OpenEXR QUIET )
+  if( BUILD_GUI )
+    ## Check for dependencies for Pangolin
+    find_package( GLEW REQUIRED )
+    find_package( GLUT REQUIRED )
+    find_package( GLM REQUIRED )  # n.b. we provide the FindGLM.cmake file
+    find_package( OpenGL REQUIRED )
+    find_package( JPEG REQUIRED )
+    find_package( PNG REQUIRED )
+    find_package( PythonLibs REQUIRED )
+    find_package( OpenEXR QUIET )
 
-  set( Pangolin_LIBRARIES
-        ${OPENGL_LIBRARIES}
-        ${JPEG_LIBRARIES}
-        ${PNG_LIBRARIES}
-        ${PYTHON_LIBRARIES}
-        ${GLEW_LIBRARIES}
-        ${OpenEXR_LIBRARIES} )
+    set( Pangolin_LIBRARIES
+          ${OPENGL_LIBRARIES}
+          ${JPEG_LIBRARIES}
+          ${PNG_LIBRARIES}
+          ${PYTHON_LIBRARIES}
+          ${GLEW_LIBRARIES}
+          ${OpenEXR_LIBRARIES} )
 
-  if(APPLE)
-    ## Pangolin prefers FreeGLUT over the GLUT Framework from XCode
-    list( APPEND Pangolin_LIBRARIES glut  )
-  else()
-    list( APPEND Pangolin_LIBRARIES  ${GLUT_LIBRARIES}  )
+    if(APPLE)
+      ## Pangolin prefers FreeGLUT over the GLUT Framework from XCode
+      list( APPEND Pangolin_LIBRARIES glut  )
+    else()
+      list( APPEND Pangolin_LIBRARIES  ${GLUT_LIBRARIES}  )
+    endif()
   endif()
 
 else()
@@ -66,14 +70,17 @@ else()
   		${G2O_TYPES_SIM3} )
   endif()
 
-  ##====  Build local copy of Pangolin? ======================
-  option( BUILD_LOCAL_PANGOLIN "Build a local copy of Pangolin" ON )
-  if( BUILD_LOCAL_PANGOLIN )
-  	list( APPEND EXTERNAL_PROJECTS Pangolin )
-  	include( ${PROJECT_SOURCE_DIR}/cmake/BuildPangolin.cmake )
-  elseif()
-  	find_package(Pangolin 0.1 REQUIRED)
+  if(BUILD_GUI)
+    ##====  Build local copy of Pangolin? ======================
+    option( BUILD_LOCAL_PANGOLIN "Build a local copy of Pangolin" ON )
+    if( BUILD_LOCAL_PANGOLIN )
+    	list( APPEND EXTERNAL_PROJECTS Pangolin )
+    	include( ${PROJECT_SOURCE_DIR}/cmake/BuildPangolin.cmake )
+    elseif()
+    	find_package(Pangolin 0.1 REQUIRED)
+    endif()
   endif()
+
 endif()
 
 ## I haven't packaged suitesparse yet...

@@ -16,7 +16,8 @@
 #include <map>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "IOWrapper/Pangolin/Keyframe.h"
+
+#include "Pangolin_IOWrapper/Keyframe.h"
 #include "util/ThreadMutexObject.h"
 #include "DataStructures/Frame.h"
 

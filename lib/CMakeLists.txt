@@ -1,7 +1,6 @@
 
 set(GUI_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/IOWrapper/Pangolin/PangolinOutput3DWrapper.cpp
 )
 
 # Set source files
@@ -10,7 +9,6 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/GUI.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapPixelHypothesis.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/FileUtils.cpp
@@ -33,7 +31,6 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/MappingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/TrackingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/ConstraintSearchThread.cpp
-  ${ZED_SRCS}
   ${GUI_SRCS}
 )
 
@@ -41,10 +38,8 @@ set(lsdslam_SOURCE_FILES
 add_library(lsdslam STATIC ${lsdslam_SOURCE_FILES})
 target_link_libraries(lsdslam
   ${FABMAP_LIB}
-  ${Pangolin_LIBRARIES}
   ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
-  ${ZED_CUDA_LIBRARIES}
   ${G2O_LIBRARIES}
   ${G3LOG_LIB}
   active_object )
