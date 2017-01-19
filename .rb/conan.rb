@@ -14,6 +14,7 @@ class ConanTasks
     @conan_opts = opts[:opts] || {}
     @conan_scopes = opts[:scopes] || {}
     @conan_settings = opts[:settings] || {}
+    @conan_build = opts[:build] || "outdated"
     define_tasks
   end
 
@@ -35,7 +36,7 @@ class ConanTasks
           task :build do
             FileUtils::mkdir build_dir unless FileTest::directory? build_dir
             chdir build_dir do
-              sh "conan install %s .. --build=missing" % [conan_opts.join(' ')]
+              sh "conan install %s .. --build=%s" % [conan_opts.join(' '), @conan_build]
               sh "conan build .."
             end
 
