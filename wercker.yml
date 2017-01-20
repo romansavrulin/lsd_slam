@@ -17,6 +17,13 @@ build-cmake:
 
 build-conan:
   steps:
+    - install-packages:
+      packages: python-pip
+
+    - script:
+      name: Install Conan
+      code: pip install conan
+
     - script:
       name: Build
       code: |
