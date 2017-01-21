@@ -15,7 +15,7 @@ build-cmake:
       code: |
            LSDSLAM_BUILD_DIR=build_wercker rake debug:test debug:clean
 
-build-conan:
+build:
   steps:
     - script:
       name: Build
