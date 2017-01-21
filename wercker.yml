@@ -13,14 +13,14 @@ build-cmake:
     - script:
       name: Build
       code: |
-           LSDSLAM_BUILD_DIR=build_wercker rake debug:test
+           LSDSLAM_BUILD_DIR=build_wercker rake debug:test debug:clean
 
 build-conan:
   steps:
     - script:
       name: Build
       code: |
-           LSDSLAM_BUILD_DIR=build_wercker rake conan:debug:test
+           LSDSLAM_BUILD_DIR=build_wercker rake conan:debug:test conan:debug:clean
 
     - script:
       name: Upload to conan.io
