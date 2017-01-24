@@ -39,7 +39,7 @@ class ConanTasks
             FileUtils::mkdir build_dir unless FileTest::directory? build_dir
             chdir build_dir do
               sh "conan install %s .. --build=%s" % [conan_opts.join(' '), @conan_build]
-              sh "conan build .."
+              sh "VERBOSE=1 conan build .."
             end
 
           end
@@ -49,6 +49,9 @@ class ConanTasks
             sh "cd %s && make unit_test" % build_dir
           end
 
+          task :clean do
+            sh "cd %s && make clean" % build_dir
+          end
         end
 
       end

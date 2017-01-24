@@ -38,8 +38,8 @@ builds.each do |build|
       mkdir build_dir unless FileTest.directory? build_dir
       chdir build_dir do
         sh "cmake % s .." % cmake_args.join(' ')
-        sh "VERBOSE=1 make deps && touch #{deps_touchfile}" unless File.readable? deps_touchfile
-        sh "VERBOSE=1 make"
+        sh "make deps && touch #{deps_touchfile}" unless File.readable? deps_touchfile
+        sh "make"
       end
     end
 

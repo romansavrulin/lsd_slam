@@ -1,5 +1,5 @@
 # wercker version for box creation
-box: amarburg/lsdslam-dev-host
+box: amarburg/lsdslam-dev-host:conan-latest
 
 dev:
   steps:
@@ -13,19 +13,17 @@ build-cmake:
     - script:
       name: Build
       code: |
-           LSDSLAM_BUILD_DIR=build_wercker rake debug:test
+           LSDSLAM_BUILD_DIR=build_wercker rake debug:test debug:clean
 
 build:
   steps:
-    - install-packages:
-      packages: python-pip
-
-    - script:
-      name: Install Conan
-      code: pip install conan
-
     - script:
       name: Build
       code: |
-           LSDSLAM_BUILD_DIR=build_wercker rake conan:debug:test
+           LSDSLAM_BUILD_DIR=build_wercker rake conan:debug:test conan:debug:clean
 
+    - script:
+      name: Upload to conan.io
+      code: |
+        conan user -p "$CONAN_PASSWORD" $CONAN_USERNAME
+        conan upload "*@amarburg/testing" --confirm
