@@ -12,5 +12,7 @@ target_link_libraries( lsdslam_test
           lsdslam )
 
 # # Don't use ctest, instead just execture the Google test binaries
-add_custom_target( unit_test ${PROJECT_BINARY_DIR}/lsdslam_test
+add_custom_target( unit_test 
+		WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+		COMMNAD ./lsdslam_test
                     DEPENDS lsdslam_test )
