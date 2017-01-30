@@ -20,10 +20,12 @@ build:
     - script:
       name: Build
       code: |
+           echo '@conan_settings = {"compiler": "gcc", "compiler.libcxx": "libstdc++11"}' > config.rb
            LSDSLAM_BUILD_DIR=build_wercker rake conan:debug:test conan:debug:clean
 
     - script:
       name: Upload to conan.io
       code: |
+        conan export amarburg/testing
         conan user -p "$CONAN_PASSWORD" $CONAN_USERNAME
-        conan upload "*@amarburg/testing" --confirm
+        conan upload "lsd-slam*" --confirm

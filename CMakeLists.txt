@@ -157,9 +157,9 @@ endif()
 
 if( CUDA_VERSION )
 	find_package( CUDA REQUIRED ${CUDA_VERSION} )
-  if(${CUDA_VERSION} VERSION_EQUAL "8.0")
+  #if(${CUDA_VERSION} VERSION_EQUAL "8.0")
   	SET( CUDA_USE_STATIC_CUDA_RUNTIME OFF )
-  endif()
+  #endif()
 endif()
 
 
