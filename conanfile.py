@@ -36,7 +36,7 @@ class LsdSlamConan(ConanFile):
     cmake_opts += "-DBUILD_UNIT_TESTS=1 " if self.scope.dev and self.scope.build_tests else ""
     cmake_opts += "-DBUILD_GUI:bool=%s" % self.options.build_gui
 
-    build_opts = "-j" if self.options.build_parallel else ""
+    build_opts = "-j2" if self.options.build_parallel else ""
 
     print('cmake_opts')
     self.run('cmake "%s" %s %s' % (self.conanfile_directory, cmake.command_line, cmake_opts))
