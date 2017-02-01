@@ -6,6 +6,7 @@ class LsdSlamConan(ConanFile):
   license = 'GPLv3'
   url = 'https://github.com/amarburg/lsd_slam'
   settings = "os", "compiler", "build_type", "arch"
+  description = "Conan-enabled library version of LSD-SLAM"
   generators = "cmake"
   options = {"opencv_dir": "ANY",  "build_parallel": [True, False], "build_gui": [True,False]}
   default_options = "opencv_dir=''", "build_parallel=True", "build_gui=False"
@@ -55,7 +56,7 @@ class LsdSlamConan(ConanFile):
     else:
         self.copy(pattern="*.so*", dst="lib", src="lib", keep_path=False)
     #else:
-    
+
     self.copy(pattern="*.a", dst="lib", src="lib", keep_path=False)
 
   def package_info(self):
