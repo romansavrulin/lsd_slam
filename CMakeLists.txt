@@ -34,6 +34,9 @@ if(USE_CONAN)
     if(APPLE)
       ## Pangolin prefers FreeGLUT over the GLUT Framework from XCode
       list( APPEND Pangolin_LIBRARIES glut  )
+
+      include_directories( /usr/local/include )
+      link_directories( /usr/local/lib )
     else()
       list( APPEND Pangolin_LIBRARIES  ${GLUT_LIBRARIES}  )
     endif()
@@ -164,7 +167,7 @@ endif()
 
 
 ## C++ flags applied to all builds
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11") 
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 
 set( LSDSLAM_INCLUDE_DIRS
