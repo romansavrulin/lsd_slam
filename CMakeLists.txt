@@ -43,6 +43,7 @@ if(USE_CONAN)
   endif()
 
 else()
+  ## Non-conan / cmake-based build
 	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 	set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
@@ -179,6 +180,11 @@ set( LSDSLAM_INCLUDE_DIRS
 	${Pangolin_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/thirdparty/Sophus
 	${G2O_INCLUDE_DIR} )
+
+if(APPLE)
+  include_directories( /usr/local/include )
+  link_directories( /usr/local/lib )
+endif()
 
 if( USE_CONAN )
 
