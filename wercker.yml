@@ -29,4 +29,4 @@ build:
       code: |
         conan export amarburg/testing
         conan user -p "$CONAN_PASSWORD" $CONAN_USERNAME
-        conan upload "lsd-slam*" --confirm
+        conan upload "lsd_slam*" --confirm
