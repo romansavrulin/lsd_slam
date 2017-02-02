@@ -207,9 +207,6 @@ else()
 endif()
 include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 
-# link_directories( ${ZED_LIBRARY_DIRS}
-#  									${CUDA_LIBRARY_DIRS} )
-
 add_subdirectory( lib/ )
 add_subdirectory( tools/ )
 
