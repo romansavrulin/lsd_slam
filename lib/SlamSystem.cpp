@@ -63,6 +63,7 @@ SlamSystem::SlamSystem( const Configuration &conf )
 : finalized(false),
 	perf(),
 	_conf( conf ),
+	_outputWrapper( nullptr ),
 	keyFrameGraph( new KeyFrameGraph ),
 	trackableKeyFrameSearch( new TrackableKeyFrameSearch( keyFrameGraph, conf ) )
 {
