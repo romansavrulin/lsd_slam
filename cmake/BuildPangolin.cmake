@@ -16,7 +16,7 @@ ExternalProject_Add( Pangolin
                       GIT_REPOSITORY https://github.com/amarburg/Pangolin.git
                       PREFIX Pangolin
                       BUILD_COMMAND ${EXTERNAL_PROJECT_MAKE_COMMAND}
-                      CMAKE_CACHE_ARGS -DCMAKE_BUILD_TYPE:string=Release
+                      CMAKE_CACHE_ARGS -DCMAKE_BUILD_TYPE:string=${CMAKE_BUILD_TYPE}
                               -DCMAKE_INSTALL_PREFIX:path=${PANGOLIN_INSTALL_DIR}
                               -DBUILD_EXAMPLES:bool=OFF
                               -DBUILD_SHARED_LIBS:bool=OFF
