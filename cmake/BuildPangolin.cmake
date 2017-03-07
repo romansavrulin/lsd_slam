@@ -13,7 +13,7 @@ find_package( PythonLibs REQUIRED )
 find_package( OpenEXR QUIET )
 
 ExternalProject_Add( Pangolin
-                      GIT_REPOSITORY https://github.com/amarburg/Pangolin.git
+                      GIT_REPOSITORY https://github.com/stevenlovegrove/Pangolin.git
                       PREFIX Pangolin
                       BUILD_COMMAND ${EXTERNAL_PROJECT_MAKE_COMMAND}
                       CMAKE_CACHE_ARGS -DCMAKE_BUILD_TYPE:string=${CMAKE_BUILD_TYPE}
