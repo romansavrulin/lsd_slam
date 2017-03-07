@@ -20,12 +20,14 @@ ExternalProject_Add( Pangolin
                               -DCMAKE_INSTALL_PREFIX:path=${PANGOLIN_INSTALL_DIR}
                               -DBUILD_EXAMPLES:bool=OFF
                               -DBUILD_SHARED_LIBS:bool=OFF
-                              -DBUILD_PANGOLIN_VIDEO:bool=OFF
-                              -DFORCE_GLUT:bool=ON )
+                              -DBUILD_PANGOLIN_VIDEO:bool=OFF )
+
+                              #-DFORCE_GLUT:bool=ON
 
 set( Pangolin_LIBRARIES
       -L${PANGOLIN_INSTALL_DIR}/lib
       pangolin
+      X11
       ${OPENGL_LIBRARIES}
       ${JPEG_LIBRARIES}
       ${PNG_LIBRARIES}

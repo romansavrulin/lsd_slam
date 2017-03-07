@@ -7,7 +7,7 @@
 
 #include "GUI.h"
 
-#include <pangolin/display/device/display_glut.h>
+#include <pangolin/display/display.h>
 
 GUI::GUI( const lsd_slam::Configuration &conf )
  : _conf( conf ),
@@ -17,7 +17,8 @@ GUI::GUI( const lsd_slam::Configuration &conf )
    depthImgBuffer(NULL)
 {
     const int initialWidth = 800, initialHeight = 800;
-    pangolin::CreateGlutWindowAndBind("Main", initialWidth, initialHeight, GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
+    
+    pangolin::CreateWindowAndBind("Main", initialWidth, initialHeight ); //, GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
 
     glDisable(GL_MULTISAMPLE);
 
