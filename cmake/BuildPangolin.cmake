@@ -27,7 +27,6 @@ ExternalProject_Add( Pangolin
 set( Pangolin_LIBRARIES
       -L${PANGOLIN_INSTALL_DIR}/lib
       pangolin
-      X11
       ${OPENGL_LIBRARIES}
       ${JPEG_LIBRARIES}
       ${PNG_LIBRARIES}

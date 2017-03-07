@@ -29,16 +29,15 @@ if(USE_CONAN)
           ${PNG_LIBRARIES}
           ${PYTHON_LIBRARIES}
           ${GLEW_LIBRARIES}
-          ${OpenEXR_LIBRARIES} )
+          ${OpenEXR_LIBRARIES}
+          ${GLUT_LIBRARIES} )
 
     if(APPLE)
       ## Pangolin prefers FreeGLUT over the GLUT Framework from XCode
-      list( APPEND Pangolin_LIBRARIES glut  )
+      #list( APPEND Pangolin_LIBRARIES glut  )
 
       include_directories( /usr/local/include )
       link_directories( /usr/local/lib )
-    else()
-      list( APPEND Pangolin_LIBRARIES  ${GLUT_LIBRARIES}  )
     endif()
   endif()
 
