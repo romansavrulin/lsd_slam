@@ -13,19 +13,21 @@ find_package( PythonLibs REQUIRED )
 find_package( OpenEXR QUIET )
 
 ExternalProject_Add( Pangolin
-                      GIT_REPOSITORY https://github.com/amarburg/Pangolin.git
+                      GIT_REPOSITORY https://github.com/stevenlovegrove/Pangolin.git
                       PREFIX Pangolin
                       BUILD_COMMAND ${EXTERNAL_PROJECT_MAKE_COMMAND}
                       CMAKE_CACHE_ARGS -DCMAKE_BUILD_TYPE:string=${CMAKE_BUILD_TYPE}
                               -DCMAKE_INSTALL_PREFIX:path=${PANGOLIN_INSTALL_DIR}
                               -DBUILD_EXAMPLES:bool=OFF
                               -DBUILD_SHARED_LIBS:bool=OFF
-                              -DBUILD_PANGOLIN_VIDEO:bool=OFF
-                              -DFORCE_GLUT:bool=ON )
+                              -DBUILD_PANGOLIN_VIDEO:bool=OFF )
+
+                              #-DFORCE_GLUT:bool=ON
 
 set( Pangolin_LIBRARIES
       -L${PANGOLIN_INSTALL_DIR}/lib
       pangolin
+      X11
       ${OPENGL_LIBRARIES}
       ${JPEG_LIBRARIES}
       ${PNG_LIBRARIES}
