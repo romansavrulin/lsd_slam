@@ -4,8 +4,9 @@ SET( PANGOLIN_INSTALL_DIR ${PANGOLIN_PREFIX_DIR} )
 
 ## Check for dependencies (Pangolin doesn't seem do this very well)
 find_package( GLEW REQUIRED )
-find_package( GLUT REQUIRED )
+find_package( GLUT QUIET )
 find_package( GLM REQUIRED )  # n.b. we provide the FindGLM.cmake file
+find_package( X11 REQUIRED )
 find_package( OpenGL REQUIRED )
 find_package( JPEG REQUIRED )
 find_package( PNG REQUIRED )
@@ -22,11 +23,10 @@ ExternalProject_Add( Pangolin
                               -DBUILD_SHARED_LIBS:bool=OFF
                               -DBUILD_PANGOLIN_VIDEO:bool=OFF )
 
-                              #-DFORCE_GLUT:bool=ON
-
 set( Pangolin_LIBRARIES
       -L${PANGOLIN_INSTALL_DIR}/lib
       pangolin
+      ${X11_LIBRARIES}
       ${OPENGL_LIBRARIES}
       ${JPEG_LIBRARIES}
       ${PNG_LIBRARIES}
