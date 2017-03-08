@@ -17,6 +17,7 @@ ExternalProject_Add( Pangolin
                       GIT_REPOSITORY https://github.com/stevenlovegrove/Pangolin.git
                       PREFIX Pangolin
                       BUILD_COMMAND ${EXTERNAL_PROJECT_MAKE_COMMAND}
+                      PATCH_COMMAND patch -p1 --directory=${CMAKE_BINARY_DIR}/Pangolin/src/Pangolin/ < ${CMAKE_CURRENT_LIST_DIR}/Pangolin_squelch_error_1280.patch
                       CMAKE_CACHE_ARGS -DCMAKE_BUILD_TYPE:string=${CMAKE_BUILD_TYPE}
                               -DCMAKE_INSTALL_PREFIX:path=${PANGOLIN_INSTALL_DIR}
                               -DBUILD_EXAMPLES:bool=OFF
