@@ -5,6 +5,7 @@ set(GUI_SRCS
 
 # Set source files
 set(lsdslam_SOURCE_FILES
+  ${CMAKE_CURRENT_SOURCE_DIR}/App/g3logger.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/Frame.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp

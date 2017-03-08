@@ -15,7 +15,7 @@ ENDIF()
 ## Uses my fork which doesn't create src/g3log/generated_definitions.hpp
 ## And thus doesn't need to be re-built every time...
 ExternalProject_Add( g3log
-										GIT_REPOSITORY https://github.com/amarburg/g3log.git
+										GIT_REPOSITORY https://github.com/KjellKod/g3log
 										PREFIX g3log
 										UPDATE_COMMAND git pull origin master
 										BUILD_COMMAND ${EXTERNAL_PROJECT_MAKE_COMMAND}
