@@ -62,25 +62,21 @@ int main( int argc, char** argv )
 
 	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
 
-
   // GUI elements need to ebe initialized in main thread on OSX
   std::shared_ptr<GUI> gui( new GUI( system->conf() ) );
 	lsd_slam::PangolinOutput3DWrapper *outputWrapper = new PangolinOutput3DWrapper( system->conf(), *gui );
 	system->set3DOutputWrapper( outputWrapper );
 
-  // LOG(INFO) << "Starting GUI thread";
-  // boost::thread guiThread(runGuiThread, gui );
-  // guiReady.wait();
-
   LOG(INFO) << "Starting input thread.";
-  boost::thread inputThread(runInputThread, system, args.dataSource, args.undistorter );
-  inputReady.wait();
+  InputThread input( system, args.dataSource, args.undistorter );
+  boost::thread inputThread( boost::ref(input) );
+  input.inputReady.wait();
 
   // Wait for all threads to be ready.
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-    while(!pangolin::ShouldQuit() && !inputDone.getValue() )
+    while(!pangolin::ShouldQuit() && !input.inputDone.getValue() )
   	{
   		gui->preCall();
   		gui->drawKeyframes();

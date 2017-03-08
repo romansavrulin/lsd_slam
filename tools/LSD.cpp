@@ -62,15 +62,16 @@ int main( int argc, char** argv )
 	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
 
   LOG(INFO) << "Starting input thread.";
-  boost::thread inputThread(runInputThread, system, args.dataSource, args.undistorter );
-  inputReady.wait();
+  InputThread input( system, args.dataSource, args.undistorter );
+  boost::thread inputThread( boost::ref(input) );
+  input.inputReady.wait();
 
   // Wait for all threads to be ready.
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
   // This is idle while(1) loop
-  while( !inputDone.getValue() )
+  while( !input.inputDone.getValue() )
   { sleep(1); }
 
   LOG(INFO) << "Finalizing system.";

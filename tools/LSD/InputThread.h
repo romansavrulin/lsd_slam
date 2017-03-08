@@ -6,9 +6,24 @@
 #include "util/DataSource.h"
 #include "util/Undistorter.h"
 
-extern ThreadMutexObject<bool> inputDone;
-extern ThreadSynchronizer inputReady;
+namespace lsd_slam {
 
-extern void runInputThread( std::shared_ptr<lsd_slam::SlamSystem> &system,
-                            const std::shared_ptr<lsd_slam::DataSource> &dataSource,
-                            const std::shared_ptr<lsd_slam::Undistorter> &undistorter );
+  class InputThread {
+  public:
+    
+    InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &system,
+                   std::shared_ptr<lsd_slam::DataSource> &dataSource,
+                   std::shared_ptr<lsd_slam::Undistorter> &undistorter );
+
+      // Entry point for boost::thread
+      void operator()();
+
+
+      std::shared_ptr<lsd_slam::SlamSystem> &system;
+      std::shared_ptr<lsd_slam::DataSource> dataSource;
+      std::shared_ptr<lsd_slam::Undistorter> undistorter;
+
+      ThreadMutexObject<bool> inputDone;
+      ThreadSynchronizer inputReady;
+    };
+  }
