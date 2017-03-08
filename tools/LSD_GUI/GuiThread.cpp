@@ -3,18 +3,10 @@
 
 #include "Pangolin_IOWrapper/PangolinOutput3DWrapper.h"
 
-
 using namespace lsd_slam;
 
-GUI *gui = NULL;
-
-void runGui(SlamSystem * system )
+void runGuiThread(const std::shared_ptr<GUI> &gui )
 {
-	gui = new GUI( system->conf() );
-	gui->initImages();
-	PangolinOutput3DWrapper *outputWrapper = new PangolinOutput3DWrapper( system->conf(), *gui );
-	system->set3DOutputWrapper( outputWrapper );
-
 	guiReady.notify();
 	startAll.wait();
 
@@ -22,8 +14,9 @@ void runGui(SlamSystem * system )
 	{
 		if(guiDone.getValue()) break;
 
-		gui->preCall();
+		LOG(INFO) << "runGuiThread";
 
+		gui->preCall();
 		gui->drawKeyframes();
 
 		gui->drawFrustum();

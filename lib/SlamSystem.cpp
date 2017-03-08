@@ -60,7 +60,7 @@ using namespace lsd_slam;
 
 
 SlamSystem::SlamSystem( const Configuration &conf )
-: finalized(false),
+: _finalized(false),
 	perf(),
 	_conf( conf ),
 	_outputWrapper( nullptr ),
@@ -160,7 +160,7 @@ SlamSystem::~SlamSystem()
 
 void SlamSystem::finalize()
 {
-	finalized = true;
+	_finalized = true;
 
 	LOG(INFO) << "Finalizing Graph... adding final constraints!!";
 

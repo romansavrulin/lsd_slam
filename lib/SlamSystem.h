@@ -81,8 +81,6 @@ public:
 
 	// bool trackingIsGood;
 
-	bool finalized;
-
 	SlamSystem( const Configuration &conf );
 
 	SlamSystem( const SlamSystem&) = delete;
@@ -106,6 +104,7 @@ public:
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
 	void finalize();
+	bool finalized() const { return _finalized; }
 
 	/** Does an offline optimization step. */
 	// void optimizeGraph();
@@ -178,6 +177,7 @@ private:
 	// Individual / no locking
 	Output3DWrapper* _outputWrapper;	// no lock required
 
+	bool _finalized;
 
 
 	// ======= Functions =====

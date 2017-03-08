@@ -29,7 +29,7 @@ builds.each do |build|
     cmake_args = %W( -DCMAKE_BUILD_TYPE:string=#{build_type}
                   #{ENV['CMAKE_FLAGS']}
                   #{@cmake_opts.join(' ')}
-          -DEXTERNAL_PROJECT_PARALLELISM:string=0 )
+                  -DEXTERNAL_PROJECT_PARALLELISM:string=0 )
 
     build_dir = [build_root, build].join('-')
 
@@ -120,7 +120,7 @@ namespace :dependencies do
   namespace :osx_brew do
     desc "Install GUI and non-GUI dependencies on OSX using Brew"
     task :gui => 'dependencies:osx_brew' do
-      sh "brew install glew glm homebrew/x11/freeglut"
+      sh "brew install glew glm" # freeglut"   Deprecate GLUT and use native windowing instead?
     end
   end
 

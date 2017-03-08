@@ -38,9 +38,8 @@
 
 using namespace lsd_slam;
 
-ThreadMutexObject<bool> lsdDone(false), guiDone(false);
-
-ThreadSynchronizer lsdReady, guiReady, startAll;
+ThreadMutexObject<bool> lsdDone(false);
+ThreadSynchronizer lsdReady, startAll;
 
 int main( int argc, char** argv )
 {
@@ -65,8 +64,6 @@ int main( int argc, char** argv )
 #endif
 
   Configuration conf;
-
-  //bool doGui = true;
 
   std::string calibFile;
 
@@ -116,12 +113,6 @@ int main( int argc, char** argv )
 
 	SlamSystem * system = new SlamSystem(conf);
 
-  // if( doGui ) {
-  //   LOG(INFO) << "Starting GUI thread";
-  //   boost::thread guiThread(runGui, system );
-  //   guiReady.wait();
-  // }
-
   LOG(INFO) << "Starting input thread.";
   boost::thread inputThread(runInput, system, dataSource, undistorter );
   lsdReady.wait();
@@ -130,16 +121,15 @@ int main( int argc, char** argv )
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-  while(true)
-  {
-      if( (lsdDone.getValue() || guiDone.getValue()) && !system->finalized)
-      {
-          LOG(INFO) << "Finalizing system.";
-          system->finalize();
-      }
+  // This is idle while(1) loop
+  while( !lsdDone.getValue() )
+  { sleep(1); }
 
-    sleep(1);
-  }
+  LOG(INFO) << "Finalizing system.";
+  system->finalize();
+
+  while( !system->finalized() )
+  { sleep(1); }
 
 
   if( system ) delete system;

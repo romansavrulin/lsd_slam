@@ -34,12 +34,12 @@
 #include "util/FileUtils.h"
 
 #include "LSD_GUI.h"
+#include "LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.h"
 
 
 using namespace lsd_slam;
 
 ThreadMutexObject<bool> lsdDone(false), guiDone(false);
-
 ThreadSynchronizer lsdReady, guiReady, startAll;
 
 int main( int argc, char** argv )
@@ -51,22 +51,19 @@ int main( int argc, char** argv )
 
   g3::initializeLogging(worker.get());
   std::future<std::string> log_file_name = handle->call(&g3::FileSink::fileName);
-  std::cout << "*\n*   Log file: [" << log_file_name.get() << "]\n\n" << std::endl;
 
-  LOG(INFO) << "Starting log.";
+  // This should be the only output to stdout (everything else is through the log)
+  std::cout << "*\n*   Log file: [" << log_file_name.get() << "]\n*\n" << std::endl;
+  LOG(INFO) << "Initializing log.";
 
   DataSource *dataSource = NULL;
   Undistorter* undistorter = NULL;
 
 #ifdef ENABLE_SSE
-  LOG(INFO) << "With SSE optimizations.";
+  LOG(INFO) << "Running with SSE optimizations.";
 #elif ENABLE_NEON
-  LOG(INFO) << "With NEON optimizations.";
+  LOG(INFO) << "Running with NEON optimizations.";
 #endif
-
-  Configuration conf;
-
-  bool doGui = true;
 
   std::string calibFile;
 
@@ -105,7 +102,7 @@ int main( int argc, char** argv )
   CHECK( dataSource != NULL ) << "Could not create data source.";
 
   // Load the configuration object
-
+  Configuration conf;
   conf.inputImage = undistorter->inputImageSize();
   conf.slamImage  = undistorter->outputImageSize();
   conf.camera     = undistorter->getCamera();
@@ -116,11 +113,14 @@ int main( int argc, char** argv )
 
 	SlamSystem * system = new SlamSystem(conf);
 
-  if( doGui ) {
-    LOG(INFO) << "Starting GUI thread";
-    boost::thread guiThread(runGui, system );
-    guiReady.wait();
-  }
+  // GUI elements need to ebe initialized in main thread on OSX
+  std::shared_ptr<GUI> gui( new GUI( system->conf() ) );
+	lsd_slam::PangolinOutput3DWrapper *outputWrapper = new PangolinOutput3DWrapper( system->conf(), *gui );
+	system->set3DOutputWrapper( outputWrapper );
+
+  // LOG(INFO) << "Starting GUI thread";
+  // boost::thread guiThread(runGuiThread, gui );
+  // guiReady.wait();
 
   LOG(INFO) << "Starting input thread.";
   boost::thread inputThread(runInput, system, dataSource, undistorter );
@@ -130,17 +130,19 @@ int main( int argc, char** argv )
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-  while(true)
-  {
-      if( (lsdDone.getValue() || guiDone.getValue()) && !system->finalized)
-      {
-          LOG(INFO) << "Finalizing system.";
-          system->finalize();
-      }
+    while(!pangolin::ShouldQuit() && !lsdDone.getValue() )
+  	{
+  		gui->preCall();
+  		gui->drawKeyframes();
+  		gui->drawFrustum();
+  		gui->drawImages();
+  		gui->postCall();
+    }
 
-    sleep(1);
-  }
+    LOG(INFO) << "Finalizing system.";
+    system->finalize();
 
+    while( ! system->finalized() ) { sleep(1); }
 
   if( system ) delete system;
   if( undistorter ) delete undistorter;
