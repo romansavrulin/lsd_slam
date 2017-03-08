@@ -9,4 +9,6 @@
 extern ThreadMutexObject<bool> inputDone;
 extern ThreadSynchronizer inputReady;
 
-extern void runInputThread(lsd_slam::SlamSystem * system, lsd_slam::DataSource *dataSource, lsd_slam::Undistorter* undistorter );
+extern void runInputThread( std::shared_ptr<lsd_slam::SlamSystem> &system,
+                            const std::shared_ptr<lsd_slam::DataSource> &dataSource,
+                            const std::shared_ptr<lsd_slam::Undistorter> &undistorter );

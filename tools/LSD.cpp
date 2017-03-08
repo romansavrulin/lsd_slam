@@ -22,12 +22,11 @@
 
 #include "App/g3logger.h"
 
-#include "util/DataSource.h"
-#include "util/Undistorter.h"
+
 #include "SlamSystem.h"
 
 #include "util/settings.h"
-#include "util/Parse.h"
+
 #include "util/globalFuncs.h"
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
@@ -35,6 +34,7 @@
 
 #include "LSD.h"
 #include "LSD/InputThread.h"
+#include "LSD/ParseArgs.h"
 
 
 using namespace lsd_slam;
@@ -46,60 +46,23 @@ int main( int argc, char** argv )
   initializeG3Log( argv[0] );
   logBanner();
 
-  DataSource *dataSource = NULL;
-  Undistorter* undistorter = NULL;
   Configuration conf;
-
-  std::string calibFile;
-
-  if(Parse::arg(argc, argv, "-c", calibFile) > 0)
-  {
-     undistorter = Undistorter::getUndistorterForFile(calibFile.c_str());
-  } else {
-    printf("Need to specify calibration file with -c option");
-    exit(0);
-  }
-
-  CHECK( undistorter != NULL ) << "Could not create undistorter.";
-
-  // open image files: first try to open as file.
-	std::string source;
-	if(!(Parse::arg(argc, argv, "-f", source) > 0))
-	{
-		printf("need source files! (set using -f FOLDER or KLG)\n");
-		exit(0);
-	}
-
-  std::vector<std::string> files;
-
-  if(getdir(source, files) >= 0)
-  {
-      printf("found %d image files in folder %s!\n", (int)files.size(), source.c_str());
-  }
-  else
-  {
-      printf("could not load file list! wrong path / file?\n");
-  }
-
-  printf("Loading images from %s\n", source.c_str());
-  dataSource = new ImagesSource( files );
-
-  CHECK( dataSource != NULL ) << "Could not create data source.";
+  ParseArgs args( argc, argv );
 
   // Load the configuration object
 
-  conf.inputImage = undistorter->inputImageSize();
-  conf.slamImage  = undistorter->outputImageSize();
-  conf.camera     = undistorter->getCamera();
+  conf.inputImage = args.undistorter->inputImageSize();
+  conf.slamImage  = args.undistorter->outputImageSize();
+  conf.camera     = args.undistorter->getCamera();
 
   LOG(INFO) << "Slam image: " << conf.slamImage.width << " x " << conf.slamImage.height;
 
   CHECK( (conf.camera.fx) > 0 && (conf.camera.fy > 0) ) << "Camera focal length is zero";
 
-	SlamSystem * system = new SlamSystem(conf);
+	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
 
   LOG(INFO) << "Starting input thread.";
-  boost::thread inputThread(runInputThread, system, dataSource, undistorter );
+  boost::thread inputThread(runInputThread, system, args.dataSource, args.undistorter );
   inputReady.wait();
 
   // Wait for all threads to be ready.
@@ -116,9 +79,6 @@ int main( int argc, char** argv )
   while( !system->finalized() )
   { sleep(1); }
 
-
-  if( system ) delete system;
-  if( undistorter ) delete undistorter;
 
   return 0;
 }

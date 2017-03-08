@@ -8,7 +8,9 @@ using namespace lsd_slam;
 ThreadMutexObject<bool> inputDone;
 ThreadSynchronizer inputReady;
 
-void runInputThread(SlamSystem * system, DataSource *dataSource, Undistorter* undistorter )
+void runInputThread( std::shared_ptr<lsd_slam::SlamSystem> &system,
+                            const std::shared_ptr<lsd_slam::DataSource> &dataSource,
+                            const std::shared_ptr<lsd_slam::Undistorter> &undistorter )
 {
     // get HZ
     float fps = dataSource->fps();
@@ -85,9 +87,8 @@ void runInputThread(SlamSystem * system, DataSource *dataSource, Undistorter* un
               newSystem->set3DOutputWrapper( system->outputWrapper() );
 
               LOG(WARNING) << "FULL RESET!";
-              delete system;
 
-              system = newSystem;
+              system.reset( newSystem );
 
               fullResetRequested = false;
               runningIdx = 0;
