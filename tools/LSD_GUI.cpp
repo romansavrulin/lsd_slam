@@ -78,11 +78,7 @@ int main( int argc, char** argv )
 
     while(!pangolin::ShouldQuit() && !input.inputDone.getValue() )
   	{
-  		gui->preCall();
-  		gui->drawKeyframes();
-  		gui->drawFrustum();
-  		gui->drawImages();
-  		gui->postCall();
+  		gui->update();
     }
 
     LOG(INFO) << "Finalizing system.";
