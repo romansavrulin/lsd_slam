@@ -2,10 +2,20 @@
 
 #include <g3log/logworker.hpp>
 
+#include "G3LogSinks.h"
+
 namespace lsd_slam {
 
-std::unique_ptr<g3::LogWorker> initializeG3Log( const std::string &appName );
+  struct G3Logger {
 
-void logBanner( void );
+    G3Logger( const std::string &appName );
+    void logBanner( void );
+
+    void verbose( bool );
+
+    std::unique_ptr<g3::LogWorker> worker;
+    std::unique_ptr<g3::SinkHandle<ColorStderrSink>> stderrHandle;
+  };
+
 
 }

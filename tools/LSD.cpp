@@ -48,8 +48,8 @@ ThreadSynchronizer startAll;
 
 int main( int argc, char** argv )
 {
-  auto logWorker = initializeG3Log( argv[0] );
-  logBanner();
+  G3Logger logWorker( argv[0] );
+  logWorker.logBanner();
 
   Configuration conf;
   ParseArgs args( argc, argv );

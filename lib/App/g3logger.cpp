@@ -5,18 +5,17 @@
 #include "g3logger.h"
 
 #include <g3log/g3log.hpp>
-#include "G3LogSinks.h"
+
 
 namespace lsd_slam {
 
-std::unique_ptr<g3::LogWorker> initializeG3Log( const std::string &appName )
+G3Logger::G3Logger( const std::string &appName )
+  : worker( g3::LogWorker::createLogWorker() ),
+  stderrHandle( worker->addSink(std::unique_ptr<ColorStderrSink>( new ColorStderrSink ),
+                                       &ColorStderrSink::ReceiveLogMessage) )
 {
-  auto worker = g3::LogWorker::createLogWorker();
-  auto handle = worker->addDefaultLogger(appName, ".");
 
-  // Uses a custom log sing (ColorStderrSink)
-  auto stderrHandle = worker->addSink(std::unique_ptr<ColorStderrSink>( new ColorStderrSink ),
-                                       &ColorStderrSink::ReceiveLogMessage);
+  auto handle = worker->addDefaultLogger(appName, ".");
 
   g3::initializeLogging(worker.get());
   std::future<std::string> log_file_name = handle->call(&g3::FileSink::fileName);
@@ -25,11 +24,15 @@ std::unique_ptr<g3::LogWorker> initializeG3Log( const std::string &appName )
   // Everything else gets sent to the logger
   std::cout << "*\n*   Log file: [" << log_file_name.get() << "]\n*\n" << std::endl;
 
-  return worker;
 }
 
 
-void logBanner( void )
+void G3Logger::verbose( bool verbose )
+{
+   stderrHandle->call( &ColorStderrSink::setThreshold, DEBUG );
+}
+
+void G3Logger::logBanner( void )
 {
 
   LOG(INFO) << "Starting log.";
