@@ -45,7 +45,7 @@ using namespace lsd_slam;
 
 int main( int argc, char** argv )
 {
-  initializeG3Log( argv[0] );
+  auto logWorker = initializeG3Log( argv[0] );
   logBanner();
 
   Configuration conf;
