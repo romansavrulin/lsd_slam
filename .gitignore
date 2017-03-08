@@ -3,3 +3,5 @@
 *.so
 .DS_Store
 build[_-]*/
+config.rb
+__pycache__/
