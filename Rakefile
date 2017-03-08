@@ -43,7 +43,7 @@ builds.each do |build|
         sh "cmake % s .." % cmake_args.join(' ')
         sh "make deps && touch #{deps_touchfile}" unless File.readable? deps_touchfile
 
-        if @build_parallelism > 0
+        if @build_parallelism and @build_parallelism > 0
           sh "make -j#{@build_parallelism}"
         else
           sh "make"
