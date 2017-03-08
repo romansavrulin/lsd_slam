@@ -5,6 +5,9 @@
 
 using namespace lsd_slam;
 
+ThreadMutexObject<bool> guiDone(false);
+ThreadSynchronizer guiReady;
+
 void runGuiThread(const std::shared_ptr<GUI> &gui )
 {
 	guiReady.notify();

@@ -1,11 +1,14 @@
 
 
+#include "InputThread.h"
 #include "LSD.h"
 
 using namespace lsd_slam;
 
+ThreadMutexObject<bool> inputDone;
+ThreadSynchronizer inputReady;
 
-void runInput(SlamSystem * system, DataSource *dataSource, Undistorter* undistorter )
+void runInputThread(SlamSystem * system, DataSource *dataSource, Undistorter* undistorter )
 {
     // get HZ
     float fps = dataSource->fps();
@@ -14,7 +17,8 @@ void runInput(SlamSystem * system, DataSource *dataSource, Undistorter* undistor
 
     const bool doDepth( system->conf().doDepth && dataSource->hasDepth() );
 
-    lsdReady.notify();
+    inputReady.notify();
+
     startAll.wait();
 
     int numFrames = dataSource->numFrames();
@@ -26,7 +30,7 @@ void runInput(SlamSystem * system, DataSource *dataSource, Undistorter* undistor
 
     for(unsigned int i = 0; (numFrames < 0) || (i < numFrames); ++i)
     {
-        if(lsdDone.getValue()) break;
+        if(inputDone.getValue()) break;
 
         std::chrono::time_point<std::chrono::steady_clock> start(std::chrono::steady_clock::now());
 
@@ -97,5 +101,5 @@ void runInput(SlamSystem * system, DataSource *dataSource, Undistorter* undistor
     }
 
     LOG(INFO) << "Have processed all input frames.";
-    lsdDone.assignValue(true);
+    inputDone.assignValue(true);
 }

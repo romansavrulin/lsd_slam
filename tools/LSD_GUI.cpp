@@ -18,13 +18,14 @@
 * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opencv2/opencv.hpp>
-
 #include <boost/thread.hpp>
 
-#include <g3log/g3log.hpp>
-#include <g3log/logworker.hpp>
-#include "util/G3LogSinks.h"
+#include "App/g3logger.h"
+
+#include "util/DataSource.h"
+#include "util/Undistorter.h"
+#include "SlamSystem.h"
+
 
 #include "util/settings.h"
 #include "util/Parse.h"
@@ -34,36 +35,22 @@
 #include "util/FileUtils.h"
 
 #include "LSD_GUI.h"
+#include "LSD_GUI/GuiThread.h"
 #include "LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.h"
 
+#include "LSD/InputThread.h"
+
+ThreadSynchronizer startAll;
 
 using namespace lsd_slam;
 
-ThreadMutexObject<bool> lsdDone(false), guiDone(false);
-ThreadSynchronizer lsdReady, guiReady, startAll;
-
 int main( int argc, char** argv )
 {
-  auto worker = g3::LogWorker::createLogWorker();
-  auto handle = worker->addDefaultLogger(argv[0], ".");
-  auto stderrHandle = worker->addSink(std::unique_ptr<ColorStderrSink>( new ColorStderrSink ),
-                                       &ColorStderrSink::ReceiveLogMessage);
-
-  g3::initializeLogging(worker.get());
-  std::future<std::string> log_file_name = handle->call(&g3::FileSink::fileName);
-
-  // This should be the only output to stdout (everything else is through the log)
-  std::cout << "*\n*   Log file: [" << log_file_name.get() << "]\n*\n" << std::endl;
-  LOG(INFO) << "Initializing log.";
+  initializeG3Log( argv[0] );
+  logBanner();
 
   DataSource *dataSource = NULL;
   Undistorter* undistorter = NULL;
-
-#ifdef ENABLE_SSE
-  LOG(INFO) << "Running with SSE optimizations.";
-#elif ENABLE_NEON
-  LOG(INFO) << "Running with NEON optimizations.";
-#endif
 
   std::string calibFile;
 
@@ -123,14 +110,14 @@ int main( int argc, char** argv )
   // guiReady.wait();
 
   LOG(INFO) << "Starting input thread.";
-  boost::thread inputThread(runInput, system, dataSource, undistorter );
-  lsdReady.wait();
+  boost::thread inputThread(runInputThread, system, dataSource, undistorter );
+  inputReady.wait();
 
   // Wait for all threads to be ready.
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-    while(!pangolin::ShouldQuit() && !lsdDone.getValue() )
+    while(!pangolin::ShouldQuit() && !inputDone.getValue() )
   	{
   		gui->preCall();
   		gui->drawKeyframes();

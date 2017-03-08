@@ -9,6 +9,9 @@ require 'conan'
 @conan_opts = {}
 @conan_settings = {}
 @conan_scopes = { build_tests: 'True' }
+
+@build_parallelism = nil
+
 load 'config.rb' if FileTest::exists? 'config.rb'
 
 build_root = ENV['BUILD_ROOT'] || "build"
@@ -29,7 +32,7 @@ builds.each do |build|
     cmake_args = %W( -DCMAKE_BUILD_TYPE:string=#{build_type}
                   #{ENV['CMAKE_FLAGS']}
                   #{@cmake_opts.join(' ')}
-                  -DEXTERNAL_PROJECT_PARALLELISM:string=0 )
+                  -DEXTERNAL_PROJECT_PARALLELISM:string=#{@build_parallelism} )
 
     build_dir = [build_root, build].join('-')
 
@@ -39,7 +42,12 @@ builds.each do |build|
       chdir build_dir do
         sh "cmake % s .." % cmake_args.join(' ')
         sh "make deps && touch #{deps_touchfile}" unless File.readable? deps_touchfile
-        sh "make"
+
+        if @build_parallelism > 0
+          sh "make -j#{@build_parallelism}"
+        else
+          sh "make"
+        end
       end
     end
 

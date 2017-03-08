@@ -2,7 +2,7 @@
 
 namespace lsd_slam {
 
-void initializeLSDG3Log( void );
+void initializeG3Log( const std::string &appName );
 
 void logBanner( void );
 

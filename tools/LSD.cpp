@@ -18,13 +18,13 @@
 * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <opencv2/opencv.hpp>
-
 #include <boost/thread.hpp>
 
-#include <g3log/g3log.hpp>
-#include <g3log/logworker.hpp>
-#include "util/G3LogSinks.h"
+#include "App/g3logger.h"
+
+#include "util/DataSource.h"
+#include "util/Undistorter.h"
+#include "SlamSystem.h"
 
 #include "util/settings.h"
 #include "util/Parse.h"
@@ -34,35 +34,20 @@
 #include "util/FileUtils.h"
 
 #include "LSD.h"
+#include "LSD/InputThread.h"
 
 
 using namespace lsd_slam;
 
-ThreadMutexObject<bool> lsdDone(false);
-ThreadSynchronizer lsdReady, startAll;
+ThreadSynchronizer startAll;
 
 int main( int argc, char** argv )
 {
-  auto worker = g3::LogWorker::createLogWorker();
-  auto handle = worker->addDefaultLogger(argv[0], ".");
-  auto stderrHandle = worker->addSink(std::unique_ptr<ColorStderrSink>( new ColorStderrSink ),
-                                       &ColorStderrSink::ReceiveLogMessage);
-
-  g3::initializeLogging(worker.get());
-  std::future<std::string> log_file_name = handle->call(&g3::FileSink::fileName);
-  std::cout << "*\n*   Log file: [" << log_file_name.get() << "]\n\n" << std::endl;
-
-  LOG(INFO) << "Starting log.";
+  initializeG3Log( argv[0] );
+  logBanner();
 
   DataSource *dataSource = NULL;
   Undistorter* undistorter = NULL;
-
-#ifdef ENABLE_SSE
-  LOG(INFO) << "With SSE optimizations.";
-#elif ENABLE_NEON
-  LOG(INFO) << "With NEON optimizations.";
-#endif
-
   Configuration conf;
 
   std::string calibFile;
@@ -114,15 +99,15 @@ int main( int argc, char** argv )
 	SlamSystem * system = new SlamSystem(conf);
 
   LOG(INFO) << "Starting input thread.";
-  boost::thread inputThread(runInput, system, dataSource, undistorter );
-  lsdReady.wait();
+  boost::thread inputThread(runInputThread, system, dataSource, undistorter );
+  inputReady.wait();
 
   // Wait for all threads to be ready.
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
   // This is idle while(1) loop
-  while( !lsdDone.getValue() )
+  while( !inputDone.getValue() )
   { sleep(1); }
 
   LOG(INFO) << "Finalizing system.";

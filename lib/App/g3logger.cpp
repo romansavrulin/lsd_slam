@@ -1,17 +1,19 @@
 
+#include <iostream>
 
 #include <g3log/g3log.hpp>
 #include <g3log/logworker.hpp>
 
+#include "G3LogSinks.h"
 
 namespace lsd_slam {
 
-
-
-void initializeG3Logger( void )
+void initializeG3Log( const std::string &appName )
 {
   auto worker = g3::LogWorker::createLogWorker();
-  auto handle = worker->addDefaultLogger(argv[0], ".");
+  auto handle = worker->addDefaultLogger(appName, ".");
+
+  // Uses a custom log sing (ColorStderrSink)
   auto stderrHandle = worker->addSink(std::unique_ptr<ColorStderrSink>( new ColorStderrSink ),
                                        &ColorStderrSink::ReceiveLogMessage);
 
@@ -19,13 +21,14 @@ void initializeG3Logger( void )
   std::future<std::string> log_file_name = handle->call(&g3::FileSink::fileName);
 
   // This should be the only message written explicitly to std::cout
-  // Everything else gets logged
+  // Everything else gets sent to the logger
   std::cout << "*\n*   Log file: [" << log_file_name.get() << "]\n*\n" << std::endl;
 }
 
 
 void logBanner( void )
 {
+  
   LOG(INFO) << "Starting log.";
 
   #ifdef ENABLE_SSE
