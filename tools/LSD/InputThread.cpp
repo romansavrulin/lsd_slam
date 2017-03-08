@@ -83,12 +83,8 @@ void runInputThread( std::shared_ptr<lsd_slam::SlamSystem> &system,
 
           if(fullResetRequested)
           {
-              SlamSystem *newSystem = new SlamSystem( system->conf() );
-              newSystem->set3DOutputWrapper( system->outputWrapper() );
-
               LOG(WARNING) << "FULL RESET!";
-
-              system.reset( newSystem );
+              system.reset( system->fullReset() );
 
               fullResetRequested = false;
               runningIdx = 0;

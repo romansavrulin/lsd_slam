@@ -60,7 +60,7 @@ using namespace lsd_slam;
 
 
 SlamSystem::SlamSystem( const Configuration &conf )
-: _finalized(false),
+: _finalized(),
 	perf(),
 	_conf( conf ),
 	_outputWrapper( nullptr ),
@@ -158,10 +158,17 @@ SlamSystem::~SlamSystem()
 	// Util::closeAllWindows();
 }
 
+SlamSystem *SlamSystem::fullReset( void )
+{
+	SlamSystem *newSystem = new SlamSystem( conf() );
+	newSystem->set3DOutputWrapper( outputWrapper() );
+	return newSystem;
+}
+
+
+
 void SlamSystem::finalize()
 {
-	_finalized = true;
-
 	LOG(INFO) << "Finalizing Graph... adding final constraints!!";
 
 	// This happens in the foreground
@@ -204,6 +211,8 @@ void SlamSystem::finalize()
 
 	// usleep(200000);
 	LOG(INFO) << "Done Finalizing Graph.!!";
+	_finalized.notify();
+
 }
 
 

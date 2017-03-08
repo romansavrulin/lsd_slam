@@ -92,7 +92,5 @@ int main( int argc, char** argv )
     LOG(INFO) << "Finalizing system.";
     system->finalize();
 
-    while( ! system->finalized() ) { sleep(1); }
-
   return 0;
 }

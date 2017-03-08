@@ -89,6 +89,8 @@ public:
 	~SlamSystem();
 
 
+	SlamSystem *fullReset();
+
 	void randomInit(uchar* image, int id, double timeStamp);
 	void randomInit( SharedFramePtr frame );
 	void gtDepthInit( SharedFramePtr frame );
@@ -104,7 +106,7 @@ public:
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
 	void finalize();
-	bool finalized() const { return _finalized; }
+	ThreadSynchronizer &finalized() { return _finalized; }
 
 	/** Does an offline optimization step. */
 	// void optimizeGraph();
@@ -177,7 +179,7 @@ private:
 	// Individual / no locking
 	Output3DWrapper* _outputWrapper;	// no lock required
 
-	bool _finalized;
+	ThreadSynchronizer _finalized;
 
 
 	// ======= Functions =====
