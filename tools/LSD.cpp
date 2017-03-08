@@ -1,4 +1,10 @@
 /**
+*  This version "LSD" of the main binary has no GUI dependencies.
+*  Pangolin, etc are not required to build this version.
+*  (of course, it's not that exciting to watch!)
+*
+*  See LSD_GUI which is functionally identical but does have the
+*  Pangolin-based GUI
 *
 * Based on original LSD-SLAM code from:
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
@@ -21,7 +27,6 @@
 #include <boost/thread.hpp>
 
 #include "App/g3logger.h"
-
 
 #include "SlamSystem.h"
 
