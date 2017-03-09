@@ -37,14 +37,13 @@
 #include "util/Configuration.h"
 #include "util/FileUtils.h"
 
-#include "LSD.h"
-#include "LSD/InputThread.h"
+#include "App/App.h"
+#include "App/InputThread.h"
 #include "LSD/ParseArgs.h"
 
 
 using namespace lsd_slam;
 
-ThreadSynchronizer startAll;
 
 int main( int argc, char** argv )
 {

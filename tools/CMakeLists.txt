@@ -10,7 +10,6 @@ include_directories(
 link_directories( ${CONAN_LIB_DIRS} )
 
 set( LSD_SRCS
-  LSD/InputThread.cpp
   LSD/ParseArgs.cpp )
 
 # build image node
@@ -23,7 +22,7 @@ if(BUILD_GUI)
     LSD_GUI/GuiThread.cpp
     LSD_GUI/GUI.cpp
     LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.cpp
-        LSD_GUI/Pangolin_IOWrapper/PangolinGUIIOWrapper.cpp
+    LSD_GUI/Pangolin_IOWrapper/PangolinOutputIOWrapper.cpp
     ${LSD_SRCS} )
   target_link_libraries( LSD_GUI lsdslam ${CONAN_LIBS} ${Pangolin_LIBRARIES} )
 endif()

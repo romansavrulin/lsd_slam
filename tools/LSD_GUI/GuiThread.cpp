@@ -1,5 +1,5 @@
 
-#include "LSD.h"
+#include "App/App.h"
 
 #include "Pangolin_IOWrapper/PangolinOutput3DWrapper.h"
 

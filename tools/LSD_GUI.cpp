@@ -37,7 +37,7 @@
 #include "LSD_GUI/Pangolin_IOWrapper/PangolinOutputIOWrapper.h"
 
 
-#include "LSD/InputThread.h"
+#include "App/InputThread.h"
 #include "LSD/ParseArgs.h"
 
 ThreadSynchronizer startAll;
