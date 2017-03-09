@@ -35,6 +35,8 @@
 #include "LSD_GUI.h"
 #include "LSD_GUI/GuiThread.h"
 #include "LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.h"
+#include "LSD_GUI/Pangolin_IOWrapper/PangolinGUIIOWrapper.h"
+
 
 #include "LSD/InputThread.h"
 #include "LSD/ParseArgs.h"
@@ -60,15 +62,19 @@ int main( int argc, char** argv )
 
   CHECK( (conf.camera.fx) > 0 && (conf.camera.fy > 0) ) << "Camera focal length is zero";
 
-	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
+  std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
 
   // GUI elements need to ebe initialized in main thread on OSX
   std::shared_ptr<GUI> gui( new GUI( system->conf() ) );
-	lsd_slam::PangolinOutput3DWrapper *outputWrapper = new PangolinOutput3DWrapper( system->conf(), *gui );
-	system->set3DOutputWrapper( outputWrapper );
+
+  std::shared_ptr<lsd_slam::PangolinOutput3DWrapper> outputWrapper( new PangolinOutput3DWrapper( system->conf(), *gui ) );
+  system->set3DOutputWrapper( outputWrapper.get() );
+
+  std::shared_ptr<lsd_slam::PangolinGUIIOWrapper> guiWrapper( new PangolinGUIIOWrapper( system->conf(), *gui ) );
+
 
   LOG(INFO) << "Starting input thread.";
-  InputThread input( system, args.dataSource, args.undistorter );
+  InputThread input( system, args.dataSource, args.undistorter, guiWrapper );
   boost::thread inputThread( boost::ref(input) );
   input.inputReady.wait();
 
@@ -76,13 +82,13 @@ int main( int argc, char** argv )
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-    while(!pangolin::ShouldQuit() && !input.inputDone.getValue() )
-  	{
-  		gui->update();
-    }
+  while( !pangolin::ShouldQuit() && !input.inputDone.getValue() ) {
+    gui->update();
+  }
 
-    LOG(INFO) << "Finalizing system.";
-    system->finalize();
+  LOG(INFO) << "Finalizing system.";
+  system->finalize();
+
 
   return 0;
 }

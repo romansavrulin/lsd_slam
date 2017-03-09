@@ -22,51 +22,25 @@
 #include <string>
 #include <vector>
 
-#include "util/SophusUtil.h"
+#include <opencv2/core/core.hpp>
 
-namespace cv {
-	class Mat;
-}
+#include "util/SophusUtil.h"
 
 namespace lsd_slam
 {
 
-class Frame;
-
-class KeyFrameGraph;
-class Frame;
-
-
-
 /**
- * Virtual 3D display object.
+ *
  */
-class Output3DWrapper
+class GUIIOWrapper
 {
 public:
-	virtual ~Output3DWrapper() {};
+	virtual ~GUIIOWrapper() {};
 
-
-	virtual void publishKeyframeGraph(KeyFrameGraph* graph) {};
-
-	// publishes a keyframe. if that frame already existis, it is overwritten, otherwise it is added.
-	virtual void publishKeyframe(Frame* kf) {};
-
-	virtual void updateDepthImage(unsigned char * data) {};
-
-	// published a tracked frame that did not become a keyframe (yet; i.e. has no depth data)
-	virtual void publishTrackedFrame(Frame* kf) {};
-
-	// publishes graph and all constraints, as well as updated KF poses.
-	virtual void publishTrajectory(std::vector<Eigen::Matrix<float, 3, 1>> trajectory, std::string identifier) {};
-	virtual void publishTrajectoryIncrement(Eigen::Matrix<float, 3, 1> pt, std::string identifier) {};
-
-	virtual void publishDebugInfo(Eigen::Matrix<float, 20, 1> data) {};
 
 	virtual void updatePose( const Sophus::Sim3f &pose ) {};
 	virtual void updateFrameNumber( int ) {};
 	virtual void updateLiveImage( const cv::Mat &img ) {};
-
 
 };
 }

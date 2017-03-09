@@ -48,6 +48,12 @@ class PangolinOutput3DWrapper : public Output3DWrapper
 
         virtual void publishDebugInfo(Eigen::Matrix<float, 20, 1> data);
 
+        virtual void updatePose( const Sophus::Sim3f &pose );
+      	virtual void updateFrameNumber( int );
+      	virtual void updateLiveImage( const cv::Mat &img );
+
+
+
         int publishLvl;
 
     private:
