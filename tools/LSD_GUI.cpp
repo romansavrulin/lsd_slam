@@ -24,7 +24,6 @@
 
 #include "SlamSystem.h"
 
-
 #include "util/settings.h"
 #include "util/Parse.h"
 #include "util/globalFuncs.h"
@@ -35,7 +34,7 @@
 #include "LSD_GUI.h"
 #include "LSD_GUI/GuiThread.h"
 #include "LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.h"
-#include "LSD_GUI/Pangolin_IOWrapper/PangolinGUIIOWrapper.h"
+#include "LSD_GUI/Pangolin_IOWrapper/PangolinOutputIOWrapper.h"
 
 
 #include "LSD/InputThread.h"
@@ -70,7 +69,7 @@ int main( int argc, char** argv )
   std::shared_ptr<lsd_slam::PangolinOutput3DWrapper> outputWrapper( new PangolinOutput3DWrapper( system->conf(), *gui ) );
   system->set3DOutputWrapper( outputWrapper.get() );
 
-  std::shared_ptr<lsd_slam::PangolinGUIIOWrapper> guiWrapper( new PangolinGUIIOWrapper( system->conf(), *gui ) );
+  std::shared_ptr<lsd_slam::PangolinOutputIOWrapper> guiWrapper( new PangolinOutputIOWrapper( system->conf(), *gui ) );
 
 
   LOG(INFO) << "Starting input thread.";

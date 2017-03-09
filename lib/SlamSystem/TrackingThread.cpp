@@ -240,7 +240,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 
 	LOG_IF( DEBUG,  enablePrintDebugInfo && printThreadingInfo ) << "Publishing tracked frame";
 	_system.publishTrackedFrame(newFrame.get());
-
+	_system.publishPose(newFrame->getScaledCamToWorld().cast<float>());
 
 	// Keyframe selection
 	// latestTrackedFrame = trackingNewFrame;

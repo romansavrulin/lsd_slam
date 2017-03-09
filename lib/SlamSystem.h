@@ -145,6 +145,7 @@ public:
 	Output3DWrapper *outputWrapper( void )      { return _outputWrapper; }
 	void set3DOutputWrapper(Output3DWrapper* outputWrapper) {	_outputWrapper = outputWrapper; }
 
+	void publishPose(const Sophus::Sim3f &pose ) 	{ if(_outputWrapper) _outputWrapper->publishPose(pose);}
 	void publishTrackedFrame( Frame *frame )      { if( _outputWrapper ) _outputWrapper->publishTrackedFrame( frame ); }
 	void publishKeyframeGraph( void )             { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph ); }
 	void publishKeyframe(  Frame *frame )         { if( _outputWrapper ) _outputWrapper->publishKeyframe( frame ); }

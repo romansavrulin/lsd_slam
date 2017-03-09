@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "IOWrapper/GUIIOWrapper.h"
+#include "IOWrapper/OutputIOWrapper.h"
 #include "LSD_GUI/GUI.h"
 #include "util/Configuration.h"
 
@@ -15,13 +15,12 @@ namespace lsd_slam
 {
 
 
-class PangolinGUIIOWrapper : public GUIIOWrapper
+class PangolinOutputIOWrapper : public OutputIOWrapper
 {
     public:
-        PangolinGUIIOWrapper( const Configuration &conf, GUI & gui);
-        virtual ~PangolinGUIIOWrapper();
+        PangolinOutputIOWrapper( const Configuration &conf, GUI & gui);
+        virtual ~PangolinOutputIOWrapper();
 
-        virtual void updatePose( const Sophus::Sim3f &pose );
       	virtual void updateFrameNumber( int );
       	virtual void updateLiveImage( const cv::Mat &img );
 

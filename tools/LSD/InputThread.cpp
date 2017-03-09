@@ -9,7 +9,7 @@ namespace lsd_slam {
   InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
     std::shared_ptr<lsd_slam::DataSource> &src,
     std::shared_ptr<lsd_slam::Undistorter> &und,
-    const std::shared_ptr< lsd_slam::GUIIOWrapper > &out )
+    const std::shared_ptr< lsd_slam::OutputIOWrapper > &out )
 
     : system( sys ), dataSource( src ), undistorter( und ), output( out ),
     inputDone( false ),
@@ -64,7 +64,6 @@ namespace lsd_slam {
 
           // Fundamentally, much of this could be done in the SlamSystem
           if( output ) {
-            output->updatePose(system->getCurrentPoseEstimateScale());
             output->updateFrameNumber( runningIdx );
             output->updateLiveImage( image );
           }

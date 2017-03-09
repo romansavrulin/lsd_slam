@@ -32,13 +32,11 @@ namespace lsd_slam
 /**
  *
  */
-class GUIIOWrapper
+class OutputIOWrapper
 {
 public:
-	virtual ~GUIIOWrapper() {};
+	virtual ~OutputIOWrapper() {};
 
-
-	virtual void updatePose( const Sophus::Sim3f &pose ) {};
 	virtual void updateFrameNumber( int ) {};
 	virtual void updateLiveImage( const cv::Mat &img ) {};
 

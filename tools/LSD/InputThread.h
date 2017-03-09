@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IOWrapper/GUIIOWrapper.h"
+#include "IOWrapper/OutputIOWrapper.h"
 
 #include "util/ThreadMutexObject.h"
 
@@ -16,7 +16,7 @@ namespace lsd_slam {
     InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &system,
                    std::shared_ptr<lsd_slam::DataSource> &dataSource,
                    std::shared_ptr<lsd_slam::Undistorter> &undistorter,
-                  const  std::shared_ptr<lsd_slam::GUIIOWrapper> &output = std::shared_ptr<lsd_slam::GUIIOWrapper>(nullptr) );
+                  const std::shared_ptr<lsd_slam::OutputIOWrapper> &output = std::shared_ptr<lsd_slam::OutputIOWrapper>(nullptr) );
 
       // Entry point for boost::thread
       void operator()();
@@ -25,7 +25,7 @@ namespace lsd_slam {
       std::shared_ptr<lsd_slam::DataSource> dataSource;
       std::shared_ptr<lsd_slam::Undistorter> undistorter;
 
-      std::shared_ptr< lsd_slam::GUIIOWrapper> output;
+      std::shared_ptr<lsd_slam::OutputIOWrapper> output;
 
       ThreadMutexObject<bool> inputDone;
       ThreadSynchronizer inputReady;

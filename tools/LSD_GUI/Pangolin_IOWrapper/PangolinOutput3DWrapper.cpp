@@ -30,6 +30,11 @@ PangolinOutput3DWrapper::~PangolinOutput3DWrapper()
 
 }
 
+void PangolinOutput3DWrapper::publishPose( const Sophus::Sim3f &pose )
+{
+  _gui.pose.assignValue( pose );
+}
+
 void PangolinOutput3DWrapper::updateDepthImage(unsigned char * data)
 {
     _gui.updateDepthImage(data);
@@ -165,21 +170,6 @@ void PangolinOutput3DWrapper::publishTrajectoryIncrement(Eigen::Matrix<float, 3,
 void PangolinOutput3DWrapper::publishDebugInfo(Eigen::Matrix<float, 20, 1> data)
 {
     //TODO
-}
-
-void PangolinOutput3DWrapper::updatePose( const Sophus::Sim3f &pose )
-{
-_gui.pose.assignValue( pose );
-}
-
-void PangolinOutput3DWrapper::updateFrameNumber( int runningIdx )
-{
-  _gui.updateFrameNumber( runningIdx );
-}
-
-void PangolinOutput3DWrapper::updateLiveImage( const cv::Mat &img )
-{
-  _gui.updateLiveImage( img.data );
 }
 
 }

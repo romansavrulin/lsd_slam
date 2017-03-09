@@ -1,11 +1,11 @@
 /*
- * PangolinGUIIOWrapper.cpp
+ * PangolinOutputIOWrapper.cpp
  *
  *  Created on: 17 Oct 2014
  *      Author: thomas
  */
 
-#include "PangolinGUIIOWrapper.h"
+#include "PangolinOutputIOWrapper.h"
 
 // #include "util/SophusUtil.h"
 // #include "util/settings.h"
@@ -17,29 +17,24 @@
 namespace lsd_slam
 {
 
-PangolinGUIIOWrapper::PangolinGUIIOWrapper( const Configuration &conf, GUI & gui)
+PangolinOutputIOWrapper::PangolinOutputIOWrapper( const Configuration &conf, GUI & gui)
  : _conf( conf ),
    _gui(gui)
 {
 
 }
 
-PangolinGUIIOWrapper::~PangolinGUIIOWrapper()
+PangolinOutputIOWrapper::~PangolinOutputIOWrapper()
 {
 
 }
 
-void PangolinGUIIOWrapper::updatePose( const Sophus::Sim3f &pose )
-{
-_gui.pose.assignValue( pose );
-}
-
-void PangolinGUIIOWrapper::updateFrameNumber( int runningIdx )
+void PangolinOutputIOWrapper::updateFrameNumber( int runningIdx )
 {
   _gui.updateFrameNumber( runningIdx );
 }
 
-void PangolinGUIIOWrapper::updateLiveImage( const cv::Mat &img )
+void PangolinOutputIOWrapper::updateLiveImage( const cv::Mat &img )
 {
   _gui.updateLiveImage( img.data );
 }

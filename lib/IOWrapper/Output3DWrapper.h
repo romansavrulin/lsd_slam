@@ -46,6 +46,7 @@ class Output3DWrapper
 public:
 	virtual ~Output3DWrapper() {};
 
+	virtual void publishPose( const Sophus::Sim3f &pose ) {};
 
 	virtual void publishKeyframeGraph(KeyFrameGraph* graph) {};
 
@@ -62,11 +63,6 @@ public:
 	virtual void publishTrajectoryIncrement(Eigen::Matrix<float, 3, 1> pt, std::string identifier) {};
 
 	virtual void publishDebugInfo(Eigen::Matrix<float, 20, 1> data) {};
-
-	virtual void updatePose( const Sophus::Sim3f &pose ) {};
-	virtual void updateFrameNumber( int ) {};
-	virtual void updateLiveImage( const cv::Mat &img ) {};
-
 
 };
 }
