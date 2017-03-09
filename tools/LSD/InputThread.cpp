@@ -21,8 +21,6 @@ InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
     long int dt_us = (fps > 0) ? (1e6/fps) : 0;
     long int dt_wiggle = 0;
 
-    const bool doDepth( system->conf().doDepth && dataSource->hasDepth() );
-
     inputReady.notify();
 
     startAll.wait();
@@ -50,25 +48,8 @@ InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
         CHECK(image.type() == CV_8U);
 
         std::shared_ptr<Frame> frame( new Frame( runningIdx, system->conf(), fakeTimeStamp, image.data ));
-
-        if( doDepth ) {
-          cv::Mat depthOrig, depth;
-          dataSource->getDepth( depthOrig );
-
-          // Depth needs to be scaled as well...
-          undistorter->undistortDepth( depthOrig, depth );
-
-          CHECK(depth.type() == CV_32F );
-          CHECK( (depth.rows == image.rows) && (depth.cols == image.cols) );
-
-          frame->setDepthFromGroundTruth( depth.ptr<float>() );
-        }
-
         if(runningIdx == 0)
         {
-          if( doDepth )
-          system->gtDepthInit( frame );
-          else
           system->randomInit( frame );
         }
         else
@@ -76,23 +57,13 @@ InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
           system->trackFrame( frame, fps == 0 );
         }
 
-        // if( gui ){
-        //   gui->pose.assignValue(system->getCurrentPoseEstimateScale());
-        //   gui->updateFrameNumber( runningIdx );
-        //   gui->updateLiveImage( image.data );
-        // }
-
         runningIdx++;
         fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
 
         if(fullResetRequested)
         {
-          SlamSystem *newSystem = new SlamSystem( system->conf() );
-          newSystem->set3DOutputWrapper( system->outputWrapper() );
-
           LOG(WARNING) << "FULL RESET!";
-
-          system.reset( newSystem );
+          system.reset( system->fullReset() );
 
           fullResetRequested = false;
           runningIdx = 0;
