@@ -69,11 +69,11 @@ int main( int argc, char** argv )
   std::shared_ptr<lsd_slam::PangolinOutput3DWrapper> outputWrapper( new PangolinOutput3DWrapper( system->conf(), *gui ) );
   system->set3DOutputWrapper( outputWrapper.get() );
 
-  std::shared_ptr<lsd_slam::PangolinOutputIOWrapper> guiWrapper( new PangolinOutputIOWrapper( system->conf(), *gui ) );
-
+  std::shared_ptr<lsd_slam::PangolinOutputIOWrapper> ioWrapper( new PangolinOutputIOWrapper( system->conf(), *gui ) );
 
   LOG(INFO) << "Starting input thread.";
-  InputThread input( system, args.dataSource, args.undistorter, guiWrapper );
+  InputThread input( system, args.dataSource, args.undistorter );
+  input.setIOOutputWrapper( ioWrapper );
   boost::thread inputThread( boost::ref(input) );
   input.inputReady.wait();
 

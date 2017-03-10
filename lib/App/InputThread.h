@@ -15,8 +15,9 @@ namespace lsd_slam {
 
     InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &system,
                    std::shared_ptr<lsd_slam::DataSource> &dataSource,
-                   std::shared_ptr<lsd_slam::Undistorter> &undistorter,
-                  const std::shared_ptr<lsd_slam::OutputIOWrapper> &output = std::shared_ptr<lsd_slam::OutputIOWrapper>(nullptr) );
+                   std::shared_ptr<lsd_slam::Undistorter> &undistorter );
+
+    void setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out );
 
       // Entry point for boost::thread
       void operator()();
@@ -25,9 +26,11 @@ namespace lsd_slam {
       std::shared_ptr<lsd_slam::DataSource> dataSource;
       std::shared_ptr<lsd_slam::Undistorter> undistorter;
 
-      std::shared_ptr<lsd_slam::OutputIOWrapper> output;
-
       ThreadMutexObject<bool> inputDone;
       ThreadSynchronizer inputReady;
+
+protected:
+  std::shared_ptr<lsd_slam::OutputIOWrapper> output;
+
     };
   }

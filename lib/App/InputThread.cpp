@@ -8,14 +8,19 @@ namespace lsd_slam {
 
   InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
     std::shared_ptr<lsd_slam::DataSource> &src,
-    std::shared_ptr<lsd_slam::Undistorter> &und,
-    const std::shared_ptr< lsd_slam::OutputIOWrapper > &out )
-
-    : system( sys ), dataSource( src ), undistorter( und ), output( out ),
+    std::shared_ptr<lsd_slam::Undistorter> &und )
+    : system( sys ), dataSource( src ), undistorter( und ),
+    output( nullptr ),
     inputDone( false ),
     inputReady()
     {
     }
+
+    void InputThread::setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out )
+    {
+      output = out;
+    }
+
 
     void InputThread::operator()() {
       // get HZ
