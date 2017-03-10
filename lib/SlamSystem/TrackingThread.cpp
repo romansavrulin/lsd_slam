@@ -150,7 +150,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	// Are the following two calls atomic enough or should I lock _currentKeyFrame
 	// before the next two lines?
 	bool newKeyFramePending = _system.mapThread->newKeyFramePending();	// pre-save here, to make decision afterwards.
-	SharedFramePtr keyframe( _currentKeyFrame.get() );
+	Frame::SharedPtr keyframe( _currentKeyFrame.get() );
 
 	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag )
 	{
@@ -328,7 +328,7 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 	// relocalizer.getResult(keyframe, succFrame, succFrameID, succFrameToKF_init);
 	// assert(keyframe != 0);
 
-	SharedFramePtr keyframe(_currentKeyFrame.get());
+	Frame::SharedPtr keyframe(_currentKeyFrame.get());
 	_trackingReference->importFrame( keyframe.get() );
 	_trackingReferenceFrameSharedPT = keyframe;
 

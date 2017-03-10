@@ -131,7 +131,7 @@ void MappingThread::callbackMergeOptimizationOffset()
 
 //==== Actual meat ====
 
-void MappingThread::gtDepthInit( std::shared_ptr<Frame> frame )
+void MappingThread::gtDepthInit( const Frame::SharedPtr &frame )
 {
 	// For a newly-imported frame, this will only be true if the depth
 	// has been set explicitly
@@ -143,7 +143,7 @@ void MappingThread::gtDepthInit( std::shared_ptr<Frame> frame )
 }
 
 
-void MappingThread::randomInit( std::shared_ptr<Frame> frame )
+void MappingThread::randomInit( const Frame::SharedPtr &frame )
 {
 	map->initializeRandomly( frame.get() );
 

@@ -44,6 +44,8 @@ public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class FrameMemory;
 
+	typedef std::shared_ptr<Frame> SharedPtr;
+
 
 	Frame(int id, const Configuration &conf, double timestamp, const unsigned char* image );
 
@@ -293,9 +295,6 @@ private:
 
 
 };
-
-typedef std::shared_ptr<Frame> SharedFramePtr;
-
 
 
 inline float* Frame::image(int level)

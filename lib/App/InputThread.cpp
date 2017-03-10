@@ -7,20 +7,20 @@ namespace lsd_slam {
 
 
   InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
-    std::shared_ptr<lsd_slam::DataSource> &src,
-    std::shared_ptr<lsd_slam::Undistorter> &und )
+                              std::shared_ptr<lsd_slam::DataSource> &src,
+                              std::shared_ptr<lsd_slam::Undistorter> &und )
     : system( sys ), dataSource( src ), undistorter( und ),
     output( nullptr ),
     inputDone( false ),
     inputReady()
     {
+      ;
     }
 
     void InputThread::setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out )
     {
       output = out;
     }
-
 
     void InputThread::operator()() {
       // get HZ
@@ -54,7 +54,7 @@ namespace lsd_slam {
 
           CHECK(image.type() == CV_8U);
 
-          std::shared_ptr<Frame> frame( new Frame( runningIdx, system->conf(), fakeTimeStamp, image.data ));
+          Frame::SharedPtr frame( new Frame( runningIdx, system->conf(), fakeTimeStamp, image.data ));
           if(runningIdx == 0)
           {
             system->randomInit( frame );
@@ -67,7 +67,6 @@ namespace lsd_slam {
           runningIdx++;
           fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
 
-          // Fundamentally, much of this could be done in the SlamSystem
           if( output ) {
             output->updateFrameNumber( runningIdx );
             output->updateLiveImage( image );

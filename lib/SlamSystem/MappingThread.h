@@ -33,7 +33,7 @@ public:
 	~MappingThread();
 
 	//=== Callbacks into the thread ===
-	void pushUnmappedTrackedFrame( const std::shared_ptr<Frame> &frame )
+	void pushUnmappedTrackedFrame( const Frame::SharedPtr &frame )
 	{
 		{
 			std::lock_guard<std::mutex> lock(unmappedTrackedFrames.mutex() );
@@ -52,7 +52,7 @@ public:
 	{ optimizationUpdateMerged.reset();
 		if( _thread ) _thread->send( std::bind( &MappingThread::callbackMergeOptimizationOffset, this )); }
 
-	void createNewKeyFrame( const SharedFramePtr &frame )
+	void createNewKeyFrame( const Frame::SharedPtr &frame )
 	{
 		if( _newKeyFrame.get() != nullptr ) LOG(WARNING) << "Asked to make " << frame->id() << " a keyframe when " << _newKeyFrame()->id() << " is already pending";
 		_newKeyFrame = frame;
@@ -67,14 +67,14 @@ public:
 			return _newKeyFrame.get() != nullptr;
 	}
 
-	void gtDepthInit( SharedFramePtr frame );
-	void randomInit( SharedFramePtr frame );
+	void gtDepthInit( const Frame::SharedPtr &frame );
+	void randomInit( const Frame::SharedPtr &frame );
 
 
 	// SET & READ EVERYWHERE
 	// std::mutex currentKeyFrameMutex;
 
-	MutexObject< std::deque< SharedFramePtr > > unmappedTrackedFrames;
+	MutexObject< std::deque< Frame::SharedPtr > > unmappedTrackedFrames;
 
 	DepthMap* map;
 	TrackingReference* mappingTrackingReference;

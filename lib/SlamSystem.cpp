@@ -222,7 +222,7 @@ void SlamSystem::finalize()
 // 	depthMapScreenshotFlag = true;
 // }
 
-void SlamSystem::gtDepthInit( std::shared_ptr<Frame> frame )
+void SlamSystem::gtDepthInit( const Frame::SharedPtr &frame )
 {
 	// For a newly-imported frame, this will only be true if the depth
 	// has been set explicitly
@@ -246,7 +246,7 @@ void SlamSystem::randomInit(uchar* image, int id, double timeStamp)
 	randomInit( std::shared_ptr<Frame>( new Frame(id, _conf, timeStamp, image) ) );
 }
 
-void SlamSystem::randomInit( std::shared_ptr<Frame> frame )
+void SlamSystem::randomInit( const Frame::SharedPtr &frame )
 {
 	LOG(INFO) << "Doing Random initialization!";
 
@@ -268,18 +268,15 @@ void SlamSystem::randomInit( std::shared_ptr<Frame> frame )
 	LOG(INFO) << "Done Random initialization!";
 }
 
-// Passthrough to TrackingThread
 void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp )
 {
-	LOG(DEBUG) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
-	trackingThread->trackFrame( std::shared_ptr<lsd_slam::Frame>(new Frame(frameID, _conf, timestamp, image)), blockUntilMapped );
+	trackFrame( Frame::SharedPtr(new Frame(frameID, _conf, timestamp, image)), blockUntilMapped );
 }
 
-void SlamSystem::trackFrame(std::shared_ptr<Frame> trackingNewFrame, bool blockUntilMapped )
+void SlamSystem::trackFrame(const Frame::SharedPtr &newFrame, bool blockUntilMapped )
 {
 	LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
-	trackingThread->trackFrame( trackingNewFrame, blockUntilMapped );
-
+	trackingThread->trackFrame( newFrame, blockUntilMapped );
 
 	//TODO: At present only happens at frame rate.  Push to a thread?
 	addTimingSamples();
@@ -288,7 +285,7 @@ void SlamSystem::trackFrame(std::shared_ptr<Frame> trackingNewFrame, bool blockU
 
 //=== Keyframe maintenance functions ====
 
-void SlamSystem::changeKeyframe( std::shared_ptr<Frame> candidate, bool noCreate, bool force, float maxScore)
+void SlamSystem::changeKeyframe( const Frame::SharedPtr &candidate, bool noCreate, bool force, float maxScore)
 {
 	Frame* newReferenceKF=0;
 
@@ -335,7 +332,7 @@ void SlamSystem::loadNewCurrentKeyframe(Frame* keyframeToLoad)
 }
 
 
-void SlamSystem::createNewCurrentKeyframe( SharedFramePtr newKeyframeCandidate)
+void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate)
 {
 	LOG_IF(INFO, printThreadingInfo) << "CREATE NEW KF " << newKeyframeCandidate->id() << ", replacing " << currentKeyFrame()->id();
 
