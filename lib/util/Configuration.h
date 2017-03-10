@@ -26,7 +26,8 @@ public:
     stopOnFailedRead( true ),
     SLAMEnabled( true ),
     doKFReActivation( true ),
-    doMapping( true )
+    doMapping( true ),
+    continuousPCOutput( false )
   {;}
 
   ImageSize inputImage;
@@ -39,6 +40,7 @@ public:
   bool SLAMEnabled;
   bool doKFReActivation;
   bool doMapping;
+  bool continuousPCOutput;
 
 
 protected:

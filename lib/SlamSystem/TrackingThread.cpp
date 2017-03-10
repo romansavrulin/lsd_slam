@@ -239,7 +239,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 //  mostCurrentTrackedFrame->TrackingParent->getScaledCamToWorld() * sim3FromSE3(mostCurrentTrackedFrame->thisToParent_SE3TrackingResult, 1.0);
 
 	LOG_IF( DEBUG,  enablePrintDebugInfo && printThreadingInfo ) << "Publishing tracked frame";
-	_system.publishTrackedFrame(newFrame.get());
+	_system.publishTrackedFrame(newFrame);
 	_system.publishPose(newFrame->getScaledCamToWorld().cast<float>());
 
 	// Keyframe selection
@@ -287,26 +287,6 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 			_system.mapThread->unmappedTrackedFrames.wait( );
 		}
 	}
-
-	// {
-	// 	int utf = 0;
-	// 	{
-	// 		std::unique_lock< std::mutex > lock( unmappedTrackedFrames.mutex() );
-	// 		utf = unmappedTrackedFrames().size();
-	// 	}
-	//
-	// 	// std::unique_lock<std::mutex> lock(newFrameMappedMutex);
-	// 	while(utf > 0)
-	// 	{
-	// 		LOGF(DEBUG, "TRACKING IS BLOCKING, waiting for %d frames to finish mapping.", (int)utf);
-	// 		_mapThread.newFrameMapped.wait();
-	//
-	// 		{
-	// 			std::unique_lock< std::mutex > lock( unmappedTrackedFrames.mutex() );
-	// 			utf = unmappedTrackedFrames().size();
-	// 		}
-	// 	}
-	// }
 
 	LOG_IF( DEBUG, printThreadingInfo ) << "Exiting trackFrame";
 

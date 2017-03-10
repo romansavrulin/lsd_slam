@@ -107,8 +107,6 @@ bool saveLoopClosureImages =  false;
 bool saveAllTrackingStages = false;
 bool saveAllTrackingStagesInternal = false;
 
-bool continuousPCOutput = false;
-
 
 bool fullResetRequested = false;
 bool manualTrackingLossIndicated = false;

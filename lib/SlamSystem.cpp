@@ -237,7 +237,7 @@ void SlamSystem::gtDepthInit( const Frame::SharedPtr &frame )
 		keyFrameGraph->idToKeyFrame.insert(std::make_pair( currentKeyFrame()->id(), currentKeyFrame() ));
 	}
 
-	if(continuousPCOutput) publishKeyframe( currentKeyFrame().get() );
+	if( _conf.continuousPCOutput) publishKeyframe( currentKeyFrame() );
 
 }
 
@@ -263,7 +263,7 @@ void SlamSystem::randomInit( const Frame::SharedPtr &frame )
 			keyFrameGraph->idToKeyFrame.insert( std::make_pair(currentKeyFrame()->id(), currentKeyFrame() ) );
 		}
 
-	if(continuousPCOutput ) publishKeyframe( currentKeyFrame().get() );
+	if( _conf.continuousPCOutput ) publishKeyframe( currentKeyFrame() );
 
 	LOG(INFO) << "Done Random initialization!";
 }

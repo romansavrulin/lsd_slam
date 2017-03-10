@@ -256,9 +256,6 @@ extern bool saveLoopClosureImages;
 extern bool saveAllTrackingStages;
 extern bool saveAllTrackingStagesInternal;
 
-extern bool continuousPCOutput;
-
-
 /// Relative path of calibration file, map saving directory etc. for live_odometry
 extern std::string packagePath;
 

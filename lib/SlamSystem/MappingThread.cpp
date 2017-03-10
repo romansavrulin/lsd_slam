@@ -331,7 +331,9 @@ bool MappingThread::updateKeyframe()
 
 
 
-	if( continuousPCOutput && _currentKeyFrame().get() != nullptr ) _system.publishKeyframe( _currentKeyFrame().get() );
+	// Whils is this here?
+	if( _system.conf().continuousPCOutput && (bool)_currentKeyFrame() )
+			_system.publishKeyframe( _currentKeyFrame() );
 
 	return true;
 }
@@ -364,7 +366,7 @@ void MappingThread::finishCurrentKeyframe()
 		}
 	}
 
-	_system.publishKeyframe(_currentKeyFrame().get());
+	_system.publishKeyframe(_currentKeyFrame());
 }
 
 void MappingThread::discardCurrentKeyframe()

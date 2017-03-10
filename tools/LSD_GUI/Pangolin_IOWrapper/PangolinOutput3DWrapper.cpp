@@ -40,7 +40,7 @@ void PangolinOutput3DWrapper::updateDepthImage(unsigned char * data)
     _gui.updateDepthImage(data);
 }
 
-void PangolinOutput3DWrapper::publishKeyframe(Frame* f)
+void PangolinOutput3DWrapper::publishKeyframe(const Frame::SharedPtr &f)
 {
     Keyframe * fMsg = new Keyframe;
 
@@ -86,7 +86,7 @@ void PangolinOutput3DWrapper::publishKeyframe(Frame* f)
     _gui.addKeyframe(fMsg);
 }
 
-void PangolinOutput3DWrapper::publishTrackedFrame(Frame* kf)
+void PangolinOutput3DWrapper::publishTrackedFrame(const Frame::SharedPtr &kf)
 {
 //    lsd_slam_viewer::keyframeMsg fMsg;
 //
