@@ -54,15 +54,7 @@ namespace lsd_slam {
 
           CHECK(image.type() == CV_8U);
 
-          Frame::SharedPtr frame( new Frame( runningIdx, system->conf(), fakeTimeStamp, image.data ));
-          if(runningIdx == 0)
-          {
-            system->randomInit( frame );
-          }
-          else
-          {
-            system->trackFrame( frame, fps == 0 );
-          }
+          system->trackFrame( new Frame( runningIdx, system->conf(), fakeTimeStamp, image.data ), fps == 0 );
 
           runningIdx++;
           fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;

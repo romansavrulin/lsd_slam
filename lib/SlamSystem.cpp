@@ -65,7 +65,8 @@ SlamSystem::SlamSystem( const Configuration &conf )
 	_conf( conf ),
 	_outputWrapper( nullptr ),
 	keyFrameGraph( new KeyFrameGraph ),
-	trackableKeyFrameSearch( new TrackableKeyFrameSearch( keyFrameGraph, conf ) )
+	trackableKeyFrameSearch( new TrackableKeyFrameSearch( keyFrameGraph, conf ) ),
+	_initialized( false )
 {
 
 	// Because some of these rely on conf(), need to explicitly call after
@@ -222,14 +223,20 @@ void SlamSystem::finalize()
 // 	depthMapScreenshotFlag = true;
 // }
 
-void SlamSystem::gtDepthInit( const Frame::SharedPtr &frame )
+void SlamSystem::initialize( const Frame::SharedPtr &frame )
 {
-	// For a newly-imported frame, this will only be true if the depth
-	// has been set explicitly
-	CHECK( frame->hasIDepthBeenSet() );
+	LOG_IF(FATAL, !conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
 
 	currentKeyFrame.set( frame );
-	mapThread->gtDepthInit( frame );
+
+	if( frame->hasIDepthBeenSet() ) {
+		LOG(INFO) << "Using initial Depth estimate in first frame.";
+		mapThread->gtDepthInit( frame );
+	} else {
+		LOG(INFO) << "Doing Random initialization!";
+		mapThread->randomInit( frame );
+	}
+
 	keyFrameGraph->addFrame( frame.get() );
 
 	if( conf().SLAMEnabled) {
@@ -239,43 +246,27 @@ void SlamSystem::gtDepthInit( const Frame::SharedPtr &frame )
 
 	if( _conf.continuousPCOutput) publishKeyframe( currentKeyFrame() );
 
+	setInitialized( true );
 }
 
-void SlamSystem::randomInit(uchar* image, int id, double timeStamp)
+// void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp )
+// {
+// 	trackFrame( Frame::SharedPtr(new Frame(frameID, _conf, timestamp, image)), blockUntilMapped );
+// }
+
+void SlamSystem::trackFrame( Frame *newFrame, bool blockUntilMapped )
 {
-	randomInit( std::shared_ptr<Frame>( new Frame(id, _conf, timeStamp, image) ) );
-}
-
-void SlamSystem::randomInit( const Frame::SharedPtr &frame )
-{
-	LOG(INFO) << "Doing Random initialization!";
-
-	if(! conf().doMapping)
-		LOG(FATAL) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
-
-		currentKeyFrame.set( frame );
-
-		mapThread->randomInit( frame );
-		keyFrameGraph->addFrame( frame.get() );
-
-		if( conf().SLAMEnabled) {
-			boost::lock_guard<boost::shared_mutex> lock( keyFrameGraph->idToKeyFrameMutex );
-			keyFrameGraph->idToKeyFrame.insert( std::make_pair(currentKeyFrame()->id(), currentKeyFrame() ) );
-		}
-
-	if( _conf.continuousPCOutput ) publishKeyframe( currentKeyFrame() );
-
-	LOG(INFO) << "Done Random initialization!";
-}
-
-void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp )
-{
-	trackFrame( Frame::SharedPtr(new Frame(frameID, _conf, timestamp, image)), blockUntilMapped );
+	trackFrame( Frame::SharedPtr(newFrame), blockUntilMapped );
 }
 
 void SlamSystem::trackFrame(const Frame::SharedPtr &newFrame, bool blockUntilMapped )
 {
+	if( !initialized() ) {
+		initialize( newFrame );
+	}
+
 	LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
+
 	trackingThread->trackFrame( newFrame, blockUntilMapped );
 
 	//TODO: At present only happens at frame rate.  Push to a thread?

@@ -91,16 +91,12 @@ public:
 
 	SlamSystem *fullReset();
 
-	void randomInit( uchar* image, int id, double timeStamp);
-	void randomInit( const Frame::SharedPtr &frame );
-	void gtDepthInit( const Frame::SharedPtr &frame );
-
 	// tracks a frame.
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
 	void trackFrame(const Frame::SharedPtr &newFrame, bool blockUntilMapped );
-	void trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp );
+	void trackFrame( Frame *newFrame, bool blockUntilMapped );
 
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
@@ -122,7 +118,6 @@ public:
 	void loadNewCurrentKeyframe(Frame* keyframeToLoad);
 	void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
 
-
 	// void requestDepthMapScreenshot(const std::string& filename);
 
 	// int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent=true, bool useFABMAP=true, float closeCandidatesTH=1.0);
@@ -137,7 +132,6 @@ public:
 
 	Timer timeLastUpdate;
 
-	// Output3DWrapper *get3DOutputWrapper( void ) const { return outputWrapper; }
 	const Configuration &conf( void ) const     { return _conf; }
 
 	//=== Debugging output functions =====
@@ -171,7 +165,6 @@ public:
 
 	TrackableKeyFrameSearch* trackableKeyFrameSearch;
 
-
 private:
 
 	const Configuration &_conf;
@@ -181,6 +174,11 @@ private:
 
 	ThreadSynchronizer _finalized;
 
+	bool _initialized;
+	bool initialized( void ) const { return _initialized; }
+	bool setInitialized( bool i ) { _initialized = i; return _initialized; }
+
+	void initialize( const Frame::SharedPtr &frame );
 
 	// ======= Functions =====
 
