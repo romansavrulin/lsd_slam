@@ -158,7 +158,7 @@ bool MappingThread::doMappingIteration()
 		return false;
 	}
 
-		// TODO:  Don't know under what circumstances this if happens
+		// TODO:  Don't know what circumstances cause this to happens
 	// if(!doMapping && currentKeyFrame()->idxInKeyframes < 0)
 	// {
 	// 	if(currentKeyFrame()->numMappedOnThisTotal >= MIN_NUM_MAPPED)
