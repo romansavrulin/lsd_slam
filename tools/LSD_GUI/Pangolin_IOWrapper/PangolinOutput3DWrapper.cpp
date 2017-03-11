@@ -134,7 +134,7 @@ void PangolinOutput3DWrapper::publishTrackedFrame(const Frame::SharedPtr &kf)
 //    pose_publisher.publish(pMsg);
 }
 
-void PangolinOutput3DWrapper::publishKeyframeGraph(KeyFrameGraph* graph)
+void PangolinOutput3DWrapper::publishKeyframeGraph( const shared_ptr<KeyFrameGraph> &graph)
 {
     graph->keyframesAllMutex.lock_shared();
 

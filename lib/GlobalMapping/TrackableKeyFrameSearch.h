@@ -32,6 +32,7 @@
 #include "util/MovingAverage.h"
 #include "util/settings.h"
 
+#include "DataStructures/Frame.h"
 
 
 namespace lsd_slam
@@ -40,12 +41,11 @@ namespace lsd_slam
 
 class KeyFrameGraph;
 class SE3Tracker;
-class Frame;
 
 
 struct TrackableKFStruct
 {
-	Frame* ref;
+	Frame::SharedPtr ref;
 	SE3 refToFrame;
 	float dist;
 	float angle;
@@ -60,15 +60,15 @@ class TrackableKeyFrameSearch
 {
 public:
 	/** Constructor. */
-	TrackableKeyFrameSearch(KeyFrameGraph* graph, const Configuration &conf );
+	TrackableKeyFrameSearch( const std::shared_ptr<KeyFrameGraph> &graph, const Configuration &conf );
 	~TrackableKeyFrameSearch();
 
 	/**
 	 * Finds candidates for trackable frames.
 	 * Returns the most likely candidates first.
 	 */
-	std::unordered_set<Frame*> findCandidates(Frame* keyframe, Frame* &fabMapResult_out, bool includeFABMAP=true, bool closenessTH=1.0);
-	Frame* findRePositionCandidate(Frame* frame, float maxScore=1);
+	std::unordered_set<Frame::SharedPtr> findCandidates(const Frame::SharedPtr &keyframe, Frame::SharedPtr &fabMapResult_out, bool includeFABMAP=true, bool closenessTH=1.0);
+	Frame::SharedPtr findRePositionCandidate( const Frame::SharedPtr &frame, float maxScore=1);
 
 
 	inline float getRefFrameScore(float distanceSquared, float usage)
@@ -85,15 +85,15 @@ private:
 	 * Returns a possible loop closure for the keyframe or nullptr if none is found.
 	 * Uses FabMap internally.
 	 */
-	Frame* findAppearanceBasedCandidate(Frame* keyframe);
-	std::vector<TrackableKFStruct> findEuclideanOverlapFrames(Frame* frame, float distanceTH, float angleTH, bool checkBothScales = false);
+	Frame::SharedPtr findAppearanceBasedCandidate(const Frame::SharedPtr &keyframe);
+	std::vector<TrackableKFStruct> findEuclideanOverlapFrames(const Frame::SharedPtr &frame, float distanceTH, float angleTH, bool checkBothScales = false);
 
 #ifdef HAVE_FABMAP
-	std::unordered_map<int, Frame*> fabmapIDToKeyframe;
+	std::unordered_map<int, Frame::SharedPtr> fabmapIDToKeyframe;
 	FabMap fabMap;
 #endif
-	KeyFrameGraph* graph;
-	SE3Tracker* tracker;
+	std::shared_ptr<KeyFrameGraph> graph;
+	std::unique_ptr<SE3Tracker> tracker;
 
 	float fowX, fowY;
 

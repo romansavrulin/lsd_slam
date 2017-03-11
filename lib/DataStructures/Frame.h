@@ -149,20 +149,25 @@ public:
 	 * Here are ALL central pose and scale informations.
 	 * generally, everything is stored relative to the frame
 	 */
-	FramePoseStruct* pose;
-	Sim3 getScaledCamToWorld(int num=0) { return pose->getCamToWorld();}
-	bool hasTrackingParent()   { return pose->trackingParent != nullptr;}
-	Frame* getTrackingParent() { return pose->trackingParent->frame;}
+	std::shared_ptr<FramePoseStruct> pose;
+	Sim3 getScaledCamToWorld(int num=0) { return pose->getCamToWorld(); }
+	bool hasTrackingParent()   { return pose->trackingParent != nullptr; }
+const Frame &trackingParent() { return pose->trackingParent->frame; }
+
+	bool isTrackingParent( const Frame::SharedPtr &other )
+	{
+		return hasTrackingParent() && ( other->id() == pose->trackingParent->frame.id() );
+	}
 
 	Sim3 lastConstraintTrackedCamToWorld;
 
 
 
 	/** Pointers to all adjacent Frames in graph. empty for non-keyframes.*/
-	std::unordered_set< Frame* > neighbors;
+	std::unordered_set< Frame::SharedPtr > neighbors;
 
 	/** Multi-Map indicating for which other keyframes with which initialization tracking failed.*/
-	std::unordered_multimap< Frame*, Sim3 > trackingFailed;
+	std::unordered_multimap< Frame::SharedPtr, Sim3 > trackingFailed;
 
 
 	// flag set when depth is updated.
@@ -231,6 +236,8 @@ private:
 
 	struct Data
 	{
+		Data( int id, double timestamp, const Camera &camera, const SlamImageSize &slamImageSize );
+
 		int id;
 
 		int width[PYRAMID_LEVELS], height[PYRAMID_LEVELS];
@@ -276,8 +283,7 @@ private:
 		// data from initial tracking, indicating which pixels in the reference frame ware good or not.
 		// deleted as soon as frame is used for mapping.
 		bool* refPixelWasGood;
-	};
-	Data data;
+	} data;
 
 
 	// used internally. locked while something is being built, such that no
@@ -303,22 +309,26 @@ inline float* Frame::image(int level)
 		require(IMAGE, level);
 	return data.image[level];
 }
+
 inline const Eigen::Vector4f* Frame::gradients(int level)
 {
 	if (! data.gradientsValid[level])
 		require(GRADIENTS, level);
 	return data.gradients[level];
 }
+
 inline const float* Frame::maxGradients(int level)
 {
 	if (! data.maxGradientsValid[level])
 		require(MAX_GRADIENTS, level);
 	return data.maxGradients[level];
 }
+
 inline bool Frame::hasIDepthBeenSet() const
 {
 	return data.hasIDepthBeenSet;
 }
+
 inline const float* Frame::idepth(int level)
 {
 	if (! data.hasIDepthBeenSet)
@@ -330,24 +340,28 @@ inline const float* Frame::idepth(int level)
 		require(IDEPTH, level);
 	return data.idepth[level];
 }
+
 inline const unsigned char* Frame::validity_reAct()
 {
 	if( !data.reActivationDataValid)
 		return 0;
 	return data.validity_reAct;
 }
+
 inline const float* Frame::idepth_reAct()
 {
 	if( !data.reActivationDataValid)
 		return 0;
 	return data.idepth_reAct;
 }
+
 inline const float* Frame::idepthVar_reAct()
 {
 	if( !data.reActivationDataValid)
 		return 0;
 	return data.idepthVar_reAct;
 }
+
 inline const float* Frame::idepthVar(int level)
 {
 	if (! data.hasIDepthBeenSet)

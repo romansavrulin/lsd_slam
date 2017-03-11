@@ -12,7 +12,6 @@
 #include "util/MovingAverage.h"
 #include "util/ThreadMutexObject.h"
 
-#include "DataStructures/CurrentKeyFrame.h"
 #include "DepthEstimation/DepthMap.h"
 #include "Tracking/TrackingReference.h"
 
@@ -26,8 +25,6 @@ namespace lsd_slam {
 
 class MappingThread {
 public:
-
-	// TODO.  Don't like passing reference to Mutex.  Another way to do it?
 
 	MappingThread( SlamSystem &system );
 	~MappingThread();
@@ -88,9 +85,8 @@ public:
 private:
 
 	SlamSystem &_system;
-	CurrentKeyFrame &_currentKeyFrame;
 
-	CurrentKeyFrame _newKeyFrame;
+	MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
 	void callbackIdle( void );

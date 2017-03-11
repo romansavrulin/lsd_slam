@@ -23,16 +23,17 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
+#include <boost/thread/shared_mutex.hpp>
 #include <memory>
 #include <chrono>
-
-#include <boost/thread/shared_mutex.hpp>
 
 #include "util/settings.h"
 #include "IOWrapper/Timestamp.h"
 #include "opencv2/core/core.hpp"
 
 #include "IOWrapper/Output3DWrapper.h"
+
+#include "DataStructures/Frame.h"
 
 #include "util/SophusUtil.h"
 #include "util/MovingAverage.h"
@@ -41,45 +42,36 @@
 #include "util/ThreadMutexObject.h"
 
 #include "Tracking/Relocalizer.h"
-#include "DataStructures/CurrentKeyFrame.h"
 
 namespace lsd_slam
 {
 
-// class TrackingReference;
-class KeyFrameGraph;
-// class SE3Tracker;
-// class Sim3Tracker;
-// class DepthMap;
-// class Frame;
-// class DataSet;
-// class LiveSLAMWrapper;
-class Output3DWrapper;
-class FramePoseStruct;
-class TrackableKeyFrameSearch;
-// struct KFConstraintStruct;
+	// class TrackingReference;
+	class KeyFrameGraph;
+	// class SE3Tracker;
+	// class Sim3Tracker;
+	// class DepthMap;
+	// class Frame;
+	// class DataSet;
+	// class LiveSLAMWrapper;
+	class Output3DWrapper;
+	class FramePoseStruct;
+	class TrackableKeyFrameSearch;
+	// struct KFConstraintStruct;
 
 	class TrackingThread;
 	class OptimizationThread;
 	class MappingThread;
 	class ConstraintSearchThread;
 
+	using std::unique_ptr;
+	using std::shared_ptr;
 
-typedef Eigen::Matrix<float, 7, 7> Matrix7x7;
+class SlamSystem {
 
-class SlamSystem
-{
 friend class IntegrationTest;
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-	// settings. Constant from construction onward.
-	// int width;
-	// int height;
-	// Eigen::Matrix3f K;
-	// const bool SLAMEnabled;
-
-	// bool trackingIsGood;
 
 	SlamSystem( const Configuration &conf );
 
@@ -88,7 +80,7 @@ public:
 
 	~SlamSystem();
 
-
+	// Creates a new SlamSystem, and passes over relevant configuration info
 	SlamSystem *fullReset();
 
 	// tracks a frame.
@@ -103,26 +95,23 @@ public:
 	void finalize();
 	ThreadSynchronizer &finalized() { return _finalized; }
 
-	/** Does an offline optimization step. */
-	// void optimizeGraph();
-
-	// inline Frame* getCurrentKeyframe() {return currentKeyFrame.get();}	// not thread-safe!
-
 	/** Returns the current pose estimate. */
 	SE3 getCurrentPoseEstimate();
 
 	Sophus::Sim3f getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
+	MutexObject< Frame::SharedPtr >  &currentKeyFrame() { return _currentKeyFrame; };
+
 	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
-	void loadNewCurrentKeyframe(Frame* keyframeToLoad);
+	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
 	void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
 
 	// void requestDepthMapScreenshot(const std::string& filename);
 
 	// int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent=true, bool useFABMAP=true, float closeCandidatesTH=1.0);
 
-	std::vector<FramePoseStruct*> getAllPoses();
+	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
 	struct PerformanceData {
 		PerformanceData( void ) {;}
@@ -135,42 +124,40 @@ public:
 	const Configuration &conf( void ) const     { return _conf; }
 
 	//=== Debugging output functions =====
-	Output3DWrapper *outputWrapper( void )      { return _outputWrapper; }
-	void set3DOutputWrapper(Output3DWrapper* outputWrapper) {	_outputWrapper = outputWrapper; }
+	shared_ptr<Output3DWrapper> outputWrapper( void )      { return _outputWrapper; }
+	void set3DOutputWrapper( Output3DWrapper* outputWrapper ) {	_outputWrapper.reset(outputWrapper); }
+	void set3DOutputWrapper( const shared_ptr<Output3DWrapper> &outputWrapper) {	_outputWrapper = outputWrapper; }
 
-	void publishPose(const Sophus::Sim3f &pose ) 	{ if(_outputWrapper) _outputWrapper->publishPose(pose);}
+	void publishPose(const Sophus::Sim3f &pose ) 	                 { if( _outputWrapper ) _outputWrapper->publishPose(pose);}
 	void publishTrackedFrame( const Frame::SharedPtr &frame )      { if( _outputWrapper ) _outputWrapper->publishTrackedFrame( frame ); }
-	void publishKeyframeGraph( void )             { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph ); }
+	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
 	void publishKeyframe(  const Frame::SharedPtr &frame )         { if( _outputWrapper ) _outputWrapper->publishKeyframe( frame ); }
-	void publishDepthImage( unsigned char* data  ) { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
+	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
 
 
 	void updateDisplayDepthMap();
 
-
-
-	TrackingThread *trackingThread;
-	OptimizationThread *optThread;
-	MappingThread *mapThread;
-	ConstraintSearchThread *constraintThread;
+	unique_ptr<TrackingThread> trackingThread;
+	unique_ptr<OptimizationThread> optThread;
+	unique_ptr<MappingThread> mapThread;
+	unique_ptr<ConstraintSearchThread> constraintThread;
 
 	// mutex to lock frame pose consistency. within a shared lock of this, *->getScaledCamToWorld() is
 	// GUARANTEED to give the same result each call, and to be compatible to each other.
 	// locked exclusively during the pose-update by Mapping.
 	boost::shared_mutex poseConsistencyMutex;
 
-	KeyFrameGraph* keyFrameGraph;	  // has own locks
 
-	CurrentKeyFrame currentKeyFrame;
+	const shared_ptr<KeyFrameGraph> &keyFrameGraph() { return _keyFrameGraph; };	  // has own locks
+	shared_ptr<TrackableKeyFrameSearch> &trackableKeyFrameSearch() { return _trackableKeyFrameSearch; }
 
-	TrackableKeyFrameSearch* trackableKeyFrameSearch;
 
 private:
 
 	const Configuration &_conf;
 
 	// Individual / no locking
-	Output3DWrapper* _outputWrapper;	// no lock required
+	shared_ptr<Output3DWrapper> _outputWrapper;	// no lock required
 
 	ThreadSynchronizer _finalized;
 
@@ -184,6 +171,13 @@ private:
 
 	void addTimingSamples();
 
+	// == Shared data
+
+	std::shared_ptr<KeyFrameGraph> _keyFrameGraph;	  // has own locks
+	MutexObject< Frame::SharedPtr >  _currentKeyFrame;
+
+
+	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;
 
 
 

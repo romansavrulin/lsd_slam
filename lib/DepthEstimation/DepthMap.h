@@ -28,13 +28,14 @@
 #include "util/MovingAverage.h"
 #include "util/Timer.h"
 
+#include "DataStructures/Frame.h"
+
 
 
 namespace lsd_slam
 {
 
 class DepthMapPixelHypothesis;
-class Frame;
 class KeyFrameGraph;
 
 
@@ -61,7 +62,7 @@ public:
 	/**
 	 * does propagation and whole-filling-regularization (no observation, for that need to call updateKeyframe()!)
 	 **/
-	void createKeyFrame(Frame* new_keyframe);
+	void createKeyFrame( const Frame::SharedPtr &new_keyframe);
 
 	/**
 	 * does one fill holes iteration
@@ -69,7 +70,7 @@ public:
 	void finalizeKeyFrame();
 
 	void invalidate();
-	inline bool isValid() {return activeKeyFrame!=0;};
+	inline bool isValid() {return (bool)activeKeyFrame;};
 
 	int debugPlotDepthMap();
 
@@ -79,10 +80,10 @@ public:
 	cv::Mat debugImageStereoLines;
 	cv::Mat debugImageDepth;
 
-	void initializeFromGTDepth(Frame* new_frame);
-	void initializeRandomly(Frame* new_frame);
+	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
+	void initializeRandomly( const std::shared_ptr<Frame> &new_frame);
 
-	void setFromExistingKF(Frame* kf);
+	void setFromExistingKF(const Frame::SharedPtr &kf);
 
 	void addTimingSample();
 	Timer timeLastUpdate;
@@ -111,14 +112,15 @@ private:
 	// ============= parameter copies for convenience ===========================
 	// these are just copies of the pointers given to this function, for convenience.
 	// these are NOT managed by this object!
-	Frame* activeKeyFrame;
+	Frame::SharedPtr activeKeyFrame;
 	boost::shared_lock<boost::shared_mutex> activeKeyFramelock;
+
 	const float* activeKeyFrameImageData;
 	bool activeKeyFrameIsReactivated;
 
-	Frame* oldest_referenceFrame;
-	Frame* newest_referenceFrame;
-	std::vector<Frame*> referenceFrameByID;
+	Frame::SharedPtr oldest_referenceFrame;
+	Frame::SharedPtr newest_referenceFrame;
+	std::vector< Frame::SharedPtr > referenceFrameByID;
 	int referenceFrameByID_offset;
 
 	// ============= internally used buffers for intermediate calculations etc. =============
@@ -139,8 +141,7 @@ private:
 			float &result_idepth, float &result_var, float &result_eplLength,
 			RunningStats* const stats);
 
-
-	void propagateDepth(Frame* new_keyframe);
+	void propagateDepth( const Frame::SharedPtr &new_keyframe);
 
 
 	void observeDepth();

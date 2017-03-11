@@ -95,23 +95,17 @@ KeyFrameGraph::~KeyFrameGraph()
 	// deletes keyframes (by deleting respective shared pointers).
 
 	idToKeyFrame.clear();
-
-	// deletes pose structs (their memory is managed by graph)
-	// WARNING: at this point, all Frames have to be deleted, otherwise it night cause segfaults!
-	for(FramePoseStruct* p : allFramePoses)
-		delete p;
+	allFramePoses.clear();
 }
 
 
-void KeyFrameGraph::addFrame(Frame* frame)
+void KeyFrameGraph::addFrame(const Frame::SharedPtr &frame)
 {
 
 	frame->pose->isRegisteredToGraph = true;
-	FramePoseStruct* pose = frame->pose;
-
 
 	allFramePosesMutex.lock();
-	allFramePoses.push_back(pose);
+	allFramePoses.push_back(frame->pose);
 	allFramePosesMutex.unlock();
 }
 
@@ -127,7 +121,7 @@ void KeyFrameGraph::dumpMap(std::string folder)
 	for(unsigned int i=0;i<keyframesAll.size();i++)
 	{
 		snprintf(buf, 100, "%s/depth-%d.png", folder.c_str(), i);
-		cv::imwrite(buf, getDepthRainbowPlot(keyframesAll[i], 0));
+		cv::imwrite(buf, getDepthRainbowPlot(keyframesAll[i].get(), 0));
 
 		snprintf(buf, 100, "%s/frame-%d.png", folder.c_str(), i);
 		cv::imwrite(buf, cv::Mat(keyframesAll[i]->height(), keyframesAll[i]->width(),CV_32F,keyframesAll[i]->image()));
@@ -231,7 +225,7 @@ void KeyFrameGraph::dumpMap(std::string folder)
 
 
 
-void KeyFrameGraph::addKeyFrame(Frame* frame)
+void KeyFrameGraph::addKeyFrame( const Frame::SharedPtr &frame)
 {
 	if(frame->pose->graphVertex != nullptr)
 		return;
@@ -339,37 +333,39 @@ int KeyFrameGraph::optimize(int num_iterations)
 
 
 
-void KeyFrameGraph::calculateGraphDistancesToFrame(Frame* startFrame, std::unordered_map< Frame*, int >* distanceMap)
+void KeyFrameGraph::calculateGraphDistancesToFrame(const Frame::SharedPtr &startFrame, std::unordered_map< Frame::SharedPtr, int > &distanceMap)
 {
-	distanceMap->insert(std::make_pair(startFrame, 0));
+	distanceMap.insert(std::make_pair(startFrame, 0));
 
-	std::multimap< int, Frame* > priorityQueue;
+	std::multimap< int, Frame::SharedPtr > priorityQueue;
 	priorityQueue.insert(std::make_pair(0, startFrame));
+
 	while (! priorityQueue.empty())
 	{
 		auto it = priorityQueue.begin();
 		int length = it->first;
-		Frame* frame = it->second;
+		Frame::SharedPtr frame( it->second );
 		priorityQueue.erase(it);
 
-		auto mapEntry = distanceMap->find(frame);
+		auto mapEntry = distanceMap.find(frame);
 
-		if (mapEntry != distanceMap->end() && length > mapEntry->second)
+		if (mapEntry != distanceMap.end() && length > mapEntry->second)
 		{
 			continue;
 		}
 
-		for (Frame* neighbor : frame->neighbors)
+		for (auto neighbor : frame->neighbors)
 		{
-			auto neighborMapEntry = distanceMap->find(neighbor);
+			auto neighborMapEntry = distanceMap.find(neighbor);
 
-			if (neighborMapEntry != distanceMap->end() && length + 1 >= neighborMapEntry->second)
+			if (neighborMapEntry != distanceMap.end() && length + 1 >= neighborMapEntry->second)
 				continue;
 
-			if (neighborMapEntry != distanceMap->end())
+			if (neighborMapEntry != distanceMap.end())
 				neighborMapEntry->second = length + 1;
 			else
-				distanceMap->insert(std::make_pair(neighbor, length + 1));
+				distanceMap.insert(std::make_pair(neighbor, length + 1));
+
 			priorityQueue.insert(std::make_pair(length + 1, neighbor));
 		}
 	}

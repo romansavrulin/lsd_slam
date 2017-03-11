@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,8 @@ template< typename T >
 class NotifyBuffer;
 
 class Frame;
+
+typedef Eigen::Matrix<float, 7, 7> Matrix7x7;
 
 SE3 SE3CV2Sophus(const cv::Mat& R, const cv::Mat& t);
 

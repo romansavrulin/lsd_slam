@@ -38,7 +38,7 @@
 // #include "util/Timer.h"
 // #include "util/ThreadMutexObject.h"
 
-#include "DataStructures/CurrentKeyFrame.h"
+
 #include "Tracking/Relocalizer.h"
 #include "util/MovingAverage.h"
 
@@ -104,7 +104,6 @@ public:
 private:
 
 	SlamSystem &_system;
-	CurrentKeyFrame &_currentKeyFrame;
 
 	bool _trackingIsGood;
 

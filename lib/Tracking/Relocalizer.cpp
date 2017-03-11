@@ -28,29 +28,29 @@ namespace lsd_slam
 
 
 Relocalizer::Relocalizer( const Configuration &conf )
-	: _conf( conf )
+	: _conf( conf ),
+	KFForReloc(),
+	nextRelocIDX( 0 ),
+	maxRelocIDX( 0 ),
+	 continueRunning( false ),
+	 isRunning( false ),
+		hasResult( false ),
+		resultKF( nullptr ),
+		resultFrameID( 0 ),
+		resultFrameToKeyframe( SE3() )
 {
 	for(int i=0;i<RELOCALIZE_THREADS;i++)
 		running[i] = false;
 
-	//
-	// this->w = w;
-	// this->h = h;
-	// this->K = K;
-
-	KFForReloc.clear();
-	nextRelocIDX = maxRelocIDX = 0;
-	continueRunning = isRunning = false;
-
-	hasResult = false;
-	resultKF = 0;
-	resultFrameID = 0;
-	resultFrameToKeyframe = SE3();
 }
+
+
 Relocalizer::~Relocalizer()
 {
 	stop();
 }
+
+
 void Relocalizer::stop()
 {
 	continueRunning = false;
@@ -95,7 +95,7 @@ void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 	// handleKey(pressedKey);
 }
 
-void Relocalizer::start(std::vector<Frame*> &allKeyframesList)
+void Relocalizer::start(std::vector<Frame::SharedPtr> &allKeyframesList)
 {
 	// make KFForReloc List
 	KFForReloc.clear();
@@ -106,7 +106,7 @@ void Relocalizer::start(std::vector<Frame*> &allKeyframesList)
 
 		// swap with a random element
 		int ridx = rand()%(KFForReloc.size());
-		Frame* tmp = KFForReloc.back();
+		Frame::SharedPtr tmp( KFForReloc.back() );
 		KFForReloc.back() = KFForReloc[ridx];
 		KFForReloc[ridx] = tmp;
 	}
@@ -147,7 +147,7 @@ RelocalizerResult Relocalizer::getResult( void ) //Frame* &out_keyframe, std::sh
 	else
 	{
 		std::shared_ptr< Frame > empty( NULL );
-		return RelocalizerResult( NULL, empty, -1, SE3() );
+		return RelocalizerResult( Frame::SharedPtr(nullptr), empty, -1, SE3() );
 		// out_keyframe = 0;
 		// out_successfulFrameID = -1;
 		// out_frameToKeyframe = SE3();
@@ -168,7 +168,7 @@ void Relocalizer::threadLoop(int idx)
 		// if got something: do it (unlock in the meantime)
 		if(nextRelocIDX < maxRelocIDX && CurrentRelocFrame)
 		{
-			Frame* todo = KFForReloc[nextRelocIDX%KFForReloc.size()];
+			Frame::SharedPtr todo( KFForReloc[nextRelocIDX%KFForReloc.size()] );
 			nextRelocIDX++;
 			if(todo->neighbors.size() <= 2) continue;
 
@@ -177,7 +177,7 @@ void Relocalizer::threadLoop(int idx)
 			lock.unlock();
 
 			// initial Alignment
-			SE3 todoToFrame = tracker->trackFrameOnPermaref(todo, myRelocFrame.get(), SE3());
+			SE3 todoToFrame = tracker->trackFrameOnPermaref(todo.get(), myRelocFrame.get(), SE3());
 
 			// try neighbours
 			float todoGoodVal = tracker->pointUsage * tracker->lastGoodCount() / (tracker->lastGoodCount()+tracker->lastBadCount());
@@ -188,12 +188,12 @@ void Relocalizer::threadLoop(int idx)
 
 				float bestNeightbourGoodVal = todoGoodVal;
 				float bestNeighbourUsage = tracker->pointUsage;
-				Frame* bestKF = todo;
+				Frame::SharedPtr bestKF(todo);
 				SE3 bestKFToFrame = todoToFrame;
-				for(Frame* nkf : todo->neighbors)
+				for(auto nkf : todo->neighbors)
 				{
 					SE3 nkfToFrame_init = se3FromSim3((nkf->getScaledCamToWorld().inverse() * todo->getScaledCamToWorld() * sim3FromSE3(todoToFrame.inverse(), 1))).inverse();
-					SE3 nkfToFrame = tracker->trackFrameOnPermaref(nkf, myRelocFrame.get(), nkfToFrame_init);
+					SE3 nkfToFrame = tracker->trackFrameOnPermaref(nkf.get(), myRelocFrame.get(), nkfToFrame_init);
 
 					float goodVal = tracker->pointUsage * tracker->lastGoodCount() / (tracker->lastGoodCount()+tracker->lastBadCount());
 					if(goodVal > relocalizationTH*0.8 && (nkfToFrame * nkfToFrame_init.inverse()).log().norm() < 0.1)

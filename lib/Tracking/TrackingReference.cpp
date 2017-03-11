@@ -30,9 +30,9 @@ namespace lsd_slam
 
 
 TrackingReference::TrackingReference()
+	: keyframe( nullptr )
 {
 	frameID=-1;
-	keyframe = 0;
 	wh_allocated = 0;
 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
 	{
@@ -67,10 +67,12 @@ TrackingReference::~TrackingReference()
 	releaseAll();
 }
 
-void TrackingReference::importFrame(Frame* sourceKF)
+void TrackingReference::importFrame(const Frame::SharedPtr &sourceKF)
 {
 	boost::unique_lock<boost::mutex> lock(accessMutex);
+
 	keyframeLock = sourceKF->getActiveLock();
+
 	keyframe = sourceKF;
 	frameID = keyframe->id();
 
@@ -81,15 +83,16 @@ void TrackingReference::importFrame(Frame* sourceKF)
 		releaseAll();
 		wh_allocated = sourceKF->width(0) * sourceKF->height(0);
 	}
+
 	clearAll();
 	lock.unlock();
 }
 
 void TrackingReference::invalidate()
 {
-	if(keyframe != 0)
-		keyframeLock.unlock();
-	keyframe = 0;
+	if( (bool)keyframe ) keyframeLock.unlock();
+
+	keyframe.reset();
 }
 
 void TrackingReference::makePointCloud(int level)
