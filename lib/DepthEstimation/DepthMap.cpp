@@ -232,7 +232,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, Ru
 
 	Frame::SharedPtr refFrame( activeKeyFrameIsReactivated ? newest_referenceFrame : oldest_referenceFrame );
 
-	if(refFrame->isTrackingParent( activeKeyFrame) )
+	if(refFrame->isTrackingParent( activeKeyFrame ) )
 	{
 		bool* wasGoodDuringTracking = refFrame->refPixelWasGoodNoCreate();
 		if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (_conf.slamImage.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
@@ -479,7 +479,7 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 	LOGF_IF(WARNING, ( !new_keyframe->isTrackingParent( activeKeyFrame) ),
 			"propagating depth from current keyframe %d to new keyframe %d, which was tracked on a different frame (%d).  While this should work, it is not recommended.",
 			activeKeyFrame->id(), new_keyframe->id(),
-			new_keyframe->trackingParent().id());
+			new_keyframe->trackingParent()->id());
 
 	// wipe depthmap
 	for(DepthMapPixelHypothesis* pt = otherDepthMap+_conf.slamImage.area()-1; pt >= otherDepthMap; pt--)
@@ -1084,14 +1084,14 @@ void DepthMap::updateKeyframe(std::deque< Frame::SharedPtr > referenceFrames)
 		if(  !frame->isTrackingParent( activeKeyFrame) ) {
 			LOGF(WARNING, "updating frame %d with %d, which was tracked on a different frame (%d).  While this should work, it is not recommended.",
 					activeKeyFrame->id(), frame->id(),
-					frame->trackingParent().id());
+					frame->trackingParent()->id());
 		}
 
 		Sim3 refToKf;
-		if(frame->trackingParent().id() == activeKeyFrame->id())
+		if(frame->trackingParent()->id() == activeKeyFrame->id())
 			refToKf = frame->pose->thisToParent_raw;
 		else
-			refToKf = activeKeyFrame->getScaledCamToWorld().inverse() *  frame->getScaledCamToWorld();
+			refToKf = activeKeyFrame->getCamToWorld().inverse() *  frame->getCamToWorld();
 
 		frame->prepareForStereoWith(activeKeyFrame.get(), refToKf, _conf.camera.K, 0);
 

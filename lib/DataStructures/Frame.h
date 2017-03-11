@@ -149,14 +149,18 @@ public:
 	 * Here are ALL central pose and scale informations.
 	 * generally, everything is stored relative to the frame
 	 */
-	std::shared_ptr<FramePoseStruct> pose;
-	Sim3 getScaledCamToWorld(int num=0) { return pose->getCamToWorld(); }
-	bool hasTrackingParent()   { return pose->trackingParent != nullptr; }
-const Frame &trackingParent() { return pose->trackingParent->frame; }
+	FramePoseStruct::SharedPtr pose;
+	Sim3 getCamToWorld(int num=0)  { return pose->getCamToWorld(); }
+	//Sim3 getCamToWorld(int num=0) { return pose->getCamToWorld(); }
 
-	bool isTrackingParent( const Frame::SharedPtr &other )
+	// parent, the frame originally tracked on. never changes.
+	SharedPtr &setTrackingParent( const SharedPtr &newParent  ) { return _trackingParent = newParent; }
+	bool hasTrackingParent()    { return (bool)_trackingParent; }
+	SharedPtr &trackingParent()  { return _trackingParent; }
+
+	bool isTrackingParent( const SharedPtr &other )
 	{
-		return hasTrackingParent() && ( other->id() == pose->trackingParent->frame.id() );
+		return hasTrackingParent() && ( other->id() == id() );
 	}
 
 	Sim3 lastConstraintTrackedCamToWorld;
@@ -214,6 +218,8 @@ const Frame &trackingParent() { return pose->trackingParent->frame; }
 private:
 
 	const Configuration &_conf;
+
+	SharedPtr _trackingParent;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);

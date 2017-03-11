@@ -142,7 +142,7 @@ public:
 	unique_ptr<MappingThread> mapThread;
 	unique_ptr<ConstraintSearchThread> constraintThread;
 
-	// mutex to lock frame pose consistency. within a shared lock of this, *->getScaledCamToWorld() is
+	// mutex to lock frame pose consistency. within a shared lock of this, *->getCamToWorld() is
 	// GUARANTEED to give the same result each call, and to be compatible to each other.
 	// locked exclusively during the pose-update by Mapping.
 	boost::shared_mutex poseConsistencyMutex;

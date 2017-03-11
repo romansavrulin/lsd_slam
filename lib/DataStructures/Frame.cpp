@@ -37,6 +37,7 @@ Frame::Frame(int id, const Configuration &conf,
 							double timestamp, const unsigned char* image )
 	: _conf( conf ),
 	pose( new FramePoseStruct(*this) ),
+	_trackingParent( nullptr ),
 	data( id, timestamp, conf.camera, conf.slamImage )
 {
 	initialize(id, timestamp);

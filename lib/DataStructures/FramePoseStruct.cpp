@@ -30,9 +30,8 @@ int FramePoseStruct::cacheValidCounter = 0;
 
 int privateFramePoseStructAllocCount = 0;
 
-FramePoseStruct::FramePoseStruct( const Frame &f )
-:frame( f ),
-trackingParent( nullptr )
+FramePoseStruct::FramePoseStruct( Frame &f )
+	:frame( f )
 {
 	cacheValidFor = -1;
 	isOptimized = false;
@@ -95,13 +94,14 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 		return camToWorld;
 
 	// return id if there is no parent (very first frame)
-	if(!trackingParent)
-		return camToWorld = Sim3();
+	if(!frame.hasTrackingParent() ) {
+			// abs. pose is computed from the parent's abs. pose, and cached.
+			cacheValidFor = cacheValidCounter;
 
-	// abs. pose is computed from the parent's abs. pose, and cached.
-	cacheValidFor = cacheValidCounter;
+			return camToWorld = frame.trackingParent()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 
-	return camToWorld = trackingParent->getCamToWorld(recursionDepth+1) * thisToParent_raw;
+	} else {
+		return camToWorld = Sim3();}
 }
 
 }

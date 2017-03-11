@@ -47,7 +47,7 @@ void ConstraintSearchThread::callbackIdle( void )
 	{
 		std::lock_guard< std::mutex > lock( _system.keyFrameGraph()->keyframesForRetrackMutex );
 
-		if(_system.keyFrameGraph->keyframesForRetrack.size() > 10) {
+		if(_system.keyFrameGraph()->keyframesForRetrack.size() > 10) {
 			std::deque< Frame::SharedPtr >::iterator toReTrack = _system.keyFrameGraph()->keyframesForRetrack.begin() + (rand() % (_system.keyFrameGraph()->keyframesForRetrack.size()/3));
 			Frame::SharedPtr toReTrackFrame( *toReTrack );
 
@@ -100,12 +100,12 @@ int ConstraintSearchThread::callbackDoFullReConstraintTrack( void )
 	return lastNumConstraintsAddedOnFullRetrack = added;
 }
 
-void ConstraintSearchThread::callbackNewKeyFrame( Frame *newKF )
+void ConstraintSearchThread::callbackNewKeyFrame( const Frame::SharedPtr &frame  )
 {
 	{
 		Timer timer;
 
-		findConstraintsForNewKeyFrames(newKF, true, true, 1.0);
+		findConstraintsForNewKeyFrames( frame, true, true, 1.0);
 		_failedToRetrack=0;
 
 		_system.perf.findConstraint.update( timer );
@@ -221,17 +221,17 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 	if(!newKeyFrame->hasTrackingParent()) {
 		// {
 		// 	std::lock_guard<std::mutex> lock( _system.optThread->newConstraintMutex );
-			_system.keyFrameGraph->addKeyFrame(newKeyFrame);
+			_system.keyFrameGraph()->addKeyFrame(newKeyFrame);
 		// }
 		_system.optThread->doNewConstraint();
 		return 0;
 	}
 
-	if(!forceParent && (newKeyFrame->lastConstraintTrackedCamToWorld * newKeyFrame->getScaledCamToWorld().inverse()).log().norm() < 0.01)
+	if(!forceParent && (newKeyFrame->lastConstraintTrackedCamToWorld * newKeyFrame->getCamToWorld().inverse()).log().norm() < 0.01)
 		return 0;
 
 
-	newKeyFrame->lastConstraintTrackedCamToWorld = newKeyFrame->getScaledCamToWorld();
+	newKeyFrame->lastConstraintTrackedCamToWorld = newKeyFrame->getCamToWorld();
 
 	// =============== get all potential candidates and their initial relative pose. =================
 	std::vector<KFConstraintStruct*> constraints;
@@ -241,7 +241,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 
 
 	// erase the ones that are already neighbours.
-	for(std::unordered_set<Frame*>::iterator c = candidates.begin(); c != candidates.end();)
+	for(std::unordered_set<Frame::SharedPtr>::iterator c = candidates.begin(); c != candidates.end();)
 	{
 		if(newKeyFrame->neighbors.find(*c) != newKeyFrame->neighbors.end())
 		{
@@ -257,12 +257,12 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 		boost::shared_lock_guard<boost::shared_mutex> lock(_system.poseConsistencyMutex);
 		for (auto candidate : candidates)
 		{
-			Sim3 candidateToFrame_initialEstimate = newKeyFrame->getScaledCamToWorld().inverse() * candidate->getScaledCamToWorld();
+			Sim3 candidateToFrame_initialEstimate = newKeyFrame->getCamToWorld().inverse() * candidate->getCamToWorld();
 			candidateToFrame_initialEstimateMap[candidate] = candidateToFrame_initialEstimate;
 		}
 
 		if(newKeyFrame->hasTrackingParent())
-			_system.keyFrameGraph()->calculateGraphDistancesToFrame(newKeyFrame->getTrackingParent(), &distancesToNewKeyFrame);
+			_system.keyFrameGraph()->calculateGraphDistancesToFrame(newKeyFrame->trackingParent(), distancesToNewKeyFrame);
 	}
 
 
@@ -273,7 +273,9 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 	// Do a first check on trackability of close candidates.
 	std::unordered_set<Frame::SharedPtr> closeCandidates;
 	std::vector<Frame::SharedPtr> farCandidates;
-	Frame::SharedPtr parent = newKeyFrame->hasTrackingParent() ? newKeyFrame->getTrackingParent() : nullptr;
+
+	// will be null if newKeyFrame doesn't have a trackingParent
+	Frame::SharedPtr parent( newKeyFrame->trackingParent() );
 
 	int closeFailed = 0;
 	int closeInconsistent = 0;
@@ -533,8 +535,8 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 			_system.poseConsistencyMutex.lock_shared();
 			constraints.push_back(new KFConstraintStruct());
 			constraints.back()->firstFrame = newKeyFrame;
-			constraints.back()->secondFrame = newKeyFrame->getTrackingParent();
-			constraints.back()->secondToFirst = constraints.back()->firstFrame->getScaledCamToWorld().inverse() * constraints.back()->secondFrame->getScaledCamToWorld();
+			constraints.back()->secondFrame = newKeyFrame->trackingParent();
+			constraints.back()->secondToFirst = constraints.back()->firstFrame->getCamToWorld().inverse() * constraints.back()->secondFrame->getCamToWorld();
 			constraints.back()->information  <<
 					0.8098,-0.1507,-0.0557, 0.1211, 0.7657, 0.0120, 0,
 					-0.1507, 2.1724,-0.1103,-1.9279,-0.1182, 0.1943, 0,

@@ -35,17 +35,14 @@ public:
 
 	typedef std::shared_ptr<FramePoseStruct> SharedPtr;
 
-	FramePoseStruct( const Frame &frame );
+	FramePoseStruct( Frame &frame );
 	virtual ~FramePoseStruct();
-
-	// parent, the frame originally tracked on. never changes.
-	SharedPtr trackingParent;
 
 	// set initially as tracking result (then it's a SE(3)),
 	// and is changed only once, when the frame becomes a KF (->rescale).
 	Sim3 thisToParent_raw;
 
-	const Frame &frame;
+ Frame &frame;
 	// int frameID;
 
 	// whether this poseStruct is registered in the Graph. if true MEMORY WILL BE HANDLED BY GRAPH
@@ -62,6 +59,7 @@ public:
 
 	void setPoseGraphOptResult(Sim3 camToWorld);
 	void applyPoseGraphOptResult();
+
 	Sim3 getCamToWorld(int recursionDepth = 0);
 	void invalidateCache();
 

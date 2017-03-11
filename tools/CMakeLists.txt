@@ -10,7 +10,7 @@ include_directories(
 link_directories( ${CONAN_LIB_DIRS} )
 
 set( LSD_SRCS
-  LSD/ParseArgs.cpp )
+     ParseArgs.cpp )
 
 # build image node
 add_executable(LSD LSD.cpp

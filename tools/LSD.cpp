@@ -39,7 +39,7 @@
 
 #include "App/App.h"
 #include "App/InputThread.h"
-#include "LSD/ParseArgs.h"
+#include "ParseArgs.h"
 
 
 using namespace lsd_slam;

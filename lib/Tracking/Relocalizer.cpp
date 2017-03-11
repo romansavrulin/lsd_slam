@@ -192,7 +192,7 @@ void Relocalizer::threadLoop(int idx)
 				SE3 bestKFToFrame = todoToFrame;
 				for(auto nkf : todo->neighbors)
 				{
-					SE3 nkfToFrame_init = se3FromSim3((nkf->getScaledCamToWorld().inverse() * todo->getScaledCamToWorld() * sim3FromSE3(todoToFrame.inverse(), 1))).inverse();
+					SE3 nkfToFrame_init = se3FromSim3((nkf->getCamToWorld().inverse() * todo->getCamToWorld() * sim3FromSE3(todoToFrame.inverse(), 1))).inverse();
 					SE3 nkfToFrame = tracker->trackFrameOnPermaref(nkf.get(), myRelocFrame.get(), nkfToFrame_init);
 
 					float goodVal = tracker->pointUsage * tracker->lastGoodCount() / (tracker->lastGoodCount()+tracker->lastBadCount());

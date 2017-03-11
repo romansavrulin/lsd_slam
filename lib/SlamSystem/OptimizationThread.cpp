@@ -90,7 +90,7 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange)
 
 		// get change from last optimization
 		Sim3 a = _system.keyFrameGraph()->keyframesAll[i]->pose->graphVertex->estimate();
-		Sim3 b = _system.keyFrameGraph()->keyframesAll[i]->getScaledCamToWorld();
+		Sim3 b = _system.keyFrameGraph()->keyframesAll[i]->getCamToWorld();
 		Sophus::Vector7f diff = (a*b.inverse()).log().cast<float>();
 
 

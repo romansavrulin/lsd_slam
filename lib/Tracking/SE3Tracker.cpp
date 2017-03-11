@@ -478,7 +478,7 @@ SE3 SE3Tracker::trackFrame(
 
 	frame->initialTrackedResidual = lastResidual / pointUsage;
 	frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()),1);
-	frame->pose->trackingParent = reference->keyframe->pose;
+	frame->setTrackingParent( reference->keyframe );
 	return toSophus(referenceToFrame.inverse());
 }
 

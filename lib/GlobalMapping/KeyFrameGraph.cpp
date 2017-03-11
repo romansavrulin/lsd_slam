@@ -234,7 +234,7 @@ void KeyFrameGraph::addKeyFrame( const Frame::SharedPtr &frame)
 	VertexSim3* vertex = new VertexSim3();
 	vertex->setId(frame->id());
 
-	Sophus::Sim3d camToWorld_estimate = frame->getScaledCamToWorld();
+	Sophus::Sim3d camToWorld_estimate = frame->getCamToWorld();
 
 	if(!frame->hasTrackingParent())
 		vertex->setFixed(true);

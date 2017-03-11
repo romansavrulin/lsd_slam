@@ -72,7 +72,7 @@ void MappingThread::callbackUnmappedTrackedFrames( void )
 		sz = unmappedTrackedFrames().size();
 
 		if( sz > 0 )
-			nMapped = unmappedTrackedFrames().back()->trackingParent().numMappedOnThisTotal < 10;
+			nMapped = unmappedTrackedFrames().back()->trackingParent()->numMappedOnThisTotal < 10;
 	}
 
 	LOG(INFO) << "In unmapped tracked frames callback with " << sz << " frames";
@@ -385,8 +385,8 @@ void MappingThread::discardCurrentKeyframe()
 		boost::shared_lock_guard< boost::shared_mutex > lock( _system.keyFrameGraph()->allFramePosesMutex );
 		for(auto p : _system.keyFrameGraph()->allFramePoses)
 		{
-			if(p->trackingParent && p->trackingParent->frame.id() == _system.currentKeyFrame().const_ref()->id() )
-				p->trackingParent.reset();
+			if(p->frame.isTrackingParent( _system.currentKeyFrame().const_ref() ) )
+				p->frame.setTrackingParent( nullptr );
 		}
 	}
 
