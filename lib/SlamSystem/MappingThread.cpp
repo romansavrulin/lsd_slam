@@ -153,7 +153,7 @@ void MappingThread::randomInit( const Frame::SharedPtr &frame )
 bool MappingThread::doMappingIteration()
 {
 	// If there's no keyframe, then give up
-	if(  (bool)_system.currentKeyFrame().const_ref() ) {
+	if( !(bool)_system.currentKeyFrame().const_ref() ) {
 		LOG(INFO) << "Nothing to map: no keyframe";
 		return false;
 	}
