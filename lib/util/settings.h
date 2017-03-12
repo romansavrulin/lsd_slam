@@ -182,15 +182,6 @@ namespace lsd_slam
 
 #define MIN_NUM_MAPPED 5
 
-// settings variables
-// controlled via keystrokes
-extern bool autoRun;
-extern bool autoRunWithinFrame;
-extern int debugDisplay;
-extern bool displayDepthMap;
-extern bool onSceenInfoDisplay;
-extern bool dumpMap;
-extern bool doFullReConstraintTrack;
 
 
 // dyn config

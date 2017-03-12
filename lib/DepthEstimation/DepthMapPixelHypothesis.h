@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -30,13 +30,15 @@ namespace lsd_slam
 class KeyFrameGraph;
 
 /** Depth hypothesis used in DepthMap.
- *  
+ *
  *  Inverse depths need to be scaled with the DepthMap's internalScaleFactor to
  *  get frame scale. (From that, scale with the current keyframe's scale to
  *  get the current best estimate of absolute scale). */
 class DepthMapPixelHypothesis
 {
 public:
+
+	int debugDisplay;
 
 	/** Flag telling if there is a valid estimate at this point.
 	 * All other values are only valid if this is set to true. */
@@ -67,7 +69,9 @@ public:
 			const float &my_idepth_smoothed,
 			const float &my_idepth_var,
 			const float &my_idepth_var_smoothed,
-			const int &my_validity_counter) :
+			const int &my_validity_counter,
+			int dd ) :
+			debugDisplay( dd ),
 			isValid(true),
 			blacklisted(0),
 			nextStereoFrameMinID(0),
@@ -80,7 +84,9 @@ public:
 	inline DepthMapPixelHypothesis(
 			const float &my_idepth,
 			const float &my_idepth_var,
-			const int &my_validity_counter) :
+			const int &my_validity_counter,
+			int dd ) :
+			debugDisplay( dd ),
 			isValid(true),
 			blacklisted(0),
 			nextStereoFrameMinID(0),

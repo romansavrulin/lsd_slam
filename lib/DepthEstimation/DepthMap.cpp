@@ -273,7 +273,8 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, Ru
 	*target = DepthMapPixelHypothesis(
 			result_idepth,
 			result_var,
-			VALIDITY_COUNTER_INITIAL_OBSERVE);
+			VALIDITY_COUNTER_INITIAL_OBSERVE,
+			_conf.debugDisplay );
 
 	if(plotStereoImages)
 		debugImageHypothesisHandling.at<cv::Vec3b>(y, x) = cv::Vec3b(255,255,255); // white for GOT CREATED
@@ -607,7 +608,8 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 				*targetBest = DepthMapPixelHypothesis(
 						new_idepth,
 						new_var,
-						source->validity_counter);
+						source->validity_counter,
+					  _conf.debugDisplay );
 
 			}
 			else
@@ -626,7 +628,8 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 				*targetBest = DepthMapPixelHypothesis(
 						merged_new_idepth,
 						1.0f/(1.0f/targetBest->idepth_var + 1.0f/new_var),
-						merged_validity);
+						merged_validity,
+					  _conf.debugDisplay );
 			}
 		}
 
@@ -691,7 +694,8 @@ void DepthMap::regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* 
 					DepthMapPixelHypothesis(
 						idepthObs,
 						VAR_RANDOM_INIT_INITIAL,
-						0);
+						0,
+					  _conf.debugDisplay );
 
 				if(enablePrintDebugInfo) stats->num_reg_created++;
 			}
@@ -896,7 +900,8 @@ void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
 						idepth,
 						VAR_RANDOM_INIT_INITIAL,
 						VAR_RANDOM_INIT_INITIAL,
-						20);
+						20,
+					  _conf.debugDisplay );
 			}
 			else
 			{
@@ -939,7 +944,8 @@ void DepthMap::setFromExistingKF( const Frame::SharedPtr &kf)
 				*pt = DepthMapPixelHypothesis(
 						*idepth,
 						*idepthVar,
-						*validity);
+						*validity,
+					  _conf.debugDisplay );
 			}
 			else
 			{
@@ -1000,7 +1006,8 @@ void DepthMap::initializeFromGTDepth( const Frame::SharedPtr &new_frame)
 						idepthValue,
 						VAR_GT_INIT_INITIAL,
 						VAR_GT_INIT_INITIAL,
-						20);
+						20,
+					  _conf.debugDisplay );
 			}
 			else
 			{
@@ -1371,7 +1378,7 @@ int DepthMap::debugPlotDepthMap()
 		{
 			int idx = x + y*_conf.slamImage.width;
 
-			if(currentDepthMap[idx].blacklisted < MIN_BLACKLIST && debugDisplay == 2)
+			if(currentDepthMap[idx].blacklisted < MIN_BLACKLIST && _conf.debugDisplay == 2)
 				debugImageDepth.at<cv::Vec3b>(y,x) = cv::Vec3b(0,0,255);
 
 			if(!currentDepthMap[idx].isValid) continue;

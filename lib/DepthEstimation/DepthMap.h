@@ -107,6 +107,7 @@ public:
 	IndexThreadReduce threadReducer;
 
 private:
+	
 	const Configuration &_conf;
 
 	// ============= parameter copies for convenience ===========================

@@ -29,16 +29,6 @@ namespace lsd_slam
 RunningStats runningStats;
 
 
-bool autoRun = true;
-bool autoRunWithinFrame = true;
-
-int debugDisplay = 0;
-
-bool onSceenInfoDisplay = true;
-bool displayDepthMap = true;
-bool dumpMap = false;
-bool doFullReConstraintTrack = false;
-
 // dyn config
 bool printPropagationStatistics = true;
 bool printFillHolesStatistics = true;
@@ -120,39 +110,39 @@ void handleKey(char k)
 	char kkk = k;
 	switch(kkk)
 	{
-	case 'a': case 'A':
-//		autoRun = !autoRun;		// disabled... only use for debugging & if you really, really know what you are doing
-		break;
-	case 's': case 'S':
-//		autoRunWithinFrame = !autoRunWithinFrame; 	// disabled... only use for debugging & if you really, really know what you are doing
-		break;
-	case 'd': case 'D':
-		debugDisplay = (debugDisplay+1)%6;
-		printf("debugDisplay is now: %d\n", debugDisplay);
-		break;
-	case 'e': case 'E':
-		debugDisplay = (debugDisplay-1+6)%6;
-		printf("debugDisplay is now: %d\n", debugDisplay);
-		break;
-	case 'o': case 'O':
-		onSceenInfoDisplay = !onSceenInfoDisplay;
-		break;
-	case 'r': case 'R':
-		printf("requested full reset!\n");
-		fullResetRequested = true;
-		break;
-	case 'm': case 'M':
-		printf("Dumping Map!\n");
-		dumpMap = true;
-		break;
-	case 'p': case 'P':
-		printf("Tracking all Map-Frames again!\n");
-		doFullReConstraintTrack = true;
-		break;
-	case 'l': case 'L':
-		printf("Manual Tracking Loss Indicated!\n");
-		manualTrackingLossIndicated = true;
-		break;
+// 	case 'a': case 'A':
+// //		autoRun = !autoRun;		// disabled... only use for debugging & if you really, really know what you are doing
+// 		break;
+// 	case 's': case 'S':
+// //		autoRunWithinFrame = !autoRunWithinFrame; 	// disabled... only use for debugging & if you really, really know what you are doing
+// 		break;
+// 	case 'd': case 'D':
+// 		debugDisplay = (debugDisplay+1)%6;
+// 		printf("debugDisplay is now: %d\n", debugDisplay);
+// 		break;
+// 	case 'e': case 'E':
+// 		debugDisplay = (debugDisplay-1+6)%6;
+// 		printf("debugDisplay is now: %d\n", debugDisplay);
+// 		break;
+// 	case 'o': case 'O':
+// 		onSceenInfoDisplay = !onSceenInfoDisplay;
+// 		break;
+// 	case 'r': case 'R':
+// 		printf("requested full reset!\n");
+// 		fullResetRequested = true;
+// 		break;
+// 	case 'm': case 'M':
+// 		printf("Dumping Map!\n");
+// 		dumpMap = true;
+// 		break;
+// 	case 'p': case 'P':
+// 		printf("Tracking all Map-Frames again!\n");
+// 		doFullReConstraintTrack = true;
+// 		break;
+// 	case 'l': case 'L':
+// 		printf("Manual Tracking Loss Indicated!\n");
+// 		manualTrackingLossIndicated = true;
+// 		break;
 	}
 
 }

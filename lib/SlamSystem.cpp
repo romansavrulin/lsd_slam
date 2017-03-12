@@ -323,7 +323,7 @@ void SlamSystem::addTimingSamples()
 
 void SlamSystem::updateDisplayDepthMap()
 {
-	if( !displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
+	if( !conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
 
 	mapThread->map->debugPlotDepthMap();
 	double scale = 1;
@@ -351,7 +351,7 @@ void SlamSystem::updateDisplayDepthMap()
 	// 		1e-6 * (float)keyFrameGraph()->totalPoints);
 
 
-	if(onSceenInfoDisplay)
+	if( conf().onSceenInfoDisplay )
 		printMessageOnCVImage(mapThread->map->debugImageDepth, buf1, buf2);
 
 	CHECK( mapThread->map->debugImageDepth.data != NULL );

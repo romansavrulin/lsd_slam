@@ -810,25 +810,26 @@ void SE3Tracker::calcResidualAndBuffers_debugFinish(int w)
 		Util::displayImage( "Residuals", debugImageResiduals );
 
 
+		//AMM.  Disable this as well.
 		// wait for key and handle it
-		bool looping = true;
-		while(looping)
-		{
-			int k = Util::waitKey(1);
-			if(k == -1)
-			{
-				if(autoRunWithinFrame)
-					break;
-				else
-					continue;
-			}
-
-			char key = k;
-			if(key == ' ')
-				looping = false;
-			else
-				handleKey(k);
-		}
+		// bool looping = true;
+		// while(looping)
+		// {
+		// 	int k = Util::waitKey(1);
+		// 	if(k == -1)
+		// 	{
+		// 		if(autoRunWithinFrame)
+		// 			break;
+		// 		else
+		// 			continue;
+		// 	}
+		//
+		// 	char key = k;
+		// 	if(key == ' ')
+		// 		looping = false;
+		// 	else
+		// 		handleKey(k);
+		// }
 	}
 
 	if(saveAllTrackingStagesInternal)
