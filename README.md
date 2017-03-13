@@ -1,6 +1,6 @@
 # LSD-SLAM: Large-Scale Direct Monocular SLAM
 
-CI Status: [![wercker status](https://app.wercker.com/status/4c30e195acc92af03c75e1f3451b6916/m/master "wercker status")](https://app.wercker.com/project/byKey/4c30e195acc92af03c75e1f3451b6916)
+[![wercker status](https://app.wercker.com/status/4c30e195acc92af03c75e1f3451b6916/m/master "wercker status")](https://app.wercker.com/project/byKey/4c30e195acc92af03c75e1f3451b6916)
 
 See my [Development Blog](https://faculty.washington.edu/amarburg/press/category/lsdslam/) for current status.
 
@@ -12,7 +12,7 @@ See my [Development Blog](https://faculty.washington.edu/amarburg/press/category
 
 > With `BUILD_GUI=True`, the current evolution of Tom Whelan's Pangolin GUI is built as `LSD_GUI`, with all of the dependencies that entails.
 
->  My full-fat, high-dependency work is continuing in [lsd_slam_conan](https://github.com/amarburg/lsd_slam_conan), which requires Conan.
+>  My full-fat, high-dependency work is continuing in [lsd_slam_conan](https://github.com/amarburg/lsd_slam_conan), which __requires__ Conan.
 
 This fork started from [Thomas Whelan's fork](https://github.com/mp3guy/lsd_slam) which "relieves the user of the horrors of a ROS dependency and uses the much nicer lightweight [Pangolin](https://github.com/stevenlovegrove/Pangolin) framework instead."
 
