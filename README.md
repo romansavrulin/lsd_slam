@@ -1,6 +1,6 @@
 # LSD-SLAM: Large-Scale Direct Monocular SLAM
 
-CI Status: [![Build Status](https://travis-ci.org/amarburg/lsd_slam.svg)](https://travis-ci.org/amarburg/lsd_slam)
+CI Status: [![wercker status](https://app.wercker.com/status/4c30e195acc92af03c75e1f3451b6916/m/master "wercker status")](https://app.wercker.com/project/byKey/4c30e195acc92af03c75e1f3451b6916)
 
 See my [Development Blog](https://faculty.washington.edu/amarburg/press/category/lsdslam/) for current status.
 
@@ -31,11 +31,11 @@ or Thomas's branches in structure (I refactored as a way of learning the code),
 but not significantly in terms of functionality (except for all the ways in which
 I've broken it in the refactoring).   
 
-**master**  is my working / stable-ish branch.   **aaron_dev** is my **really unstable** branch.   
+**master**  is my working / stable-ish branch.   **aaron_dev** is my **really unstable** branch.   **Please note: BOTH BRANCHES ARE MOVING TARGETS.**  it's just that **aaron_dev** is, uh, moving faster.
 
 # 1. Quickstart
 
-My targeted environments are Ubuntu 14.04/16.04, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.3](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.11 with [Homebrew](http://brew.sh/).
+My targeted environments are Ubuntu 16.04, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.3](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.12 with [Homebrew](http://brew.sh/).
 
 The most authoritative documentation is stored in the Ruby Rakefile (don't be scared, it's
 pretty readable).   This includes tasks for installing dependencies (in Travis and Docker images for example),
@@ -52,7 +52,7 @@ Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed
 
 Or
 
-    rake dependencies:{xenial,trusty, osx}:gui
+    rake dependencies:{xenial,trusty,osx}:gui
     rake {debug,release}:test
 
 Should work.
@@ -63,13 +63,12 @@ For the conan-based build:
     rake conan:debug:test
 
 
-In addition to a number of "standard"  dependencies,
+In addition to a number of "standard" (apt-gettable) dependencies,
 LSD-SLAM uses these "non-standard" dependencies:
  * [g2o](https://github.com/RainerKuemmerle/g2o)
- * A [custom fork](https://github.com/amarburg/g3log.git) of [g3log](https://github.com/KjellKod/g3log)
+ * [g3log](https://github.com/KjellKod/g3log)
  * (Optionally) [Google Test](https://github.com/google/googletest) for unit testing
-
-And  [Pangolin](https://github.com/stevenlovegrove/Pangolin) is the GUI is enabled.
+ * [Pangolin](https://github.com/stevenlovegrove/Pangolin) is the GUI is enabled.
 
 LSD-SLAM will use CMake ExternalProjects to build each of these
 dependencies automatically.  **This no longer happens automatically as part
@@ -104,6 +103,3 @@ I've started to document my performance testing in [doc/Performance.md](doc/Perf
 LSD-SLAM is licensed under the GNU General Public License Version 3 (GPLv3), see http://www.gnu.org/licenses/gpl.html.
 
 # 7. TODOS
-
- * remove dependencies on Pangolin?  Trying to minimize the dependencies/design
- decisions built into this core repo  and move them to "application" repos.  I will retain g3log for logging and g2o.
