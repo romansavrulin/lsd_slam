@@ -26,20 +26,21 @@
 #include "util/SophusUtil.h"
 #include "util/Configuration.h"
 
+#include "DataStructures/Frame.h"
+
 
 namespace lsd_slam
 {
 
-class Frame;
 class Sim3Tracker;
 
 struct RelocalizerResult {
-	RelocalizerResult( Frame *out_kf, std::shared_ptr<Frame> &f, int out_id, SE3 out_se3 )
+	RelocalizerResult( const Frame::SharedPtr &out_kf, std::shared_ptr<Frame> &f, int out_id, SE3 out_se3 )
 		: keyframe( out_kf ), successfulFrame( f ),
 			successfulFrameID( out_id ), successfulFrameToKeyframe( out_se3 )
 	{;}
 
-	Frame* keyframe;
+	Frame::SharedPtr keyframe;
 	std::shared_ptr<Frame> successfulFrame;
 	int successfulFrameID;
 	SE3 successfulFrameToKeyframe;
@@ -52,7 +53,7 @@ public:
 	~Relocalizer();
 
 	void updateCurrentFrame(std::shared_ptr<Frame> currentFrame);
-	void start(std::vector<Frame*> &allKeyframesList);
+	void start(std::vector< Frame::SharedPtr > &allKeyframesList);
 	void stop();
 
 	bool waitResult(int milliseconds);
@@ -73,16 +74,16 @@ private:
 	boost::condition_variable resultReadySignal;
 
 	// for rapid-checking
-	std::vector<Frame*> KFForReloc;
+	std::vector<Frame::SharedPtr> KFForReloc;
 	std::shared_ptr<Frame> CurrentRelocFrame;
 	int nextRelocIDX;
 	int maxRelocIDX;
 	bool continueRunning;
 
 	// result!
-	std::shared_ptr<Frame> resultRelocFrame;
+	Frame::SharedPtr resultRelocFrame;
 	bool hasResult;
-	Frame* resultKF;
+	Frame::SharedPtr resultKF;
 	int resultFrameID;
 	SE3 resultFrameToKeyframe;
 

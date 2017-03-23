@@ -49,7 +49,7 @@ public:
 
 	virtual void publishPose( const Sophus::Sim3f &pose ) {};
 
-	virtual void publishKeyframeGraph(KeyFrameGraph* graph) {};
+	virtual void publishKeyframeGraph( const std::shared_ptr<KeyFrameGraph> &graph) {};
 
 	// publishes a keyframe. if that frame already existis, it is overwritten, otherwise it is added.
 	virtual void publishKeyframe(const std::shared_ptr<Frame> &kf) {};

@@ -31,14 +31,13 @@
 #include "util/Configuration.h"
 #include "util/FileUtils.h"
 
-#include "LSD_GUI.h"
 #include "LSD_GUI/GuiThread.h"
 #include "LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.h"
 #include "LSD_GUI/Pangolin_IOWrapper/PangolinOutputIOWrapper.h"
 
 
 #include "App/InputThread.h"
-#include "LSD/ParseArgs.h"
+#include "ParseArgs.h"
 
 ThreadSynchronizer startAll;
 

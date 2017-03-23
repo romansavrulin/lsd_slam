@@ -59,7 +59,7 @@ using namespace lsd_slam;
 
 TrackingThread::TrackingThread( SlamSystem &system )
 : _system( system ),
-	_currentKeyFrame( system.currentKeyFrame ),
+//	_system.currentKeyFrame( system.currentKeyFrame ),
 	_tracker( new SE3Tracker( system.conf().slamImage ) ),
 	_trackingReference( new TrackingReference() ),
 	_trackingIsGood( true )
@@ -147,15 +147,15 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 		return;
 	}
 
-	// Are the following two calls atomic enough or should I lock _currentKeyFrame
+	// Are the following two calls atomic enough or should I lock
 	// before the next two lines?
 	bool newKeyFramePending = _system.mapThread->newKeyFramePending();	// pre-save here, to make decision afterwards.
-	Frame::SharedPtr keyframe( _currentKeyFrame.get() );
+	Frame::SharedPtr keyframe( _system.currentKeyFrame().get() );
 
 	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag )
 	{
 		LOG(DEBUG) << "Importing new tracking reference from frame " << keyframe->id();
-		_trackingReference->importFrame( keyframe.get() );
+		_trackingReference->importFrame( keyframe );
 		keyframe->depthHasBeenUpdatedFlag = false;
 		_trackingReferenceFrameSharedPT = keyframe;
 	}
@@ -169,7 +169,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	SE3 frameToReference_initialEstimate;
 	{
 		boost::shared_lock_guard<boost::shared_mutex> lock( _system.poseConsistencyMutex );
-		frameToReference_initialEstimate = se3FromSim3( trackingReferencePose.getCamToWorld().inverse() * _system.keyFrameGraph->allFramePoses.back()->getCamToWorld());
+		frameToReference_initialEstimate = se3FromSim3( trackingReferencePose.getCamToWorld().inverse() * _system.keyFrameGraph()->allFramePoses.back()->getCamToWorld());
 	}
 
 
@@ -189,7 +189,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 
 
 	if(manualTrackingLossIndicated || _tracker->diverged ||
-		(_system.keyFrameGraph->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !_tracker->trackingWasGood))
+		(_system.keyFrameGraph()->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !_tracker->trackingWasGood))
 	{
 		LOGF(WARNING, "TRACKING LOST for frame %d (%1.2f%% good Points, which is %1.2f%% of available points; %s tracking; tracker has %s)!\n",
 				newFrame->id(),
@@ -232,29 +232,30 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	// 	outputWrapper->publishDebugInfo(data);
 	// }
 
-	_system.keyFrameGraph->addFrame(newFrame.get());
+	_system.keyFrameGraph()->addFrame(newFrame);
 
 
-	//Sim3 lastTrackedCamToWorld = mostCurrentTrackedFrame->getScaledCamToWorld();
-//  mostCurrentTrackedFrame->TrackingParent->getScaledCamToWorld() * sim3FromSE3(mostCurrentTrackedFrame->thisToParent_SE3TrackingResult, 1.0);
+	//Sim3 lastTrackedCamToWorld = mostCurrentTrackedFrame->getCamToWorld();
+//  mostCurrentTrackedFrame->TrackingParent->getCamToWorld() * sim3FromSE3(mostCurrentTrackedFrame->thisToParent_SE3TrackingResult, 1.0);
 
 	LOG_IF( DEBUG,  enablePrintDebugInfo && printThreadingInfo ) << "Publishing tracked frame";
 	_system.publishTrackedFrame(newFrame);
-	_system.publishPose(newFrame->getScaledCamToWorld().cast<float>());
+	_system.publishPose(newFrame->getCamToWorld().cast<float>());
 
 	// Keyframe selection
 	// latestTrackedFrame = trackingNewFrame;
 	//if (!my_createNewKeyframe && _map.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
-	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _currentKeyFrame()->id();
-	if(!newKeyFramePending && _currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
+	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame().const_ref()->id();
+	if(!newKeyFramePending && _system.currentKeyFrame().const_ref()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
-		LOG_IF( DEBUG, printThreadingInfo ) << _currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
-		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _currentKeyFrame()->meanIdepth;
-		float minVal = fmin(0.2f + _system.keyFrameGraph->keyframesAll.size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
+		LOG_IF( DEBUG, printThreadingInfo ) << _system.currentKeyFrame().const_ref()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame().const_ref()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
-		if(_system.keyFrameGraph->keyframesAll.size() < INITIALIZATION_PHASE_COUNT)	minVal *= 0.7;
+		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame().const_ref()->meanIdepth;
+		float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
 
-		lastTrackingClosenessScore = _system.trackableKeyFrameSearch->getRefFrameScore(dist.dot(dist), _tracker->pointUsage);
+		if(_system.keyFrameGraph()->size() < INITIALIZATION_PHASE_COUNT)	minVal *= 0.7;
+
+		lastTrackingClosenessScore = _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage);
 
 		if (lastTrackingClosenessScore > minVal)
 		{
@@ -263,12 +264,12 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 			// createNewKeyFrame = true;
 
 			LOGF_IF( DEBUG, printKeyframeSelectionInfo,
-							"SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->getTrackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
+							"SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
 		}
 		else
 		{
 			LOGF_IF( DEBUG, printKeyframeSelectionInfo,
-							"SKIPPD KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->getTrackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
+							"SKIPPD KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
 
 		}
 	}
@@ -308,8 +309,8 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 	// relocalizer.getResult(keyframe, succFrame, succFrameID, succFrameToKF_init);
 	// assert(keyframe != 0);
 
-	Frame::SharedPtr keyframe(_currentKeyFrame.get());
-	_trackingReference->importFrame( keyframe.get() );
+	Frame::SharedPtr keyframe(_system.currentKeyFrame().const_ref() );
+	_trackingReference->importFrame( keyframe );
 	_trackingReferenceFrameSharedPT = keyframe;
 
 	_tracker->trackFrame(
@@ -324,7 +325,7 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 	}
 	else
 	{
-		_system.keyFrameGraph->addFrame(result.successfulFrame.get());
+		_system.keyFrameGraph()->addFrame(result.successfulFrame );
 
 		_system.mapThread->pushUnmappedTrackedFrame( result.successfulFrame );
 

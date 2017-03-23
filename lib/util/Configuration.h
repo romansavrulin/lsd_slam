@@ -42,6 +42,16 @@ public:
   bool doMapping;
   bool continuousPCOutput;
 
+  // settings variables
+  // controlled via keystrokes
+ bool autoRun;
+ bool autoRunWithinFrame;
+ int debugDisplay;
+ bool displayDepthMap;
+ bool onSceenInfoDisplay;
+ bool dumpMap;
+ bool doFullReConstraintTrack;
+
 
 protected:
 

@@ -53,7 +53,7 @@ void PangolinOutput3DWrapper::publishKeyframe(const Frame::SharedPtr &f)
     int w = f->width(publishLvl);
     int h = f->height(publishLvl);
 
-    fMsg->camToWorld = f->getScaledCamToWorld().cast<float>();
+    fMsg->camToWorld = f->getCamToWorld().cast<float>();
 
     fMsg->fx = f->fx(publishLvl);
     fMsg->fy = f->fy(publishLvl);
@@ -96,7 +96,7 @@ void PangolinOutput3DWrapper::publishTrackedFrame(const Frame::SharedPtr &kf)
 //    fMsg.isKeyframe = false;
 //
 //
-//    memcpy(fMsg.camToWorld.data(),kf->getScaledCamToWorld().cast<float>().data(),sizeof(float)*7);
+//    memcpy(fMsg.camToWorld.data(),kf->getCamToWorld().cast<float>().data(),sizeof(float)*7);
 //    fMsg.fx = kf->fx(publishLvl);
 //    fMsg.fy = kf->fy(publishLvl);
 //    fMsg.cx = kf->cx(publishLvl);
@@ -109,7 +109,7 @@ void PangolinOutput3DWrapper::publishTrackedFrame(const Frame::SharedPtr &kf)
 //    liveframe_publisher.publish(fMsg);
 //
 //
-//    SE3 camToWorld = se3FromSim3(kf->getScaledCamToWorld());
+//    SE3 camToWorld = se3FromSim3(kf->getCamToWorld());
 //
 //    geometry_msgs::PoseStamped pMsg;
 //
@@ -134,7 +134,7 @@ void PangolinOutput3DWrapper::publishTrackedFrame(const Frame::SharedPtr &kf)
 //    pose_publisher.publish(pMsg);
 }
 
-void PangolinOutput3DWrapper::publishKeyframeGraph(KeyFrameGraph* graph)
+void PangolinOutput3DWrapper::publishKeyframeGraph( const std::shared_ptr<KeyFrameGraph> &graph)
 {
     graph->keyframesAllMutex.lock_shared();
 
@@ -147,7 +147,7 @@ void PangolinOutput3DWrapper::publishKeyframeGraph(KeyFrameGraph* graph)
     for(unsigned int i = 0; i < graph->keyframesAll.size(); i++)
     {
         framePoseData[i].id = graph->keyframesAll[i]->id();
-        memcpy(framePoseData[i].camToWorld, graph->keyframesAll[i]->getScaledCamToWorld().cast<float>().data(), sizeof(float) * 7);
+        memcpy(framePoseData[i].camToWorld, graph->keyframesAll[i]->getCamToWorld().cast<float>().data(), sizeof(float) * 7);
     }
 
     graph->keyframesAllMutex.unlock_shared();

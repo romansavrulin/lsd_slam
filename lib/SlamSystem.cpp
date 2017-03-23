@@ -64,66 +64,17 @@ SlamSystem::SlamSystem( const Configuration &conf )
 	perf(),
 	_conf( conf ),
 	_outputWrapper( nullptr ),
-	keyFrameGraph( new KeyFrameGraph ),
-	trackableKeyFrameSearch( new TrackableKeyFrameSearch( keyFrameGraph, conf ) ),
+	_keyFrameGraph( new KeyFrameGraph ),
+	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph, conf ) ),
 	_initialized( false )
 {
 
 	// Because some of these rely on conf(), need to explicitly call after
- 	// static initialization
-	optThread =        new OptimizationThread( *this, conf.SLAMEnabled );
-	mapThread =        new MappingThread( *this );
-	constraintThread = new ConstraintSearchThread( *this, conf.SLAMEnabled );
-	trackingThread =   new TrackingThread( *this );
-
-	// this->width = w;
-	// this->height = h;
-	// this->K = K;
-	// trackingIsGood = true;
-
-	// keyFrameGraph = new KeyFrameGraph();
-
-	// createNewKeyFrame = false;
-
-	// map =  new DepthMap( conf );
-
-	// newConstraintAdded = false;
-	//haveUnmergedOptimizationOffset = false;
-
-
-	// tracker = new SE3Tracker( _conf.slamImage );
-	// // Do not use more than 4 levels for odometry tracking
-	// for (int level = 4; level < PYRAMID_LEVELS; ++level)
-	// 	tracker->settings.maxItsPerLvl[level] = 0;
-
-	//mappingTrackingReference = new TrackingReference();
-
-
-	// if(SLAMEnabled)
-	// {
-	// 	trackableKeyFrameSearch = new TrackableKeyFrameSearch(keyFrameGraph,conf);
-	// 	constraintTracker = new Sim3Tracker( _conf.slamImage );
-	// 	constraintSE3Tracker = new SE3Tracker( _conf.slamImage );
-	// 	newKFTrackingReference = new TrackingReference();
-	// 	candidateTrackingReference = new TrackingReference();
-	// }
-	// else
-	// {
-	// 	constraintSE3Tracker = 0;
-	// 	trackableKeyFrameSearch = 0;
-	// 	constraintTracker = 0;
-	// 	newKFTrackingReference = 0;
-	// 	candidateTrackingReference = 0;
-	// }
-
-
-	// outputWrapper = 0;
-
-	// keepRunning = true;
-	// depthMapScreenshotFlag = false;
-	// lastTrackingClosenessScore = 0;
-
-	// thread_mapping = std::thread(&SlamSystem::mappingThreadLoop, this);
+ 	// static initialization.  Is this true?
+	optThread.reset( new OptimizationThread( *this, conf.SLAMEnabled ) );
+	mapThread.reset( new MappingThread( *this ) );
+	constraintThread.reset( new ConstraintSearchThread( *this, conf.SLAMEnabled ) );
+	trackingThread.reset( new TrackingThread( *this ) );
 
 	timeLastUpdate.start();
 }
@@ -143,16 +94,11 @@ SlamSystem::~SlamSystem()
 
 	// newConstraintCreatedSignal.notify_all();
 
-	delete mapThread;
-	delete constraintThread;
-	delete optThread;
-	delete trackingThread;
+	mapThread.reset();
+	constraintThread.reset();
+	optThread.reset();
+	trackingThread.reset();
 	LOG(INFO) << "DONE waiting for all threads to exit";
-
-	// delete keyframe graph
-	delete keyFrameGraph;
-
-	delete trackableKeyFrameSearch;
 
 	FrameMemory::getInstance().releaseBuffes();
 
@@ -227,7 +173,7 @@ void SlamSystem::initialize( const Frame::SharedPtr &frame )
 {
 	LOG_IF(FATAL, !conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
 
-	currentKeyFrame.set( frame );
+	currentKeyFrame().set( frame );
 
 	if( frame->hasIDepthBeenSet() ) {
 		LOG(INFO) << "Using initial Depth estimate in first frame.";
@@ -237,22 +183,17 @@ void SlamSystem::initialize( const Frame::SharedPtr &frame )
 		mapThread->randomInit( frame );
 	}
 
-	keyFrameGraph->addFrame( frame.get() );
+	keyFrameGraph()->addFrame( frame );
 
-	if( conf().SLAMEnabled) {
-		boost::lock_guard<boost::shared_mutex> lock( keyFrameGraph->idToKeyFrameMutex );
-		keyFrameGraph->idToKeyFrame.insert(std::make_pair( currentKeyFrame()->id(), currentKeyFrame() ));
+	if( conf().SLAMEnabled ) {
+		boost::lock_guard<boost::shared_mutex> lock( keyFrameGraph()->idToKeyFrameMutex );
+		keyFrameGraph()->idToKeyFrame.insert(std::make_pair( currentKeyFrame()()->id(), currentKeyFrame().const_ref() ));
 	}
 
-	if( _conf.continuousPCOutput) publishKeyframe( currentKeyFrame() );
+	if( _conf.continuousPCOutput) publishKeyframe( currentKeyFrame().const_ref() );
 
 	setInitialized( true );
 }
-
-// void SlamSystem::trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp )
-// {
-// 	trackFrame( Frame::SharedPtr(new Frame(frameID, _conf, timestamp, image)), blockUntilMapped );
-// }
 
 void SlamSystem::trackFrame( Frame *newFrame, bool blockUntilMapped )
 {
@@ -261,9 +202,7 @@ void SlamSystem::trackFrame( Frame *newFrame, bool blockUntilMapped )
 
 void SlamSystem::trackFrame(const Frame::SharedPtr &newFrame, bool blockUntilMapped )
 {
-	if( !initialized() ) {
-		initialize( newFrame );
-	}
+	if( !initialized() ) initialize( newFrame );
 
 	LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
 
@@ -278,12 +217,12 @@ void SlamSystem::trackFrame(const Frame::SharedPtr &newFrame, bool blockUntilMap
 
 void SlamSystem::changeKeyframe( const Frame::SharedPtr &candidate, bool noCreate, bool force, float maxScore)
 {
-	Frame* newReferenceKF=0;
+	Frame::SharedPtr newReferenceKF(nullptr);
 
 	if( conf().doKFReActivation && conf().SLAMEnabled )
 	{
 		Timer timer;
-		newReferenceKF = trackableKeyFrameSearch->findRePositionCandidate( candidate.get(), maxScore );
+		newReferenceKF = trackableKeyFrameSearch()->findRePositionCandidate( candidate, maxScore );
 		perf.findReferences.update( timer );
 	}
 
@@ -308,7 +247,7 @@ void SlamSystem::changeKeyframe( const Frame::SharedPtr &candidate, bool noCreat
 	// createNewKeyFrame = false;
 }
 
-void SlamSystem::loadNewCurrentKeyframe(Frame* keyframeToLoad)
+void SlamSystem::loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad)
 {
 	//std::lock_guard< std::mutex > lock( currentKeyFrame.mutex() );
 
@@ -318,24 +257,24 @@ void SlamSystem::loadNewCurrentKeyframe(Frame* keyframeToLoad)
 
 	LOG_IF(DEBUG, enablePrintDebugInfo && printRegularizeStatistics ) << "re-activate frame " << keyframeToLoad->id() << "!";
 
-	currentKeyFrame.set( keyFrameGraph->idToKeyFrame.find(keyframeToLoad->id())->second );
-	currentKeyFrame()->depthHasBeenUpdatedFlag = false;
+	currentKeyFrame().set( keyFrameGraph()->idToKeyFrame.find(keyframeToLoad->id())->second );
+	currentKeyFrame()()->depthHasBeenUpdatedFlag = false;
 }
 
 
 void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate)
 {
-	LOG_IF(INFO, printThreadingInfo) << "CREATE NEW KF " << newKeyframeCandidate->id() << ", replacing " << currentKeyFrame()->id();
+	LOG_IF(INFO, printThreadingInfo) << "CREATE NEW KF " << newKeyframeCandidate->id() << ", replacing " << currentKeyFrame()()->id();
 
 	if( conf().SLAMEnabled)
 	{
-		boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph->idToKeyFrameMutex );
-		keyFrameGraph->idToKeyFrame.insert(std::make_pair(newKeyframeCandidate->id(), newKeyframeCandidate));
+		boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->idToKeyFrameMutex );
+		keyFrameGraph()->idToKeyFrame.insert(std::make_pair(newKeyframeCandidate->id(), newKeyframeCandidate));
 	}
 
 	// propagate & make new.
-	mapThread->map->createKeyFrame(newKeyframeCandidate.get());
-	currentKeyFrame.set( newKeyframeCandidate );								// Locking
+	mapThread->map->createKeyFrame(newKeyframeCandidate);
+	currentKeyFrame().set( newKeyframeCandidate );								// Locking
 
 
 
@@ -384,12 +323,12 @@ void SlamSystem::addTimingSamples()
 
 void SlamSystem::updateDisplayDepthMap()
 {
-	if( !displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
+	if( !conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
 
 	mapThread->map->debugPlotDepthMap();
 	double scale = 1;
-	if( currentKeyFrame().get() != nullptr )
-		scale = currentKeyFrame()->getScaledCamToWorld().scale();
+	if( (bool)currentKeyFrame()() )
+		scale = currentKeyFrame()()->getCamToWorld().scale();
 
 	// debug plot depthmap
 	char buf1[200];
@@ -398,7 +337,7 @@ void SlamSystem::updateDisplayDepthMap()
 	snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d",
 			mapThread->map->_perf.update.ms(), mapThread->map->_perf.update.rate(),
 			trackingThread->perf.ms(), trackingThread->perf.rate(),
-			currentKeyFrame()->numFramesTrackedOnThis, currentKeyFrame()->numMappedOnThis ); //, (int)unmappedTrackedFrames().size());
+			currentKeyFrame()()->numFramesTrackedOnThis, currentKeyFrame()()->numMappedOnThis ); //, (int)unmappedTrackedFrames().size());
 
 	// snprintf(buf2,200,"dens %2.0f%%; good %2.0f%%; scale %2.2f; res %2.1f/; usg %2.0f%%; Map: %d F, %d KF, %d E, %.1fm Pts",
 	// 		100*currentKeyFrame->numPoints/(float)(conf().slamImage.area()),
@@ -406,13 +345,13 @@ void SlamSystem::updateDisplayDepthMap()
 	// 		scale,
 	// 		tracking_lastResidual,
 	// 		100*tracking_lastUsage,
-	// 		(int)keyFrameGraph->allFramePoses.size(),
-	// 		keyFrameGraph->totalVertices,
-	// 		(int)keyFrameGraph->edgesAll.size(),
-	// 		1e-6 * (float)keyFrameGraph->totalPoints);
+	// 		(int)keyFrameGraph()->allFramePoses.size(),
+	// 		keyFrameGraph()->totalVertices,
+	// 		(int)keyFrameGraph()->edgesAll.size(),
+	// 		1e-6 * (float)keyFrameGraph()->totalPoints);
 
 
-	if(onSceenInfoDisplay)
+	if( conf().onSceenInfoDisplay )
 		printMessageOnCVImage(mapThread->map->debugImageDepth, buf1, buf2);
 
 	CHECK( mapThread->map->debugImageDepth.data != NULL );
@@ -423,23 +362,23 @@ void SlamSystem::updateDisplayDepthMap()
 
 SE3 SlamSystem::getCurrentPoseEstimate()
 {
-	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph->allFramePosesMutex );
-	if( keyFrameGraph->allFramePoses.size() > 0)
-		return se3FromSim3(keyFrameGraph->allFramePoses.back()->getCamToWorld());
+	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->allFramePosesMutex );
+	if( keyFrameGraph()->allFramePoses.size() > 0)
+		return se3FromSim3(keyFrameGraph()->allFramePoses.back()->getCamToWorld());
 
 	return Sophus::SE3();
 }
 
 Sophus::Sim3f SlamSystem::getCurrentPoseEstimateScale()
 {
-	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph->allFramePosesMutex );
-	if(keyFrameGraph->allFramePoses.size() > 0)
-		return keyFrameGraph->allFramePoses.back()->getCamToWorld().cast<float>();
+	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->allFramePosesMutex );
+	if(keyFrameGraph()->allFramePoses.size() > 0)
+		return keyFrameGraph()->allFramePoses.back()->getCamToWorld().cast<float>();
 
 	return Sophus::Sim3f();
 }
 
-std::vector<FramePoseStruct*> SlamSystem::getAllPoses()
+std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()
 {
-	return keyFrameGraph->allFramePoses;
+	return keyFrameGraph()->allFramePoses;
 }

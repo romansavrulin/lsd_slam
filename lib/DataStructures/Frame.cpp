@@ -23,6 +23,8 @@
 #include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "Tracking/TrackingReference.h"
 
+#include "DataStructures/FramePoseStruct.h"
+
 #include <g3log/g3log.hpp>
 
 
@@ -33,7 +35,10 @@ int privateFrameAllocCount = 0;
 
 Frame::Frame(int id, const Configuration &conf,
 							double timestamp, const unsigned char* image )
-	: _conf( conf )
+	: _conf( conf ),
+	pose( new FramePoseStruct(*this) ),
+	_trackingParent( nullptr ),
+	data( id, timestamp, conf.camera, conf.slamImage )
 {
 	initialize(id, timestamp);
 
@@ -57,7 +62,9 @@ Frame::Frame(int id, const Configuration &conf,
 
 Frame::Frame(int id, const Configuration &conf,
 							double timestamp, const float* image )
-	: _conf( conf )
+	: _conf( conf ),
+	pose( new FramePoseStruct(*this)),
+	data( id, timestamp, conf.camera, conf.slamImage  )
 
 {
 	initialize(id, timestamp);
@@ -73,6 +80,49 @@ Frame::Frame(int id, const Configuration &conf,
 						<< ", now there are " << privateFrameAllocCount;
 }
 
+
+
+void Frame::initialize(int id, double timestamp)
+{
+
+	// data.fx[0] = K(0,0);
+	// data.fy[0] = K(1,1);
+	// data.cx[0] = K(0,2);
+	// data.cy[0] = K(1,2);
+	//
+	// data.KInv[0] = K.inverse();
+	// data.fxInv[0] = data.KInv[0](0,0);
+	// data.fyInv[0] = data.KInv[0](1,1);
+	// data.cxInv[0] = data.KInv[0](0,2);
+	// data.cyInv[0] = data.KInv[0](1,2);
+
+	depthHasBeenUpdatedFlag = false;
+
+	referenceID = -1;
+	referenceLevel = -1;
+
+	numMappablePixels = -1;
+
+
+	permaRefNumPts = 0;
+	permaRef_colorAndVarData = 0;
+	permaRef_posData = 0;
+
+	meanIdepth = 1;
+	numPoints = 0;
+
+	numFramesTrackedOnThis = numMappedOnThis = numMappedOnThisTotal = 0;
+
+	idxInKeyframes = -1;
+
+	edgeErrorSum = edgesNum = 1;
+
+	lastConstraintTrackedCamToWorld = Sim3();
+
+	isActive = false;
+}
+
+
 Frame::~Frame()
 {
 
@@ -80,10 +130,10 @@ Frame::~Frame()
 
 	FrameMemory::getInstance().deactivateFrame(this);
 
-	if(!pose->isRegisteredToGraph)
-		delete pose;
-	else
-		pose->frame = 0;
+	// if(!pose->isRegisteredToGraph)
+	// 	delete pose;
+	// // else
+	// // 	pose->frame = 0;
 
 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
 	{
@@ -395,84 +445,6 @@ bool Frame::minimizeInMemory()
 		return true;
 	}
 	return false;
-}
-
-void Frame::initialize(int id, double timestamp)
-{
-	data.id = id;
-
-	pose = new FramePoseStruct(this);
-
-	data.camera[0] = _conf.camera;
-	// data.fx[0] = K(0,0);
-	// data.fy[0] = K(1,1);
-	// data.cx[0] = K(0,2);
-	// data.cy[0] = K(1,2);
-	//
-	// data.KInv[0] = K.inverse();
-	// data.fxInv[0] = data.KInv[0](0,0);
-	// data.fyInv[0] = data.KInv[0](1,1);
-	// data.cxInv[0] = data.KInv[0](0,2);
-	// data.cyInv[0] = data.KInv[0](1,2);
-
-	data.timestamp = timestamp;
-
-	data.hasIDepthBeenSet = false;
-	depthHasBeenUpdatedFlag = false;
-
-	referenceID = -1;
-	referenceLevel = -1;
-
-	numMappablePixels = -1;
-
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
-	{
-		data.width[level] = _conf.slamImage.width >> level;
-		data.height[level] = _conf.slamImage.height >> level;
-
-		data.imageValid[level] = false;
-		data.gradientsValid[level] = false;
-		data.maxGradientsValid[level] = false;
-		data.idepthValid[level] = false;
-		data.idepthVarValid[level] = false;
-
-		data.image[level] = 0;
-		data.gradients[level] = 0;
-		data.maxGradients[level] = 0;
-		data.idepth[level] = 0;
-		data.idepthVar[level] = 0;
-		data.reActivationDataValid = false;
-
-// 		data.refIDValid[level] = false;
-
-		if (level > 0)
-		{
-			data.camera[level] = data.camera[0].scale( 1.0f / (int)(1<<level) );
-		}
-	}
-
-	data.validity_reAct = 0;
-	data.idepthVar_reAct = 0;
-	data.idepth_reAct = 0;
-
-	data.refPixelWasGood = 0;
-
-	permaRefNumPts = 0;
-	permaRef_colorAndVarData = 0;
-	permaRef_posData = 0;
-
-	meanIdepth = 1;
-	numPoints = 0;
-
-	numFramesTrackedOnThis = numMappedOnThis = numMappedOnThisTotal = 0;
-
-	idxInKeyframes = -1;
-
-	edgeErrorSum = edgesNum = 1;
-
-	lastConstraintTrackedCamToWorld = Sim3();
-
-	isActive = false;
 }
 
 void Frame::setDepth_Allocate()
@@ -887,5 +859,55 @@ void Frame::releaseIDepthVar(int level)
 	FrameMemory::getInstance().returnBuffer(data.idepthVar[level]);
 	data.idepthVar[level] = 0;
 }
+
+
+//====================
+
+Frame::Data::Data( int i, double ts, const Camera &cam, const SlamImageSize &slamImageSize )
+	: id( i ), timestamp( ts )
+	{
+
+		camera[0] = cam;
+
+
+		for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+		{
+			width[level] = slamImageSize.width >> level;
+			height[level] = slamImageSize.height >> level;
+
+			imageValid[level] = false;
+			gradientsValid[level] = false;
+			maxGradientsValid[level] = false;
+			idepthValid[level] = false;
+			idepthVarValid[level] = false;
+
+			image[level] = 0;
+			gradients[level] = 0;
+			maxGradients[level] = 0;
+			idepth[level] = 0;
+			idepthVar[level] = 0;
+			reActivationDataValid = false;
+
+	// 		refIDValid[level] = false;
+
+			if (level > 0)
+			{
+				camera[level] = camera[0].scale( 1.0f / (int)(1<<level) );
+			}
+		}
+
+		validity_reAct = 0;
+		idepthVar_reAct = 0;
+		idepth_reAct = 0;
+
+		refPixelWasGood = 0;
+
+		hasIDepthBeenSet = false;
+
+	}
+
+
+
+
 
 }

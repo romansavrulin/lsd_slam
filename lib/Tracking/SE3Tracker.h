@@ -56,18 +56,19 @@ public:
 	~SE3Tracker();
 
 
+	// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	SE3 trackFrame(
 			TrackingReference* reference,
 			Frame* frame,
 			const SE3& frameToReference_initialEstimate);
 
-
+			// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	SE3 trackFrameOnPermaref(
 			Frame* reference,
 			Frame* frame,
 			SE3 referenceToFrame);
 
-
+			// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	float checkPermaRefOverlap(
 			Frame* reference,
 			SE3 referenceToFrame);

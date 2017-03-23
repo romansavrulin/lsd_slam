@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "IOWrapper/Output3DWrapper.h"
 #include "Keyframe.h"
 #include "LSD_GUI/GUI.h"
@@ -31,7 +33,7 @@ class PangolinOutput3DWrapper : public Output3DWrapper
         PangolinOutput3DWrapper( const Configuration &conf, GUI & gui);
         virtual ~PangolinOutput3DWrapper();
 
-        virtual void publishKeyframeGraph(KeyFrameGraph* graph);
+        virtual void publishKeyframeGraph(const std::shared_ptr<KeyFrameGraph> &graph);
 
         // publishes a keyframe. if that frame already existis, it is overwritten, otherwise it is added.
         virtual void publishKeyframe(const Frame::SharedPtr &f);

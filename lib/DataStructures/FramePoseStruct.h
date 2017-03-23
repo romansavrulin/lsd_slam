@@ -19,32 +19,31 @@
 */
 
 #pragma once
+#include <memory>
+
 #include "util/SophusUtil.h"
 #include "GlobalMapping/g2oTypeSim3Sophus.h"
-
 
 
 namespace lsd_slam
 {
 class Frame;
+
 class FramePoseStruct {
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	FramePoseStruct(Frame* frame);
-	virtual ~FramePoseStruct();
+	typedef std::shared_ptr<FramePoseStruct> SharedPtr;
 
-	// parent, the frame originally tracked on. never changes.
-	FramePoseStruct* trackingParent;
+	FramePoseStruct( Frame &frame );
+	virtual ~FramePoseStruct();
 
 	// set initially as tracking result (then it's a SE(3)),
 	// and is changed only once, when the frame becomes a KF (->rescale).
 	Sim3 thisToParent_raw;
 
-
-	int frameID;
-	Frame* frame;
-
+ Frame &frame;
+	// int frameID;
 
 	// whether this poseStruct is registered in the Graph. if true MEMORY WILL BE HANDLED BY GRAPH
 	bool isRegisteredToGraph;
@@ -60,8 +59,10 @@ public:
 
 	void setPoseGraphOptResult(Sim3 camToWorld);
 	void applyPoseGraphOptResult();
+
 	Sim3 getCamToWorld(int recursionDepth = 0);
 	void invalidateCache();
+
 private:
 	int cacheValidFor;
 	static int cacheValidCounter;

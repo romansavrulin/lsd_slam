@@ -26,7 +26,7 @@ public:
 	{ fullReConstraintTrackComplete.reset();
 		if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::callbackDoFullReConstraintTrack, this )); }
 
-	void newKeyFrame( Frame *frame )
+	void newKeyFrame( const Frame::SharedPtr &frame )
 	{ if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::callbackNewKeyFrame, this, frame )); }
 
 	ThreadSynchronizer fullReConstraintTrackComplete;
@@ -46,10 +46,10 @@ private:
 	//=== Callbacks ===
 	void callbackIdle( void );
 	int callbackDoFullReConstraintTrack( void );
-	void callbackNewKeyFrame( Frame *frame );
+	void callbackNewKeyFrame( const Frame::SharedPtr &frame );
 
 	//=== Internal functions ====
-	int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH);
+	int findConstraintsForNewKeyFrames(const Frame::SharedPtr &newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH);
 
 	std::unique_ptr<active_object::ActiveIdle> _thread;
 
@@ -61,7 +61,7 @@ private:
 			KFConstraintStruct* e1=0, KFConstraintStruct* e2=0);
 
 	void testConstraint(
-			Frame* candidate,
+			const Frame::SharedPtr &candidate,
 			KFConstraintStruct* &e1_out, KFConstraintStruct* &e2_out,
 			Sim3 candidateToFrame_initialEstimate,
 			float strictness);
