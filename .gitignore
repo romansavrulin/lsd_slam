@@ -1,7 +1,6 @@
 .AppleDouble/
-*/build/
 *.so
 .DS_Store
-build[_-]*/
+build[_-][A-Za-z]*/
 config.rb
 __pycache__/

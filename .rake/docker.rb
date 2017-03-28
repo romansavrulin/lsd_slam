@@ -53,14 +53,13 @@ class DockerTasks
 
     namespace :docker do
 
+      task :image => "docker:image:build"
+
       desc "Build test docker image."
       namespace :image do
 
-        desc "Build all Docker images"
-        task :all => [:build, :coverity]
-
         task :build do
-          in_docker("build") {
+          in_docker {
             sh "docker build --pull -t #{docker_image} ."
           }
         end
