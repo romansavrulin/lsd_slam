@@ -1,11 +1,13 @@
 
 require 'rake'
+require 'cmake'
 
 class BuildTasks
   include Rake::DSL
 
-  def initialize( builds )
+  def initialize( builds, opts = {} )
     @builds = builds
+    @cmake = opts[:cmake] || CMake.new
 
     @build_root = "build"
 
@@ -34,18 +36,13 @@ class BuildTasks
       end
 
       task :cmake => build_dir do
-        @cmake_opts = ['-DBUILD_UNIT_TESTS:BOOL=True']
-        @cmake_opts << '-DBUILD_GUI:bool=False' if build.noGUI?
-
-        cmake_args = %W( -DCMAKE_BUILD_TYPE:string=#{build.cmakeType}
-                      #{ENV['CMAKE_FLAGS']}
-                      #{@cmake_opts.join(' ')} )
-
-        cmake_args << "-DEXTERNAL_PROJECT_PARALLELISM:string=#{@build_parallelism}" if @build_parallelism
-
+        @cmake.define( :BUILD_UNIT_TESTS, :bool, "True" )
+        @cmake.define( :BUILD_GUI, :bool, "False") if build.noGUI?
+        @cmake.build_type( build.cmakeType )
+        @cmake.define( :EXTERNAL_PROJECT_PARALLELISM, :string, @build_parallelism ) if @build_parallelism
 
         chdir build_dir do
-          sh "cmake % s .." % cmake_args.join(' ')
+          sh "cmake %s .." % @cmake.opts
         end
       end
 
@@ -69,7 +66,27 @@ class BuildTasks
         end
       end
 
-end
+      task :clean  do
+        chdir build_dir do
+          sh "make clean"
+        end
+      end
+
+      desc "Run all tests"
+      task :test => [ :build, "test:unit" ]
+
+      namespace :test do
+
+        desc "Unit tests for #{build}"
+        task :unit do
+          chdir build_dir do
+            sh "make unit_test"
+          end
+        end
+
+      end
+
+    end
 
 
     #
@@ -109,27 +126,7 @@ end
     #     #   end
     #     # end
     #
-    #     task :clean  do
-    #       chdir build_dir do
-    #         sh "make clean"
-    #       end
-    #     end
-    #
-    #     desc "Run all tests"
-    #     task :test => [ :build, "test:unit" ]
-    #
-    #     namespace :test do
-    #
-    #       desc "Unit tests for #{build}"
-    #       task :unit do
-    #         chdir build_dir do
-    #           sh "make unit_test"
-    #         end
-    #       end
-    #
-    #     end
-    #
-    #   end
+
     #
     # end
     # )
