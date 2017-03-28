@@ -87,12 +87,17 @@ builds.each do |build|
     task :coverity => "deps" do
       chdir build_dir do
         do_make "cov-build --dir cov-int"
-        sh "tar -czvf lsdslam.tar.gz cov-int"
+        sh "tar -czvf ../coverity-#{build}-lsdslam.tar.gz cov-int"
+      end
+    end
 
+    namespace :coverity do
+      task :submit do
         if @coverity_email and @coverity_token
-        sh "curl --form token=#{@coverity_token} \
+        sh "curl -o response.txt \
+              --form token=#{@coverity_token} \
               --form email=#{@coverity_email} \
-              --form file=@lsdslam.tar.gz \
+              --form file=@coverity-#{build}-lsdslam.tar.gz \
               --form version=\"latest\" \
               --form description=\"Git commit #{`git rev-parse HEAD`}\" \
               https://scan.coverity.com/builds?project=amarburg%2Flsd_slam"
