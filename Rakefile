@@ -49,7 +49,7 @@ builds.each do |build|
     @cmake_opts << '-DBUILD_GUI:bool=False' if( build =~ /NoGUI/  )
 
     desc "Make lsd_slam for #{build}"
-    task :build => ["cmake", "deps", "make", "test"]
+    task :build => ["cmake", "deps", "make"]
 
     build_dir = [build_root, build].join('-')
 
