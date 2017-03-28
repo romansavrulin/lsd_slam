@@ -100,7 +100,7 @@ class DockerTasks
       task :console do
         in_docker {
           args = %w(docker run -ti --entrypoint /bin/bash) + docker_run_opts
-          sh *args
+          sh(*args)
         }
       end
     end
