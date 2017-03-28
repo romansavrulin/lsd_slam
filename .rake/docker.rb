@@ -1,6 +1,8 @@
 require 'rake'
 require 'pathname'
 
+require 'path'
+
 #
 #
 #
@@ -12,8 +14,7 @@ class DockerTasks
 
     @builds = opts[:builds] || %w( debug release )
 
-    @root_dir = Pathname.new(__FILE__).parent.parent
-    @docker_path = @root_dir.join('.docker')
+    @docker_path = ROOT_DIR.join('.docker')
 
     define_image_tasks
     define_build_tasks
@@ -36,7 +37,7 @@ class DockerTasks
               docker_image
             end
 
-    docker_opts = %W( -v #{@root_dir}:/home/lsdslam/lsd_slam
+    docker_opts = %W( -v #{ROOT_DIR}:/home/lsdslam/lsd_slam
                     --env BUILD_ROOT=build_docker_#{image.gsub(/:/,'_')}
                     #{image})
 

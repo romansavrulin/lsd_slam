@@ -6,7 +6,7 @@ $:.unshift File.dirname(__FILE__) + "/.rake"
 require 'docker'
 require 'conan'
 require 'dependencies'
-require 'tests'
+require 'benchmark'
 require 'build'
 require 'build_tasks'
 
@@ -38,9 +38,10 @@ newBuilds = [ Build.new( "Debug", cmake: cmake  ),
             ]
 BuildTasks.new( newBuilds )
 
+task :default => "debug:test"
+
 
 # Conan builds default to no GUI, so Debug_GUI needs to be explicitly included
 ConanTasks.new( builds: %w( Release Debug Debug_GUI ), opts: @conan_opts, settings: @conan_settings, scopes: @conan_scopes )
-
 DockerTasks.new( builds: %w( Release Debug Debug_GUI ) )
-BenchmarkTasks.new( builds: %w( Release Debug Debug_GUI ) )
+BenchmarkTasks.new( newBuilds )
