@@ -5,6 +5,8 @@
  *      Author: thomas
  */
 
+//TODO: Hm, the abstractions in this file have gotten a little stale, look at it again
+
 #pragma once
 
 #include <mutex>
@@ -70,7 +72,7 @@ class MutexObject
 
         void notifyAll()
         {
-            // std::lock_guard lock(mutex);
+            //std::lock_guard<std::mutex> lock(mutex);
             _cv.notify_all();
         }
 
@@ -171,7 +173,7 @@ class ThreadMutexObject
 
         void notifyAll()
         {
-            // std::lock_guard lock(mutex);
+            //std::lock_guard<std::mutex> lock(mutex);
             signal.notify_all();
         }
 

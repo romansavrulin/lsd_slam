@@ -27,6 +27,9 @@ MappingThread::MappingThread( SlamSystem &system )
 		_newKeyFrame( nullptr ),
 		relocalizer( system.conf() ),
 		map( new DepthMap( system.conf() ) ),
+		unmappedTrackedFrames(),
+		unmappedTrackedFramesMutex(),
+		trackedFramesMapped(),
 		mappingTrackingReference( new TrackingReference() ),
 		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::callbackIdle, this ), std::chrono::milliseconds(200)) )
 {
@@ -41,7 +44,7 @@ MappingThread::~MappingThread()
 	delete map;
 
 	// make sure to reset all shared pointers to all frames before deleting the keyframegraph!
-	unmappedTrackedFrames().clear();
+	unmappedTrackedFrames.clear();
 
 	// latestFrameTriedForReloc.reset();
 	// latestTrackedFrame.reset();
@@ -68,11 +71,11 @@ void MappingThread::callbackUnmappedTrackedFrames( void )
 	bool nMapped = false;
 	size_t sz = 0;
 	{
-		std::lock_guard<std::mutex> lock(unmappedTrackedFrames.mutex() );
-		sz = unmappedTrackedFrames().size();
+		std::lock_guard<std::mutex> lock( unmappedTrackedFramesMutex );
+		sz = unmappedTrackedFrames.size();
 
 		if( sz > 0 )
-			nMapped = unmappedTrackedFrames().back()->trackingParent()->numMappedOnThisTotal < 10;
+			nMapped = unmappedTrackedFrames.back()->trackingParent()->numMappedOnThisTotal < 10;
 	}
 
 	LOG(INFO) << "In unmapped tracked frames callback with " << sz << " frames";
@@ -89,9 +92,11 @@ void MappingThread::callbackUnmappedTrackedFrames( void )
 		// waiting on the signal.
 		//
 		// This should be called once per callback otherwise TrackingThread might get hung up?
-		unmappedTrackedFrames.notifyAll();
+		trackedFramesMapped.notify();
 		//}
 	}
+
+	LOG(INFO) << "Done mapping.";
 }
 
 void MappingThread::callbackMergeOptimizationOffset()
@@ -264,26 +269,26 @@ bool MappingThread::updateKeyframe()
 	std::shared_ptr<Frame> reference = nullptr;
 	std::deque< std::shared_ptr<Frame> > references;
 
-	unmappedTrackedFrames.lock();
+	unmappedTrackedFramesMutex.lock();
 
 	// Drops frames that have a different tracking parent.
-	while(unmappedTrackedFrames().size() > 0 &&
-			(!unmappedTrackedFrames().front()->hasTrackingParent() ||
-				!unmappedTrackedFrames().front()->isTrackingParent( _system.currentKeyFrame().const_ref() ) ) ) {
-		unmappedTrackedFrames().front()->clear_refPixelWasGood();
-		unmappedTrackedFrames().pop_front();
+	while(unmappedTrackedFrames.size() > 0 &&
+			  (!unmappedTrackedFrames.front()->hasTrackingParent() ||
+			   !unmappedTrackedFrames.front()->isTrackingParent( _system.currentKeyFrame().const_ref() ) ) ) {
+		unmappedTrackedFrames.front()->clear_refPixelWasGood();
+		unmappedTrackedFrames.pop_front();
 	}
 
 	// clone list
-	if(unmappedTrackedFrames().size() > 0) {
+	if(unmappedTrackedFrames.size() > 0) {
 		// Copies all but only pops one?
-		 for(unsigned int i=0;i<unmappedTrackedFrames().size(); i++)
-		 	references.push_back(unmappedTrackedFrames()[i]);
+		 for(unsigned int i=0;i<unmappedTrackedFrames.size(); i++)
+		 	references.push_back(unmappedTrackedFrames[i]);
 		//unmappedTrackedFrames().swap( references );
 
-		std::shared_ptr<Frame> popped = unmappedTrackedFrames().front();
-		unmappedTrackedFrames().pop_front();
-		unmappedTrackedFrames.unlock();
+		std::shared_ptr<Frame> popped = unmappedTrackedFrames.front();
+		unmappedTrackedFrames.pop_front();
+		unmappedTrackedFramesMutex.unlock();
 
 		LOGF_IF( INFO, printThreadingInfo,
 			"MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame().const_ref()->id());
@@ -295,7 +300,7 @@ bool MappingThread::updateKeyframe()
 	}
 	else
 	{
-		unmappedTrackedFrames.unlock();
+		unmappedTrackedFramesMutex.unlock();
 		return false;
 	}
 

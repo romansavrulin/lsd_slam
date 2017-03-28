@@ -283,13 +283,14 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 
 	// If blocking is requested...
 	if(blockUntilMapped && trackingIsGood() ){
-		while( _system.mapThread->unmappedTrackedFrames().size() > 0 ) {
-			LOG(DEBUG) << "Waiting for mapping to be done...";
-			_system.mapThread->unmappedTrackedFrames.wait( );
+		while( _system.mapThread->unmappedTrackedFrames.size() > 0 ) {
+			LOG(INFO) << "Waiting for mapping to be done...";
+			_system.mapThread->trackedFramesMapped.wait( );
+			LOG(INFO) << " .... done waiting for mapping";
 		}
 	}
 
-	LOG_IF( DEBUG, printThreadingInfo ) << "Exiting trackFrame";
+	LOG_IF( INFO, printThreadingInfo ) << "Exiting trackFrame";
 
 }
 

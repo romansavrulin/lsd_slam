@@ -33,8 +33,8 @@ public:
 	void pushUnmappedTrackedFrame( const Frame::SharedPtr &frame )
 	{
 		{
-			std::lock_guard<std::mutex> lock(unmappedTrackedFrames.mutex() );
-			unmappedTrackedFrames().push_back( frame );
+			std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
+			unmappedTrackedFrames.push_back( frame );
 		}
 
 		if( _thread ) {
@@ -71,7 +71,9 @@ public:
 	// SET & READ EVERYWHERE
 	// std::mutex currentKeyFrameMutex;
 
-	MutexObject< std::deque< Frame::SharedPtr > > unmappedTrackedFrames;
+	std::deque< Frame::SharedPtr > unmappedTrackedFrames;
+	std::mutex unmappedTrackedFramesMutex;
+	ThreadSynchronizer trackedFramesMapped;
 
 	DepthMap* map;
 	TrackingReference* mappingTrackingReference;

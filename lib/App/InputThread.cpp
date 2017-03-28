@@ -45,10 +45,9 @@ namespace lsd_slam {
 
         std::chrono::time_point<std::chrono::steady_clock> start(std::chrono::steady_clock::now());
 
-        cv::Mat imageDist = cv::Mat( system->conf().inputImage.cvSize(), CV_8U);
-
         if( dataSource->grab() ) {
 
+          cv::Mat imageDist = cv::Mat( system->conf().inputImage.cvSize(), CV_8U);
           dataSource->getImage( imageDist );
           undistorter->undistort(imageDist, image);
 
@@ -74,6 +73,7 @@ namespace lsd_slam {
           }
 
         } else {
+          LOG(INFO) << "Bad read, still running...";
           if( system->conf().stopOnFailedRead ) break;
         }
 
