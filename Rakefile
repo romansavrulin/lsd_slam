@@ -7,6 +7,8 @@ require 'docker'
 require 'conan'
 require 'dependencies'
 require 'tests'
+require 'build'
+require 'build_tasks'
 
 ## Set defaults
 @cmake_opts = ['-DBUILD_UNIT_TESTS:BOOL=True']
@@ -29,10 +31,13 @@ load 'config.rb' if FileTest::exists? 'config.rb'
 build_root = ENV['BUILD_ROOT'] || "build"
 
 
+newBuilds = [ Build.new( "Debug" ) ]
+BuildTasks.new( newBuilds )
+
 
 task :default => "debug:test"
 
-builds = %w( Release Debug Debug_NoGUI )
+builds = %w( Release Debug_NoGUI )
 builds.each do |build|
 
   deps_touchfile = '.DEPS_MADE'
