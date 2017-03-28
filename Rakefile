@@ -6,6 +6,7 @@ $:.unshift File.dirname(__FILE__) + "/.rake"
 require 'docker'
 require 'conan'
 require 'dependencies'
+require 'tests'
 
 ## Set defaults
 @cmake_opts = ['-DBUILD_UNIT_TESTS:BOOL=True']
@@ -145,5 +146,5 @@ end
 # Conan builds default to no GUI, so Debug_GUI needs to be explicitly included
 ConanTasks.new( builds: %w( Release Debug Debug_GUI ), opts: @conan_opts, settings: @conan_settings, scopes: @conan_scopes )
 
-
 DockerTasks.new( builds: builds )
+BenchmarkTasks.new( builds: builds )
