@@ -33,14 +33,14 @@ namespace lsd_slam
 
 int privateFrameAllocCount = 0;
 
-Frame::Frame(int id, const Configuration &conf,
+Frame::Frame(int frameId, const Configuration &conf,
 							double timestamp, const unsigned char* image )
 	: _conf( conf ),
 	pose( new FramePoseStruct(*this) ),
 	_trackingParent( nullptr ),
-	data( id, timestamp, conf.camera, conf.slamImage )
+	data( frameId, timestamp, conf.camera, conf.slamImage )
 {
-	initialize(id, timestamp);
+	initialize(timestamp);
 
 	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 	float* maxPt = data.image[0] + data.width[0]*data.height[0];
@@ -56,18 +56,18 @@ Frame::Frame(int id, const Configuration &conf,
 	privateFrameAllocCount++;
 
 	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo)
-						<< "ALLOCATED frame " << this->id()
+						<< "ALLOCATED frame " << id()
 						<< ", now there are " << privateFrameAllocCount;
 }
 
-Frame::Frame(int id, const Configuration &conf,
+Frame::Frame(int frameId, const Configuration &conf,
 							double timestamp, const float* image )
 	: _conf( conf ),
 	pose( new FramePoseStruct(*this)),
-	data( id, timestamp, conf.camera, conf.slamImage  )
+	data( frameId, timestamp, conf.camera, conf.slamImage  )
 
 {
-	initialize(id, timestamp);
+	initialize(timestamp);
 
 	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 	memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
@@ -76,13 +76,13 @@ Frame::Frame(int id, const Configuration &conf,
 	privateFrameAllocCount++;
 
 	LOG_IF(INFO, printMemoryDebugInfo)
-						<< "ALLOCATED frame " << this->id()
+						<< "ALLOCATED frame " << id()
 						<< ", now there are " << privateFrameAllocCount;
 }
 
 
 
-void Frame::initialize(int id, double timestamp)
+void Frame::initialize(double timestamp)
 {
 
 	// data.fx[0] = K(0,0);
@@ -155,6 +155,12 @@ Frame::~Frame()
 
 	privateFrameAllocCount--;
 	LOGF_IF(DEBUG, enablePrintDebugInfo && printMemoryDebugInfo, "DELETED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
+}
+
+bool Frame::isTrackingParent( const SharedPtr &other )
+{
+	//LOG(INFO) << "Comparing my id " << id() << " to " << other->id();
+	return hasTrackingParent() && ( other->id() == trackingParent()->id() );
 }
 
 

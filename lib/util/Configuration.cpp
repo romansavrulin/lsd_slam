@@ -8,7 +8,7 @@ namespace lsd_slam {
       SLAMEnabled( true ),
       doKFReActivation( true ),
       doMapping( true ),
-      continuousPCOutput( false ),
+      continuousPCOutput( true ),
 
       autoRun( true ),
       autoRunWithinFrame( true ),

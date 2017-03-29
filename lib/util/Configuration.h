@@ -21,14 +21,7 @@ namespace lsd_slam {
 class Configuration {
 public:
 
-  Configuration() :
-    doDepth( NO_STEREO ),
-    stopOnFailedRead( true ),
-    SLAMEnabled( true ),
-    doKFReActivation( true ),
-    doMapping( true ),
-    continuousPCOutput( false )
-  {;}
+  Configuration();
 
   ImageSize inputImage;
   SlamImageSize slamImage;
@@ -46,7 +39,7 @@ public:
   // controlled via keystrokes
  bool autoRun;
  bool autoRunWithinFrame;
- int debugDisplay;
+ int  debugDisplay;
  bool displayDepthMap;
  bool onSceenInfoDisplay;
  bool dumpMap;

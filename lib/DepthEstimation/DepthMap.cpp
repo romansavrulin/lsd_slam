@@ -1077,6 +1077,8 @@ void DepthMap::updateKeyframe(std::deque< Frame::SharedPtr > referenceFrames)
 {
 	assert(isValid());
 
+	LOG(INFO) << "In DepthMap::updateKeyframe";
+
 	Timer timeAll;
 
 	oldest_referenceFrame = referenceFrames.front();

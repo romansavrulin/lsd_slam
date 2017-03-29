@@ -158,13 +158,9 @@ public:
 	bool hasTrackingParent()    { return (bool)_trackingParent; }
 	SharedPtr &trackingParent()  { return _trackingParent; }
 
-	bool isTrackingParent( const SharedPtr &other )
-	{
-		return hasTrackingParent() && ( other->id() == id() );
-	}
+	bool isTrackingParent( const SharedPtr &other );
 
 	Sim3 lastConstraintTrackedCamToWorld;
-
 
 
 	/** Pointers to all adjacent Frames in graph. empty for non-keyframes.*/
@@ -224,7 +220,7 @@ private:
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
 
-	void initialize(int id, double timestamp);
+	void initialize(double timestamp);
 	void setDepth_Allocate();
 
 	void buildImage(int level);

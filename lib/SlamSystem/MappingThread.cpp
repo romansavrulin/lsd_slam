@@ -275,6 +275,13 @@ bool MappingThread::updateKeyframe()
 	while(unmappedTrackedFrames.size() > 0 &&
 			  (!unmappedTrackedFrames.front()->hasTrackingParent() ||
 			   !unmappedTrackedFrames.front()->isTrackingParent( _system.currentKeyFrame().const_ref() ) ) ) {
+					 if( unmappedTrackedFrames.front()->hasTrackingParent() ) {
+					 LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id()
+					  				<< " its has tracking parent " << unmappedTrackedFrames.front()->trackingParent()->id()
+										<< " current keyframe is " << _system.currentKeyFrame().const_ref()->id();
+						} else {
+							LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id() << " which doesn't have a tracking parent";
+						}
 		unmappedTrackedFrames.front()->clear_refPixelWasGood();
 		unmappedTrackedFrames.pop_front();
 	}

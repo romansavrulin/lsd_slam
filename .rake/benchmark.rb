@@ -33,7 +33,8 @@ class BenchmarkTasks
   def define_benchmark_tasks( build )
     ## Nasty, ugly, nasty
 
-      { room: "LSD_room" }.each_pair {|name,dataset_path|
+      { room: "LSD_room",
+        machine: "LSD_machine" }.each_pair {|name,dataset_path|
 
       desc "Run the \"name\" test set with \"#{build}\""
       task name do

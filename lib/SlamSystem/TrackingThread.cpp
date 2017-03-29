@@ -246,10 +246,10 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	// latestTrackedFrame = trackingNewFrame;
 	//if (!my_createNewKeyframe && _map.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame().const_ref()->id();
+	LOG_IF( INFO, printThreadingInfo ) << _system.currentKeyFrame().const_ref()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame().const_ref()->id() << ", considering " << newFrame->id() << " as new keyframe.";
+
 	if(!newKeyFramePending && _system.currentKeyFrame().const_ref()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
-		LOG_IF( DEBUG, printThreadingInfo ) << _system.currentKeyFrame().const_ref()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame().const_ref()->id() << ", considering " << newFrame->id() << " as new keyframe.";
-
 		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame().const_ref()->meanIdepth;
 		float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
 
@@ -263,12 +263,12 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 			_system.mapThread->createNewKeyFrame( newFrame );
 			// createNewKeyFrame = true;
 
-			LOGF_IF( DEBUG, printKeyframeSelectionInfo,
+			LOGF_IF( INFO, printKeyframeSelectionInfo,
 							"SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
 		}
 		else
 		{
-			LOGF_IF( DEBUG, printKeyframeSelectionInfo,
+			LOGF_IF( INFO, printKeyframeSelectionInfo,
 							"SKIPPD KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
 
 		}
@@ -284,13 +284,11 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	// If blocking is requested...
 	if(blockUntilMapped && trackingIsGood() ){
 		while( _system.mapThread->unmappedTrackedFrames.size() > 0 ) {
-			LOG(INFO) << "Waiting for mapping to be done...";
 			_system.mapThread->trackedFramesMapped.wait( );
-			LOG(INFO) << " .... done waiting for mapping";
 		}
 	}
 
-	LOG_IF( INFO, printThreadingInfo ) << "Exiting trackFrame";
+	LOG_IF( DEBUG, printThreadingInfo ) << "Exiting trackFrame";
 
 }
 
