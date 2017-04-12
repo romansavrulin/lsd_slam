@@ -17,7 +17,8 @@ ENDIF()
 ExternalProject_Add( g3log
 										GIT_REPOSITORY https://github.com/KjellKod/g3log
 										PREFIX g3log
-										UPDATE_COMMAND git pull origin master
+										UPDATE_DISCONNECTED 1
+										PATCH_COMMAND patch -p1 --directory=${CMAKE_BINARY_DIR}/g3log/src/g3log/ < ${CMAKE_CURRENT_LIST_DIR}/G3Log_neuter_semversioning.patch
 										BUILD_COMMAND ${EXTERNAL_PROJECT_MAKE_COMMAND}
 										CMAKE_ARGS ${G3LOG_CMAKE_OPTS}
   									INSTALL_COMMAND "" )
