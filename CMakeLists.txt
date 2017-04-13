@@ -146,7 +146,7 @@ set( LSDSLAM_INCLUDE_DIRS
 	${Boost_INCLUDE_DIR}
 	${Pangolin_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-  ${G2O_INCLUDE_DIR} )
+  SYSTEM ${G2O_INCLUDE_DIR} )
 
 
 ## This seems strange to me
