@@ -32,24 +32,19 @@ if(USE_CONAN)
           ${OpenEXR_LIBRARIES}
           ${GLUT_LIBRARIES} )
 
-    if(APPLE)
-      ## Pangolin prefers FreeGLUT over the GLUT Framework from XCode
-      #list( APPEND Pangolin_LIBRARIES glut  )
-
-      include_directories( /usr/local/include )
-      link_directories( /usr/local/lib )
-    endif()
   endif()
 
 else()
   ## Non-conan / cmake-based build
 	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 	set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
 	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
 	set( EXTERNAL_PROJECTS g3log )
 
 	include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
+  list( APPEND EXTERNAL_PROJECTS libactive_object )
 
   option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
 
@@ -94,19 +89,6 @@ list( APPEND G2O_INCLUDE_DIR
   ${CSPARSE_INCLUDE_DIR}
   ${CHOLMOD_INCLUDE_DIR} )
 
-
-## Use ccache if available
-option( USE_CCACHE "Use CCache (if available)" OFF )
-	if( USE_CCACHE )
-	find_program(CCACHE_FOUND ccache)
-	if(CCACHE_FOUND)
-			message( "Using ccache" )
-	    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-	    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-	endif(CCACHE_FOUND)
-endif()
-
-
 find_package(Boost COMPONENTS thread filesystem system REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -126,11 +108,6 @@ endif()
 #set(FABMAP_LIB openFABMAP )
 
 
-
-# To include/link G2O you need to be able to find the Suitesparse libs
-
-
-
 ##==== Check and define the architecture
 ## Architecture-specific optimizations
 option( CUDA_VERSION "Use CUDA" "")
@@ -145,13 +122,7 @@ if( ${ARCHITECTURE} STREQUAL "aarch64" )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a") # -DENABLE_NEON" )
 
 elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
-	# if( ZED_VERSION VERSION_EQUAL "1.0.0")
-	# 	find_package(OpenCV 3.1 COMPONENTS core highgui imgproc calib3d videoio imgcodecs REQUIRED)
-	# else()
-		find_package(OpenCV 2.4 COMPONENTS core highgui imgproc calib3d REQUIRED)
-#	endif()
-
-	# add_definitions( -DZED_1_0 )
+	find_package(OpenCV 2.4 COMPONENTS core highgui imgproc calib3d REQUIRED)
 
   # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
 	# it has nothing to do with compiler behavior
@@ -160,15 +131,12 @@ endif()
 
 if( CUDA_VERSION )
 	find_package( CUDA REQUIRED ${CUDA_VERSION} )
-  #if(${CUDA_VERSION} VERSION_EQUAL "8.0")
-  	SET( CUDA_USE_STATIC_CUDA_RUNTIME OFF )
-  #endif()
+  SET( CUDA_USE_STATIC_CUDA_RUNTIME OFF )
 endif()
 
 
 ## C++ flags applied to all builds
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
 
 set( LSDSLAM_INCLUDE_DIRS
 	${CMAKE_SOURCE_DIR}/lib
@@ -178,9 +146,11 @@ set( LSDSLAM_INCLUDE_DIRS
 	${Boost_INCLUDE_DIR}
 	${Pangolin_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-	${G2O_INCLUDE_DIR} )
+  ${G2O_INCLUDE_DIR} )
 
-if(APPLE)
+
+## This seems strange to me
+if( APPLE)
   include_directories( /usr/local/include )
   link_directories( /usr/local/lib )
 endif()
@@ -204,6 +174,7 @@ else()
 		${LIBACTIVE_OBJECT_INCLUDE_DIRS}
 	)
 endif()
+
 include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 
 add_subdirectory( lib/ )
