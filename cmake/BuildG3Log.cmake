@@ -12,19 +12,16 @@ IF( DEFINED ${CMAKE_BUILD_TYPE} )
 	ENDIF()
 ENDIF()
 
-## Uses my fork which doesn't create src/g3log/generated_definitions.hpp
-## And thus doesn't need to be re-built every time...
 ExternalProject_Add( g3log
 										GIT_REPOSITORY https://github.com/KjellKod/g3log
 										PREFIX g3log
 										UPDATE_DISCONNECTED 1
-										PATCH_COMMAND patch -p1 --directory=${CMAKE_BINARY_DIR}/g3log/src/g3log/ < ${CMAKE_CURRENT_LIST_DIR}/G3Log_neuter_semversioning.patch
 										BUILD_COMMAND ${EXTERNAL_PROJECT_MAKE_COMMAND}
 										CMAKE_ARGS ${G3LOG_CMAKE_OPTS}
   									INSTALL_COMMAND "" )
 
 ## g3log doesn't have an "install" target
-set( G3LOG_INCLUDE_DIR ${G3LOG_SOURCE_DIR}/src )
+set( G3LOG_INCLUDE_DIR ${G3LOG_SOURCE_DIR}/src ${G3LOG_INSTALL_DIR}/src/g3log-build/include )
 set( G3LOG_LIB_DIR ${G3LOG_PREFIX_DIR}/src/g3log-build/ )
 link_directories(
   ${G3LOG_LIB_DIR}
