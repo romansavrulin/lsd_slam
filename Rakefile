@@ -16,6 +16,7 @@ require 'build_tasks'
 @conan_settings = {}
 @conan_scopes = { build_tests: 'True' }
 
+##
 @coverity_email = ENV['LSDSLAM_COVERITY_EMAIL']
 @coverity_token = ENV['LSDSLAM_COVERITY_TOKEN']
 
@@ -33,7 +34,7 @@ build_root = ENV['BUILD_ROOT'] || "build"
 cmake = CMake.new
 
 newBuilds = [ Build.new( "Debug", cmake: cmake  ),
-              Build.new( "Debug_NoGIU", gui: false, cmake: cmake ),
+              Build.new( "Debug_NoGUI", gui: false, cmake: cmake ),
               Build.new( "Release", cmake: cmake  )
             ]
 BuildTasks.new( newBuilds )
