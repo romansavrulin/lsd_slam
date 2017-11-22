@@ -14,7 +14,7 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapPixelHypothesis.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/util/Configuration.cpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/util/Configuration.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/FileUtils.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/globalFuncs.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/SophusUtil.cpp
@@ -38,12 +38,16 @@ set(lsdslam_SOURCE_FILES
   ${GUI_SRCS}
 )
 
-# build shared library.
-add_library(lsdslam STATIC ${lsdslam_SOURCE_FILES})
-target_link_libraries(lsdslam
-  ${FABMAP_LIB}
-  ${Boost_LIBRARIES}
-  ${OpenCV_LIBS}
-  ${G2O_LIBRARIES}
-  ${G3LOG_LIB}
-  active_object )
+fips_begin_module( lsdslam )
+
+  fips_files( ${lsdslam_SOURCE_FILES} )
+
+  # build shared library.
+  fips_libs(
+    ${FABMAP_LIB}
+    ${Boost_LIBRARIES}
+    ${OpenCV_LIBS} )
+
+  fips_deps( g3log active_object ${G2O_LIBRARIES} )
+
+fips_end_module()

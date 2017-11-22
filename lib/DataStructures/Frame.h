@@ -213,9 +213,8 @@ public:
 
 private:
 
-	const Configuration &_conf;
-
 	SharedPtr _trackingParent;
+	const Configuration &_conf;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);

@@ -75,14 +75,13 @@ public:
 	std::mutex unmappedTrackedFramesMutex;
 	ThreadSynchronizer trackedFramesMapped;
 
+	// during re-localization used
+	Relocalizer relocalizer;
+
 	DepthMap* map;
 	TrackingReference* mappingTrackingReference;
 
 	ThreadSynchronizer optimizationUpdateMerged;
-
-
-	// during re-localization used
-	Relocalizer relocalizer;
 
 private:
 

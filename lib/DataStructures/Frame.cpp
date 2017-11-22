@@ -35,10 +35,10 @@ int privateFrameAllocCount = 0;
 
 Frame::Frame(int frameId, const Configuration &conf,
 							double timestamp, const unsigned char* image )
-	: _conf( conf ),
-	pose( new FramePoseStruct(*this) ),
-	_trackingParent( nullptr ),
-	data( frameId, timestamp, conf.camera, conf.slamImage )
+	: 	_trackingParent( nullptr ),
+			_conf( conf ),
+			pose( new FramePoseStruct(*this) ),
+			data( frameId, timestamp, conf.camera, conf.slamImage )
 {
 	initialize(timestamp);
 
@@ -62,10 +62,10 @@ Frame::Frame(int frameId, const Configuration &conf,
 
 Frame::Frame(int frameId, const Configuration &conf,
 							double timestamp, const float* image )
-	: _conf( conf ),
-	pose( new FramePoseStruct(*this)),
-	data( frameId, timestamp, conf.camera, conf.slamImage  )
-
+	: _trackingParent( nullptr ),
+		_conf( conf ),
+		pose( new FramePoseStruct(*this)),
+		data( frameId, timestamp, conf.camera, conf.slamImage  )
 {
 	initialize(timestamp);
 

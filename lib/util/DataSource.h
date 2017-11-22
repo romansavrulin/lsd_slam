@@ -76,7 +76,7 @@ public:
   {
     ++_idx;
 
-    if( _idx >= _paths.size() ) return false;
+    if( _idx >= int(_paths.size()) ) return false;
 
     return true;
   }
@@ -85,7 +85,7 @@ public:
   {
     if( i != 0 ) return 0;
 
-    if( _idx >= _paths.size() ) return -1;
+    if( _idx >= int(_paths.size()) ) return -1;
 
     mat = cv::imread( _paths[_idx], CV_LOAD_IMAGE_GRAYSCALE );
     return _idx;

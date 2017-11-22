@@ -1,28 +1,19 @@
 
-include_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}
-)
+fips_begin_app(LSD cmdline)
 
-# set(CMAKE_CXX_FLAGS
-#    "${CMAKE_CXX_FLAGS} -ggdb"
-# )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-link_directories( ${CONAN_LIB_DIRS} )
+  fips_files( LSD.cpp
+                ParseArgs.cpp  )
+  fips_libs( lsdslam )
+fips_end_app()
 
-set( LSD_SRCS
-     ParseArgs.cpp )
-
-# build image node
-add_executable(LSD LSD.cpp
-  ${LSD_SRCS}  )
-target_link_libraries( LSD lsdslam ${CONAN_LIBS} )
-
-if(BUILD_GUI)
-  add_executable(LSD_GUI LSD_GUI.cpp
-    LSD_GUI/GuiThread.cpp
-    LSD_GUI/GUI.cpp
-    LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.cpp
-    LSD_GUI/Pangolin_IOWrapper/PangolinOutputIOWrapper.cpp
-    ${LSD_SRCS} )
-  target_link_libraries( LSD_GUI lsdslam ${CONAN_LIBS} ${Pangolin_LIBRARIES} )
-endif()
+# if(BUILD_GUI)
+#   add_executable(LSD_GUI LSD_GUI.cpp
+#     LSD_GUI/GuiThread.cpp
+#     LSD_GUI/GUI.cpp
+#     LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.cpp
+#     LSD_GUI/Pangolin_IOWrapper/PangolinOutputIOWrapper.cpp
+#     ${LSD_SRCS} )
+#   target_link_libraries( LSD_GUI lsdslam ${CONAN_LIBS} ${Pangolin_LIBRARIES} )
+# endif()

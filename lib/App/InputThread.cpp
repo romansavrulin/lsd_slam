@@ -10,9 +10,9 @@ namespace lsd_slam {
                               std::shared_ptr<lsd_slam::DataSource> &src,
                               std::shared_ptr<lsd_slam::Undistorter> &und )
     : system( sys ), dataSource( src ), undistorter( und ),
-    output( nullptr ),
     inputDone( false ),
-    inputReady()
+    inputReady(),
+    output( nullptr )
     {
       ;
     }
