@@ -23,15 +23,16 @@ option(BUILD_GUI "Build Pangolin-based GUI" OFF)
 # include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
 # list( APPEND EXTERNAL_PROJECTS libactive_object )
 
-option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
+#option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
 
-## I haven't packaged suitesparse yet...
+## I believe the fipsified version of g2o will handle this...
+# ## I haven't packaged suitesparse yet...
 find_package(SuiteParse REQUIRED)
-list( APPEND G2O_LIBRARIES
-  ${CSPARSE_LIBRARY} )
-list( APPEND G2O_INCLUDE_DIR
-  ${CSPARSE_INCLUDE_DIR}
-  ${CHOLMOD_INCLUDE_DIR} )
+# list( APPEND G2O_LIBRARIES
+#   ${CSPARSE_LIBRARY} )
+# list( APPEND G2O_INCLUDE_DIR
+#   ${CSPARSE_INCLUDE_DIR}
+#   ${CHOLMOD_INCLUDE_DIR} )
 
 find_package(Boost COMPONENTS thread filesystem system REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -81,18 +82,12 @@ set( LSDSLAM_INCLUDE_DIRS
 	${OpenCV_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIR}
 	${Pangolin_INCLUDE_DIRS}
-	${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-  SYSTEM ${G2O_INCLUDE_DIR} )
+  ${CSPARSE_INCLUDE_DIR}
+	${PROJECT_SOURCE_DIR}/thirdparty/Sophus )
 
 if(APPLE)
 	set( CMAKE_MACOSX_RPATH OFF )
 endif()
-
-## Set global include paths
-list( APPEND LSDSLAM_INCLUDE_DIRS
-  ${G3LOG_INCLUDE_DIR}
-	${LIBACTIVE_OBJECT_INCLUDE_DIRS}
-)
 
 fips_include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 

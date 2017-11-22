@@ -46,7 +46,8 @@ fips_begin_module( lsdslam )
   fips_libs(
     ${FABMAP_LIB}
     ${Boost_LIBRARIES}
-    ${OpenCV_LIBS} )
+    ${OpenCV_LIBS}
+    ${CSPARSE_LIBRARY} )
 
   fips_deps( g3log active_object ${G2O_LIBRARIES} )
 
