@@ -1,0 +1,9 @@
+imports:
+    fips-googletest:
+        git: https://github.com/amarburg/fips-googletest.git
+    libvideoio:
+        git: https://github.com/amarburg/libvideoio.git
+        branch: fips
+    fips-g2o:
+        git: git@github.com:amarburg/g2o.git
+        branch: fips

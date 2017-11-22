@@ -4,3 +4,5 @@
 build[_-][A-Za-z]*/
 config.rb
 __pycache__/
+
+.fips-*
