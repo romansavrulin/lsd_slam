@@ -8,5 +8,5 @@ imports:
         git: https://github.com/amarburg/liblogger.git
         branch: fips
     fips-g2o:
-        git: git@github.com:amarburg/g2o.git
+        git: https://github.com/amarburg/g2o.git
         branch: fips
