@@ -6,3 +6,4 @@ config.rb
 __pycache__/
 
 .fips-*
+.wercker/
