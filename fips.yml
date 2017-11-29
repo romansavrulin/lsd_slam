@@ -11,6 +11,13 @@ imports:
         git: https://github.com/amarburg/g2o.git
         branch: fips
 
+exports:
+   header-dirs:
+     - lib/
+     - thirdparty/Sophus/
+   modules:
+     lsdslam: .
+
 defines:
   FIPS_RTTI: ON
   FIPS_EXCEPTIONS: ON
