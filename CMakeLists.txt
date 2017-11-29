@@ -98,7 +98,10 @@ endif()
 fips_include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 
 fips_add_subdirectory( lib/ )
-fips_add_subdirectory( tools/ )
+
+if( NOT FIPS_IMPORT )
+  fips_add_subdirectory( tools/ )
+endif()
 
 option( BUILD_UNIT_TESTS "Build unit tests" OFF )
 if( FIPS_UNITTESTS )
