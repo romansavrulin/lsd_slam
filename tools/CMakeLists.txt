@@ -7,8 +7,6 @@ include_directories(
 #    "${CMAKE_CXX_FLAGS} -ggdb"
 # )
 
-link_directories( ${CONAN_LIB_DIRS} )
-
 set( LSD_SRCS
      ParseArgs.cpp )
 
@@ -24,5 +22,5 @@ if(BUILD_GUI)
     LSD_GUI/Pangolin_IOWrapper/PangolinOutput3DWrapper.cpp
     LSD_GUI/Pangolin_IOWrapper/PangolinOutputIOWrapper.cpp
     ${LSD_SRCS} )
-  target_link_libraries( LSD_GUI lsdslam ${CONAN_LIBS} ${Pangolin_LIBRARIES} )
+  target_link_libraries( LSD_GUI lsdslam ${Pangolin_LIBRARIES} )
 endif()

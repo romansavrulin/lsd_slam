@@ -1,13 +1,10 @@
-include_directories( ${CONAN_INCLUDE_DIRS}
-                      ${GTEST_INCLUDE_DIRS}
+include_directories( ${GTEST_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/lib )
 
 add_executable( lsdslam_test
               test_test.cpp )
 
-link_directories( ${CONAN_LINK_DIRECTORIES} )
 target_link_libraries( lsdslam_test
-          ${CONAN_LIBS}
           ${GTEST_BOTH_LIBRARIES}
           lsdslam )
 

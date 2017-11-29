@@ -1,5 +1,5 @@
 # wercker version for box creation
-box: amarburg/lsdslam-dev-host:conan-latest
+box: amarburg/lsdslam-dev-host:latest
 
 dev:
   steps:
@@ -8,25 +8,9 @@ dev:
       code: |
            LSDSLAM_BUILD_DIR=build_wercker rake debug:test
 
-build-cmake:
+build:
   steps:
     - script:
       name: Build
       code: |
            LSDSLAM_BUILD_DIR=build_wercker rake debug:test debug:clean
-
-## Build with conan
-build-conan:
-  steps:
-    - script:
-      name: Build
-      code: |
-           echo '@conan_settings = {"compiler": "gcc", "compiler.libcxx": "libstdc++11"}' > config.rb
-           LSDSLAM_BUILD_DIR=build_wercker CONAN_USER_HOME=$WERCKER_CACHE_DIR/.conan rake conan:debug:test conan:debug:clean
-
-    - script:
-      name: Upload to conan.io
-      code: |
-        conan export amarburg/testing
-        conan user -p "$CONAN_PASSWORD" $CONAN_USERNAME
-        conan upload "lsd_slam*" --confirm

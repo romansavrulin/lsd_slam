@@ -6,80 +6,49 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 option(BUILD_GUI "Build Pangolin-based GUI" ON)
 
-## Enable conan tools
-option(USE_CONAN  "Use the Conan packaging system" OFF)
-if(USE_CONAN)
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  conan_basic_setup()
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
+set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
-  if( BUILD_GUI )
-    ## Check for dependencies for Pangolin
-    find_package( GLEW REQUIRED )
-    find_package( GLUT REQUIRED )
-    find_package( GLM REQUIRED )  # n.b. we provide the FindGLM.cmake file
-    find_package( OpenGL REQUIRED )
-    find_package( JPEG REQUIRED )
-    find_package( PNG REQUIRED )
-    find_package( PythonLibs REQUIRED )
-    find_package( OpenEXR QUIET )
+include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
+set( EXTERNAL_PROJECTS g3log )
 
-    set( Pangolin_LIBRARIES
-          ${OPENGL_LIBRARIES}
-          ${JPEG_LIBRARIES}
-          ${PNG_LIBRARIES}
-          ${PYTHON_LIBRARIES}
-          ${GLEW_LIBRARIES}
-          ${OpenEXR_LIBRARIES}
-          ${GLUT_LIBRARIES} )
+include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
+list( APPEND EXTERNAL_PROJECTS libactive_object )
 
-  endif()
+option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
 
-else()
-  ## Non-conan / cmake-based build
-	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
-	set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+##==== Option to build local copy of G2O ============================
+option( BUILD_LOCAL_G2O "Build a local copy of G2O" ON )
+if( BUILD_LOCAL_G2O )
+	set( G2O_USE_OPENMP ${USE_OPENMP} )
+	list( APPEND EXTERNAL_PROJECTS G2O )
 
-	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
-	set( EXTERNAL_PROJECTS g3log )
+	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG2O.cmake )
+elseif()
+	find_package(G2O REQUIRED)
 
-	include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
-  list( APPEND EXTERNAL_PROJECTS libactive_object )
-
-  option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
-
-  ##==== Option to build local copy of G2O ============================
-  option( BUILD_LOCAL_G2O "Build a local copy of G2O" ON )
-  if( BUILD_LOCAL_G2O )
-  	set( G2O_USE_OPENMP ${USE_OPENMP} )
-  	list( APPEND EXTERNAL_PROJECTS G2O )
-
-  	include( ${PROJECT_SOURCE_DIR}/cmake/BuildG2O.cmake )
-  elseif()
-  	find_package(G2O REQUIRED)
-
-  	# These are the G2O libraries I use
-  	set( G2O_LIBRARIES
-  		${G2O_CORE_LIBRARY}
-  		${G2O_STUFF_LIBRARY}
-  		${G2O_SOLVER_CSPARSE_EXTENSION}
-  		${G2O_SOLVER_CSPARSE}
-  		${G2O_TYPES_SBA}
-  		${G2O_TYPES_SIM3} )
-  endif()
-
-  if(BUILD_GUI)
-    ##====  Build local copy of Pangolin? ======================
-    option( BUILD_LOCAL_PANGOLIN "Build a local copy of Pangolin" ON )
-    if( BUILD_LOCAL_PANGOLIN )
-    	list( APPEND EXTERNAL_PROJECTS Pangolin )
-    	include( ${PROJECT_SOURCE_DIR}/cmake/BuildPangolin.cmake )
-    elseif()
-    	find_package(Pangolin 0.1 REQUIRED)
-    endif()
-  endif()
-
+	# These are the G2O libraries I use
+	set( G2O_LIBRARIES
+		${G2O_CORE_LIBRARY}
+		${G2O_STUFF_LIBRARY}
+		${G2O_SOLVER_CSPARSE_EXTENSION}
+		${G2O_SOLVER_CSPARSE}
+		${G2O_TYPES_SBA}
+		${G2O_TYPES_SIM3} )
 endif()
+
+if(BUILD_GUI)
+  ##====  Build local copy of Pangolin? ======================
+  option( BUILD_LOCAL_PANGOLIN "Build a local copy of Pangolin" ON )
+  if( BUILD_LOCAL_PANGOLIN )
+  	list( APPEND EXTERNAL_PROJECTS Pangolin )
+  	include( ${PROJECT_SOURCE_DIR}/cmake/BuildPangolin.cmake )
+  elseif()
+  	find_package(Pangolin 0.1 REQUIRED)
+  endif()
+endif()
+
 
 ## I haven't packaged suitesparse yet...
 find_package(SuiteParse REQUIRED)
@@ -146,36 +115,19 @@ set( LSDSLAM_INCLUDE_DIRS
 	${Boost_INCLUDE_DIR}
 	${Pangolin_INCLUDE_DIRS}
 	${PROJECT_SOURCE_DIR}/thirdparty/Sophus
+  ${G3LOG_INCLUDE_DIR}
+  ${LIBACTIVE_OBJECT_INCLUDE_DIRS}
   SYSTEM ${G2O_INCLUDE_DIR} )
+include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 
 
 ## This seems strange to me
 if( APPLE)
   include_directories( /usr/local/include )
   link_directories( /usr/local/lib )
+	set( CMAKE_MACOSX_RPATH OFF )
 endif()
 
-if( USE_CONAN )
-
-	## Set global include paths
-	list( APPEND LSDSLAM_INCLUDE_DIRS
-	  ${CONAN_INCLUDE_DIRS}
-	)
-
-else()
-
-	if(APPLE)
-		set( CMAKE_MACOSX_RPATH OFF )
-	endif()
-
-	## Set global include paths
-	list( APPEND LSDSLAM_INCLUDE_DIRS
-	  ${G3LOG_INCLUDE_DIR}
-		${LIBACTIVE_OBJECT_INCLUDE_DIRS}
-	)
-endif()
-
-include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 
 add_subdirectory( lib/ )
 add_subdirectory( tools/ )
@@ -183,10 +135,8 @@ add_subdirectory( tools/ )
 option( BUILD_UNIT_TESTS "Build unit tests" OFF )
 if( BUILD_UNIT_TESTS )
   ## Build a local copy of gtest (as per the GTest FAQ)
-	if( NOT USE_CONAN )
-  	include( ${CMAKE_SOURCE_DIR}/cmake/BuildGTestLibraries.cmake )
-		list( APPEND EXTERNAL_PROJECTS gtest )
-	endif()
+	include( ${CMAKE_SOURCE_DIR}/cmake/BuildGTestLibraries.cmake )
+	list( APPEND EXTERNAL_PROJECTS gtest )
 
   add_subdirectory( test/unit/ )
 endif()
