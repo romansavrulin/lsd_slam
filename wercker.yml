@@ -7,5 +7,5 @@ build:
     - script:
       name: Build
       code: |
-          ./fips set config lsd-slam-linux-make-unittest
+          ./fips set config linux-make-unittest
           ./fips build
