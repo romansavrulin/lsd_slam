@@ -151,7 +151,7 @@ public:
 	 */
 	FramePoseStruct::SharedPtr pose;
 	Sim3 getCamToWorld(int num=0)  { return pose->getCamToWorld(); }
-	//Sim3 getCamToWorld(int num=0) { return pose->getCamToWorld(); }
+
 
 	// parent, the frame originally tracked on. never changes.
 	SharedPtr &setTrackingParent( const SharedPtr &newParent  ) { return _trackingParent = newParent; }
@@ -161,7 +161,6 @@ public:
 	bool isTrackingParent( const SharedPtr &other );
 
 	Sim3 lastConstraintTrackedCamToWorld;
-
 
 	/** Pointers to all adjacent Frames in graph. empty for non-keyframes.*/
 	std::unordered_set< Frame::SharedPtr > neighbors;

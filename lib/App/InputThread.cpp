@@ -39,7 +39,7 @@ namespace lsd_slam {
       int runningIdx=0;
       float fakeTimeStamp = 0;
 
-      for(unsigned int i = 0; (numFrames < 0) || (i < numFrames); ++i)
+      for(unsigned int i = 0; (numFrames < 0) || (i < (unsigned int)numFrames); ++i)
       {
         if(inputDone.getValue()) break;
 
