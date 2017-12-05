@@ -15,6 +15,10 @@ require 'build_tasks'
 
 @build_parallelism = nil
 
+## Any of the configuration variables given above can be
+## overridden in a config.rb file
+load 'config.rb' if FileTest::exists? 'config.rb'
+
 ## Builds occur in directories "#{BUILD_ROOT}-#{build_type}"
 ## e.g. build-debug/, build-release/
 build_root = ENV['BUILD_ROOT'] || "build"
