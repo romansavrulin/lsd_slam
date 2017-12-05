@@ -1,5 +1,6 @@
 
 
+
 xenial_deps:
 	sudo apt-get update &&
 	sudo apt-get install -y cmake \
@@ -14,6 +15,8 @@ trusty_deps:
 		libgomp1 libsuitesparse-dev git \
 		autoconf libtool
 
+
+PHONY: xenial_deps trusty_deps
 
 ## Code from Rakefile
 # namespace :dependencies do
