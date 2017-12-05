@@ -45,9 +45,9 @@ namespace lsd_slam
 
 
 SE3Tracker::SE3Tracker(const ImageSize &sz )
-	: _imgSize( sz ),
+	: _pctGoodPerGoodBad(-1.0),
 		_pctGoodPerTotal(-1.0),
-		_pctGoodPerGoodBad(-1.0),
+		_imgSize( sz ),
 		_lastGoodCount(0),
 		_lastBadCount(0)
 {
@@ -75,9 +75,6 @@ SE3Tracker::SE3Tracker(const ImageSize &sz )
 	debugImageSecondFrame = cv::Mat(_imgSize.cvSize(),CV_8UC3);
 	debugImageOldImageWarped = cv::Mat(_imgSize.cvSize(),CV_8UC3);
 	debugImageOldImageSource = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-
-
-
 
 	lastResidual = 0;
 	iterationNumber = 0;
