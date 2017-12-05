@@ -2,7 +2,7 @@
 
 [![wercker status](https://app.wercker.com/status/4c30e195acc92af03c75e1f3451b6916/m/master "wercker status")](https://app.wercker.com/project/byKey/4c30e195acc92af03c75e1f3451b6916)
 
-See my [Development Blog](https://faculty.washington.edu/amarburg/press/category/lsdslam/) for current status.
+See my [Development Blog](http://staff.washington.edu/amarburg/site/) for current status.
 
 > __December 2017__   Not as much time as I would like to work on this
 over the last year (clearly).   One thing I've discovered is I'm not a huge
@@ -10,15 +10,17 @@ fan of Conan.   I ended up making a lot of infrastructure to get what I
 wanted out of it --- which was the ability to define dependencies and
 have them all built locally.
 
-> So if you've got here, I've thrown out Conan and moved to [fips](http://floooh.github.io/fips/index.html).   fips ain't perfect --
-the big problem is that you have to rewrite portions of yur CMakeFiles
-using their macros --- but it does the job I need it to do.
+> So if you've got here, I've thrown out Conan and moved to
+[fips](http://floooh.github.io/fips/index.html).   fips ain't perfect, but it
+does the job I need it to do.
 
-It's good enough I'm not even going to bother with maintaing the CMake build.
-If you want it, it's in the `cmake` branch, stripped of the conan functionality.
+> __It's good enough I'm deprecating the CMake build.__
+If you don't want to use fips, see the `cmake` branch, stripped of the conan functionality.
 
-> This also means master no long builds Thomas' Pangolin-based GUI.   That's now
-in its [own repo]() which is dependent on this repo.   Think of this repo as the "LSD SLAM Library",
+> If you really loved the Conan build, the last commit with Conan is [7b8b76f](https://github.com/amarburg/lsd_slam/commit/7b8b76ff6be7e6f4c4eb1576a7f741146eb1bdf4).
+
+> This also means master no longer builds Thomas' Pangolin-based GUI.   That's now
+in its [own repo](https://github.com/amarburg/lsd-slam-pangolin-gui) which is dependent on this repo.   Think of this repo as the "LSD SLAM Library",
 with frontends elsewhere...
 
 This fork started from [Thomas Whelan's fork](https://github.com/mp3guy/lsd_slam) which "relieves the user of the horrors of a ROS dependency and uses the much nicer lightweight [Pangolin](https://github.com/stevenlovegrove/Pangolin) framework instead."
@@ -40,23 +42,36 @@ I've broken it in the refactoring).
 
 **master**  is my working / stable-ish branch.   **aaron_dev** is my **really unstable** branch.   **Please note: BOTH BRANCHES ARE MOVING TARGETS.**  it's just that **aaron_dev** is, uh, moving faster.
 
-# 1. Quickstart
+# Quickstart
 
 My targeted environments are Ubuntu 16.04, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.3](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.12 with [Homebrew](http://brew.sh/).
 
-__If you want a GUI, go to [lsd-slam-pangolin-gui](https://github.com/amarburg/lsd-slam-pangolin-gui)
+__If you want a GUI, start with to [lsd-slam-pangolin-gui](https://github.com/amarburg/lsd-slam-pangolin-gui)__
 
-The most authoritative documentation is stored in the Ruby Rakefile (don't be scared, it's
-pretty readable).   This includes tasks for installing dependencies (in Travis and Docker images for example), and for automating building and testing.
+Common jobs are encoded in `Makefile`.This includes tasks for installing dependencies (in Travis and Docker images for example), and for automating building and testing.
 
 Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed,
 
     ./fips gen
     ./fips build
 
+Both configurations (release, debug) and platform are controlled through
+fips settings, so on a linux machine, either
+
+    ./fips gen linux-make-release
+    ./fips build linux-make-release
+
+or
+
+    ./fips set config linux-make-release
+    ./fips gen
+    ./fips build
+
+will build release binaries.  `linux-make-debug` will build debug binaries and `linux-make-unittests` will build debug binaries and the unit tests.
+
 See also [doc/CommonProblems.md](doc/CommonProblems.md)
 
-# 4. Running
+# Running
 
 Supports directories or sets of raw images. For example, you can download
 any dataset from [here](http://vision.in.tum.de/lsdslam), and run:
@@ -65,14 +80,14 @@ any dataset from [here](http://vision.in.tum.de/lsdslam), and run:
 
 I've started to document my performance testing in [doc/Performance.md](doc/Performance.md)
 
-# 5. Related Papers
+# Related Papers
 
 * **LSD-SLAM: Large-Scale Direct Monocular SLAM**, *J. Engel, T. Schöps, D. Cremers*, ECCV '14
 
 * **Semi-Dense Visual Odometry for a Monocular Camera**, *J. Engel, J. Sturm, D. Cremers*, ICCV '13
 
-# 6. License
+# License
 
 LSD-SLAM is licensed under the GNU General Public License Version 3 (GPLv3), see http://www.gnu.org/licenses/gpl.html.
 
-# 7. TODOS
+# TODOS
