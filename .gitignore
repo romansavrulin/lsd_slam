@@ -1,9 +1,7 @@
 .AppleDouble/
 *.so
 .DS_Store
-build[_-][A-Za-z]*/
 config.rb
-__pycache__/
 
 .fips-*
 .wercker/

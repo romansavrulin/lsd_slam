@@ -4,34 +4,50 @@ require 'pathname'
 # Rake support files are stored in the .rake subdirectory
 $:.unshift File.dirname(__FILE__) + "/.rake"
 require 'docker'
-require 'dependencies'
 require 'benchmark'
 require 'build'
 require 'build_tasks'
 
-##
-@coverity_email = ENV['LSDSLAM_COVERITY_EMAIL']
-@coverity_token = ENV['LSDSLAM_COVERITY_TOKEN']
 
-@build_parallelism = nil
+namespace :dependencies do
 
-## Any of the configuration variables given above can be
-## overridden in a config.rb file
-load 'config.rb' if FileTest::exists? 'config.rb'
+  desc "Install non-GUI dependencies for Ubuntu Xenial"
+  task :xenial => :trusty
+  namespace :xenial do
+    desc "Install GUI and non-GUI dependencies for Ubuntu Xenial"
+    task :gui=> 'dependencies:trusty:gui'
+  end
 
-## Builds occur in directories "#{BUILD_ROOT}-#{build_type}"
-## e.g. build-debug/, build-release/
-build_root = ENV['BUILD_ROOT'] || "build"
+  desc "Install non-GUI dependencies for Ubuntu trusty"
+  task :trusty do
+    sh "sudo apt-get update &&
+        sudo apt-get install -y cmake \
+          libopencv-dev libboost-all-dev libeigen3-dev \
+          libgomp1 libsuitesparse-dev git \
+          autoconf libtool"
+  end
 
-cmake = CMake.new
+  namespace :trusty do
+    desc "Install GUI and non-GUI dependencies for Ubuntu trust"
+    task :gui => 'dependencies:trusty' do
+      sh "sudo apt-get install -y \
+        		libglew-dev libglm-dev freeglut3-dev"
+    end
+  end
 
-newBuilds = [ Build.new( "Debug", cmake: cmake  ),
-              Build.new( "Debug_NoGUI", gui: false, cmake: cmake ),
-              Build.new( "Release", cmake: cmake  )
-            ]
-BuildTasks.new( newBuilds )
+  desc "Install non-GUI depenencies on OSX using Brew"
+  task :osx_brew do
+    sh "brew update"
+    sh "brew tap homebrew/science"
+    sh "brew install homebrew/science/opencv homebrew/science/suitesparse \
+            eigen"
+  end
 
-task :default => "debug:test"
+  namespace :osx_brew do
+    desc "Install GUI and non-GUI dependencies on OSX using Brew"
+    task :gui => 'dependencies:osx_brew' do
+      sh "brew install glew glm" # freeglut"   Deprecate GLUT and use native windowing instead?
+    end
+  end
 
-DockerTasks.new( builds: %w( Release Debug Debug_GUI ) )
-BenchmarkTasks.new( newBuilds )
+end

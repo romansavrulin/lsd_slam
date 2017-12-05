@@ -4,15 +4,22 @@
 
 See my [Development Blog](https://faculty.washington.edu/amarburg/press/category/lsdslam/) for current status.
 
-> __November/December 2016__ After early development, I'm trying to _reduce_ the number of external dependencies (introduced by myself or previous authors).   At a macro-scale I'm  experimenting with the [Conan](https://conan.io/) package manager.  However, building this repo __does not__ require Conan (though it can also be built with conan)
+> __December 2017__   Not as much time as I would like to work on this
+over the last year (clearly).   One thing I've discovered is I'm not a huge
+fan of Conan.   I ended up making a lot of infrastructure to get what I
+wanted out of it --- which was the ability to define dependencies and
+have them all built locally.
 
-> One major step is removing the explicit dependency on Pangolin for the GUI.  Rather than introduce a package management nightmare (which I'm already dangerously close to anyway),  I've made the GUI a cmake-selectable option (`BUILD_GUI`).   It is __enabled__ by default in the standard `cmake` build, and __disabled__ by default in the Conan build.
+> So if you've got here, I've thrown out Conan and moved to [fips](http://floooh.github.io/fips/index.html).   fips ain't perfect --
+the big problem is that you have to rewrite portions of yur CMakeFiles
+using their macros --- but it does the job I need it to do.
 
-> With `BUILD_GUI=False`, the core LSD-SLAM functionality is built into a library `liblsdslam` and the tool `LSD` is built.   This is a console-only app which spits out many log messages but isn't that exciting to watch.
+It's good enough I'm not even going to bother with maintaing the CMake build.
+If you want it, it's in the `cmake` branch, stripped of the conan functionality.
 
-> With `BUILD_GUI=True`, the current evolution of Tom Whelan's Pangolin GUI is built as `LSD_GUI`, with all of the dependencies that entails.
-
->  My full-fat, high-dependency work is continuing in [lsd_slam_conan](https://github.com/amarburg/lsd_slam_conan), which __requires__ Conan.
+> This also means master no long builds Thomas' Pangolin-based GUI.   That's now
+in its [own repo]() which is dependent on this repo.   Think of this repo as the "LSD SLAM Library",
+with frontends elsewhere...
 
 This fork started from [Thomas Whelan's fork](https://github.com/mp3guy/lsd_slam) which "relieves the user of the horrors of a ROS dependency and uses the much nicer lightweight [Pangolin](https://github.com/stevenlovegrove/Pangolin) framework instead."
 
@@ -29,7 +36,7 @@ This repo contains my experiments with LSD-SLAM, for performance, functionality
 and structure.   As of November 2016, it diverges significantly from either Jakob
 or Thomas's branches in structure (I refactored as a way of learning the code),
 but not significantly in terms of functionality (except for all the ways in which
-I've broken it in the refactoring).   
+I've broken it in the refactoring).
 
 **master**  is my working / stable-ish branch.   **aaron_dev** is my **really unstable** branch.   **Please note: BOTH BRANCHES ARE MOVING TARGETS.**  it's just that **aaron_dev** is, uh, moving faster.
 
@@ -37,49 +44,15 @@ I've broken it in the refactoring).
 
 My targeted environments are Ubuntu 16.04, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.3](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.12 with [Homebrew](http://brew.sh/).
 
+__If you want a GUI, go to [lsd-slam-pangolin-gui](https://github.com/amarburg/lsd-slam-pangolin-gui)
+
 The most authoritative documentation is stored in the Ruby Rakefile (don't be scared, it's
-pretty readable).   This includes tasks for installing dependencies (in Travis and Docker images for example),
-and for automating building and testing.
+pretty readable).   This includes tasks for installing dependencies (in Travis and Docker images for example), and for automating building and testing.
 
-Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed, then a standard-ish cmake-ish:
+Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed,
 
-    mkdir build
-    cd build/
-    cmake ..
-    make deps
-    make
-    make unit_test
-
-Or
-
-    rake dependencies:{xenial,trusty,osx}:gui
-    rake {debug,release}:test
-
-Should work.
-
-For the conan-based build:
-
-    rake conan:dependencies:{xenial,trusty, osx}
-    rake conan:debug:test
-
-
-In addition to a number of "standard" (apt-gettable) dependencies,
-LSD-SLAM uses these "non-standard" dependencies:
- * [g2o](https://github.com/RainerKuemmerle/g2o)
- * [g3log](https://github.com/KjellKod/g3log)
- * (Optionally) [Google Test](https://github.com/google/googletest) for unit testing
- * [Pangolin](https://github.com/stevenlovegrove/Pangolin) is the GUI is enabled.
-
-LSD-SLAM will use CMake ExternalProjects to build each of these
-dependencies automatically.  **This no longer happens automatically as part
-of a `make` or `make all` ---** it was taking too long to re-check the dependencies
-every time.   Instead, `make dep` should be run the first time.  This will
-build just the dependencies.  CMake will (still) not resolve these dependencies
-correctly when building in parallel ('make -j').
-
-Set the appropriate CMake variable `BUILD_LOCAL_* = OFF` to disable building
-local copies.  If you want to build G2O, Pangolin, etc. yourself, see
-the `cmake/Build*` files for the CMake flags I used.
+    ./fips gen
+    ./fips build
 
 See also [doc/CommonProblems.md](doc/CommonProblems.md)
 
@@ -88,24 +61,9 @@ See also [doc/CommonProblems.md](doc/CommonProblems.md)
 Supports directories or sets of raw images. For example, you can download
 any dataset from [here](http://vision.in.tum.de/lsdslam), and run:
 
-    ./LSD -c datasets/LSD_machine/cameraCalibration.cfg -f datasets/LSD_machine/images/
+    ./fips run LSD -- -c datasets/LSD_machine/cameraCalibration.cfg -f datasets/LSD_machine/images/
 
 I've started to document my performance testing in [doc/Performance.md](doc/Performance.md)
-
-# Docker
-
-For repeatability, builds can occur inside a Docker container.   To do this,
-first run `rake docker:image` which is create a local copy of the development Docker image called
-`lsdslam-build:local`.   This is a minor iteration on the published `amarburg/lsdslam-dev-host`
-image.
-
-Then `rake docker:debug:build` or `rake docker:release:build` which will build the
-release in a Docker container up through testing.  
-
-This build process will mount and build the current source tree in its own `build_docker-*` tree,
-which is not ephemeral.  
-
-For now the Docker process is focused on building and testing, not actually running in the Docker image.  Soon enough...
 
 # 5. Related Papers
 
