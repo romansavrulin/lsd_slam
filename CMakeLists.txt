@@ -1,7 +1,7 @@
 
 ## Error message if not run in fips
 if (NOT FIPS_CONFIG)
-  message(FATAL_ERROR "The master branch now uses \"fips\" as a package manager.   The \"cmake\" branch contains the working head for the cmake-based build.  See README.md for more information.")
+  message(FATAL_ERROR "As of December 2017, I'm using \"fips\" as a package manager.   The \"cmake\" branch contains the working head for the cmake-based build.  See README.md for more information.")
 endif()
 
 if (NOT FIPS_IMPORT)

@@ -15,7 +15,7 @@ have them all built locally.
 does the job I need it to do.
 
 > __It's good enough I'm deprecating the CMake build.__
-If you don't want to use fips, see the `cmake` branch, stripped of the conan functionality.
+If you don't want to use fips, see the `cmake` branch.
 
 > If you really loved the Conan build, the last commit with Conan is [7b8b76f](https://github.com/amarburg/lsd_slam/commit/7b8b76ff6be7e6f4c4eb1576a7f741146eb1bdf4).
 
