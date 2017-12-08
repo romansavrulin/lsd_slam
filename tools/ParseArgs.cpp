@@ -34,7 +34,7 @@ namespace lsd_slam {
 
     std::vector<std::string> files;
 
-    if(getdir(source, files) >= 0)
+    if( getdir(source, files) >= 0)
     {
       printf("found %d image files in folder %s!\n", (int)files.size(), source.c_str());
     }
@@ -44,7 +44,7 @@ namespace lsd_slam {
     }
 
     printf("Loading images from %s\n", source.c_str());
-    dataSource.reset(  new ImagesSource( files ) );
+    dataSource.reset(  new libvideoio::ImagesSource( files ) );
 
 
   }

@@ -1,9 +1,11 @@
 
-fips_begin_app(LSD cmdline)
+## TODO.  Strip GUI elements from this repo.
 
-  include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
-
-  fips_files( LSD.cpp
-                ParseArgs.cpp  )
-  fips_libs( lsdslam )
-fips_end_app()
+# fips_begin_app(LSD cmdline)
+#
+#   include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
+#
+#   fips_files( LSD.cpp
+#                 ParseArgs.cpp  )
+#   fips_libs( lsdslam )
+# fips_end_app()
