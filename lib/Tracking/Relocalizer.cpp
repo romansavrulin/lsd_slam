@@ -28,12 +28,12 @@ namespace lsd_slam
 
 
 Relocalizer::Relocalizer( const Configuration &conf )
-	: _conf( conf ),
-	KFForReloc(),
-	nextRelocIDX( 0 ),
-	maxRelocIDX( 0 ),
-	 continueRunning( false ),
-	 isRunning( false ),
+	: isRunning( false ),
+		_conf( conf ),
+	  KFForReloc(),
+	  nextRelocIDX( 0 ),
+	  maxRelocIDX( 0 ),
+	  continueRunning( false ),
 		hasResult( false ),
 		resultKF( nullptr ),
 		resultFrameID( 0 ),

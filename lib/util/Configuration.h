@@ -9,12 +9,16 @@
 
 #include "SophusUtil.h"
 
-#include "ImageSize.h"
-#include "Camera.h"
+#include <libvideoio/ImageSize.h>
+#include <libvideoio/Camera.h>
 
 #pragma once
 
 namespace lsd_slam {
+
+  using libvideoio::Camera;
+  using libvideoio::ImageSize;
+  using libvideoio::SlamImageSize;
 
 // Slow migration from the global settings.[h,cpp] model to a Configuration
 // object.

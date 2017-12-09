@@ -8,7 +8,7 @@ namespace lsd_slam {
 
   InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
                               std::shared_ptr<libvideoio::DataSource> &src,
-                              std::shared_ptr<lsd_slam::Undistorter> &und )
+                              std::shared_ptr<libvideoio::Undistorter> &und )
     : system( sys ), dataSource( src ), undistorter( und ),
     inputDone( false ),
     inputReady(),
