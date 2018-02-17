@@ -35,7 +35,6 @@
 #include "util/globalFuncs.h"
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
-#include "util/FileUtils.h"
 
 #include "App/App.h"
 #include "App/InputThread.h"
@@ -54,7 +53,6 @@ int main( int argc, char** argv )
   ParseArgs args( argc, argv );
 
   // Load the configuration object
-
   conf.inputImage = args.undistorter->inputImageSize();
   conf.slamImage  = args.undistorter->outputImageSize();
   conf.camera     = args.undistorter->getCamera();

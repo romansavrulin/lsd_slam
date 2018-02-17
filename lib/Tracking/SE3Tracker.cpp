@@ -47,9 +47,9 @@ namespace lsd_slam
 SE3Tracker::SE3Tracker(const ImageSize &sz )
 	: _pctGoodPerGoodBad(-1.0),
 		_pctGoodPerTotal(-1.0),
-		_imgSize( sz ),
 		_lastGoodCount(0),
-		_lastBadCount(0)
+		_lastBadCount(0),
+		_imgSize( sz )
 {
 
 	settings = DenseDepthTrackerSettings();

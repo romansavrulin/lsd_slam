@@ -1,5 +1,6 @@
 # wercker version for box creation
 box: amarburg/lsdslam-dev-host:latest
+command-timeout: 60
 
 build:
   steps:
