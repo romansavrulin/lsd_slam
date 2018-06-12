@@ -6,7 +6,7 @@
 
 #include "SlamSystem.h"
 
-#include "libvideoio/DataSource.h"
+#include "libvideoio/ImageSource.h"
 #include "libvideoio/Undistorter.h"
 
 namespace lsd_slam {
@@ -15,7 +15,7 @@ namespace lsd_slam {
   public:
 
     InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &system,
-                   std::shared_ptr<libvideoio::DataSource> &dataSource,
+                   std::shared_ptr<libvideoio::ImageSource> &dataSource,
                    std::shared_ptr<libvideoio::Undistorter> &undistorter );
 
     void setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out );
@@ -24,7 +24,7 @@ namespace lsd_slam {
     void operator()();
 
     std::shared_ptr<lsd_slam::SlamSystem> &system;
-    std::shared_ptr<libvideoio::DataSource> dataSource;
+    std::shared_ptr<libvideoio::ImageSource> dataSource;
     std::shared_ptr<libvideoio::Undistorter> undistorter;
 
     ThreadMutexObject<bool> inputDone;
