@@ -23,7 +23,7 @@ namespace lsd_slam {
 
     if(Parse::arg(argc, argv, "-c", calibFile) > 0)
     {
-      undistorter.reset( libvideoio::Undistorter::getUndistorterForFile(calibFile.c_str()) );
+      undistorter.reset( libvideoio::UndistorterFactory::getUndistorterForFile(calibFile) );
     } else {
       printf("Need to specify calibration file with -c option");
       exit(0);
