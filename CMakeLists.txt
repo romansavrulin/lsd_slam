@@ -78,7 +78,6 @@ if( CUDA_VERSION )
   SET( CUDA_USE_STATIC_CUDA_RUNTIME OFF )
 endif()
 
-
 ## C++ flags applied to all builds
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -102,18 +101,11 @@ fips_add_subdirectory( lib/ )
 
 if( NOT FIPS_IMPORT )
   fips_add_subdirectory( tools/ )
-endif()
 
-option( BUILD_UNIT_TESTS "Build unit tests" OFF )
-if( FIPS_UNITTESTS )
-  ## Build a local copy of gtest (as per the GTest FAQ)
-  fips_add_subdirectory( test/unit/ )
-
-  if( FIPS_UNITTESTS_RUN_AFTER_BUILD )
-    ## TODO
+  if( FIPS_UNITTESTS )
+    ## Build a local copy of gtest (as per the GTest FAQ)
+    fips_add_subdirectory( test/unit/ )
   endif()
-endif()
 
-if( NOT FIPS_IMPORT )
   fips_finish()
 endif()

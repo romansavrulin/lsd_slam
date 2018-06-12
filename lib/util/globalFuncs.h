@@ -125,7 +125,8 @@ inline void setPixelInCvMat(cv::Mat* mat, cv::Vec3b color, int xx, int yy, int l
 
 inline cv::Vec3b getGrayCvPixel(float val)
 {
-	if(val < 0) val = 0; if(val>255) val=255;
+	if(val < 0) val = 0;
+	if(val>255) val=255;
 	return cv::Vec3b(val,val,val);
 }
 

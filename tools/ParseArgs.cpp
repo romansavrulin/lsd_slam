@@ -51,7 +51,7 @@ namespace lsd_slam {
     }
 
     printf("Loading images from %s\n", source.c_str());
-    dataSource.reset(  new libvideoio::ImagesSource( files ) );
+    dataSource.reset(  new libvideoio::ImageFilesSource( files ) );
 
 
   }

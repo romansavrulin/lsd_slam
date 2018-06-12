@@ -126,9 +126,8 @@ void TrackingReference::makePointCloud(int level)
 	Eigen::Vector2f* gradDataPT = gradData[level];
 	Eigen::Vector2f* colorAndVarDataPT = colorAndVarData[level];
 
-	for(int x=1; x<w-1; x++)
-		for(int y=1; y<h-1; y++)
-		{
+	for(int x=1; x<w-1; x++) {
+		for(int y=1; y<h-1; y++) {
 			int idx = x + y*w;
 
 			if(pyrIdepthVarSource[idx] <= 0 || pyrIdepthSource[idx] == 0) continue;
@@ -143,9 +142,11 @@ void TrackingReference::makePointCloud(int level)
 			colorAndVarDataPT++;
 			idxPT++;
 		}
-
-		numData[level] = posDataPT - posData[level];
-		LOG(INFO) << "Keyframe " << frameID << " has " << numData[level] << " tracked points at level " << level;
 	}
+
+	numData[level] = posDataPT - posData[level];
+	LOG(INFO) << "Keyframe " << frameID << " has " << numData[level] << " tracked points at level " << level;
+}
+
 
 }

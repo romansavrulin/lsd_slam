@@ -6,7 +6,6 @@ set(GUI_SRCS
 # Set source files
 set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/App/App.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/App/g3logger.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/App/InputThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/Frame.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
@@ -45,6 +44,6 @@ fips_begin_module( lsdslam )
     ${OpenCV_LIBS}
     ${CSPARSE_LIBRARY} )
 
-  fips_deps( g3log active_object ${G2O_LIBRARIES} )
+  fips_deps( g3logger active_object ${G2O_LIBRARIES} )
 
 fips_end_module()

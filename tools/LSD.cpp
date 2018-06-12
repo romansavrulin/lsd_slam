@@ -26,7 +26,7 @@
 
 #include <boost/thread.hpp>
 
-#include "App/g3logger.h"
+#include "libg3logger/g3logger.h"
 
 #include "SlamSystem.h"
 
@@ -46,7 +46,7 @@ using namespace lsd_slam;
 
 int main( int argc, char** argv )
 {
-  G3Logger logWorker( argv[0] );
+  libg3log::G3Logger logWorker( argv[0] );
   logWorker.logBanner();
 
   Configuration conf;
