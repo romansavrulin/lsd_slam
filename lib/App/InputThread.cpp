@@ -49,6 +49,9 @@ namespace lsd_slam {
 
           cv::Mat imageDist = cv::Mat( system->conf().inputImage.cvSize(), CV_8U);
           dataSource->getImage( imageDist );
+
+          CHECK(imageDist.type() == CV_8U);
+
           undistorter->undistort(imageDist, image);
 
           CHECK(image.type() == CV_8U);
