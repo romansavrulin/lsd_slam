@@ -14,13 +14,13 @@ have them all built locally.
 [fips](http://floooh.github.io/fips/index.html).   fips ain't perfect, but it
 does the job I need it to do.
 
-> __It's good enough I'm deprecating the CMake build.__
+> __It's good enough I'm deprecating the Conan build.__
 If you don't want to use fips, see the `cmake` branch.
 
 > If you really loved the Conan build, the last commit with Conan is [7b8b76f](https://github.com/amarburg/lsd_slam/commit/7b8b76ff6be7e6f4c4eb1576a7f741146eb1bdf4).
 
-> This also means master no longer builds Thomas' Pangolin-based GUI.   That's now
-in its [own repo](https://github.com/amarburg/lsd-slam-pangolin-gui) which is dependent on this repo.   Think of this repo as the "LSD SLAM Library",
+> This also means `master` no longer builds Thomas' Pangolin-based GUI.   That's now
+in its [own repo](https://github.com/amarburg/lsd-slam-pangolin-gui) which includes this repo.   Think of this repo as the "LSD SLAM Library (w/o a GUI)",
 with frontends elsewhere...
 
 This fork started from [Thomas Whelan's fork](https://github.com/mp3guy/lsd_slam) which "relieves the user of the horrors of a ROS dependency and uses the much nicer lightweight [Pangolin](https://github.com/stevenlovegrove/Pangolin) framework instead."
