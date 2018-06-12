@@ -46,24 +46,22 @@ namespace lsd_slam {
         std::chrono::time_point<std::chrono::steady_clock> start(std::chrono::steady_clock::now());
 
         if( dataSource->grab() ) {
+          if( dataSource->getImage( image ) >= 0 ) {
+            CHECK(image.type() == CV_8UC1);
 
-          cv::Mat imageDist = cv::Mat( system->conf().inputImage.cvSize(), CV_8U);
-          dataSource->getImage( imageDist );
+            cv::Mat imageUndist;
+            undistorter->undistort(image, imageUndist);
 
-          CHECK(imageDist.type() == CV_8U);
+            system->trackFrame( new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data ), fps == 0 );
 
-          undistorter->undistort(imageDist, image);
+            runningIdx++;
+            fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
 
-          CHECK(image.type() == CV_8U);
+            if( output ) {
+              output->updateFrameNumber( runningIdx );
+              output->updateLiveImage( imageUndist );
+            }
 
-          system->trackFrame( new Frame( runningIdx, system->conf(), fakeTimeStamp, image.data ), fps == 0 );
-
-          runningIdx++;
-          fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
-
-          if( output ) {
-            output->updateFrameNumber( runningIdx );
-            output->updateLiveImage( image );
           }
 
           if(fullResetRequested)
