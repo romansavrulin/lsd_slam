@@ -13,8 +13,6 @@ if (NOT FIPS_IMPORT)
   fips_setup(PROJECT lsd_slam)
 endif()
 
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
 option(BUILD_GUI "Build Pangolin-based GUI" OFF)
 
 # ## Non-conan / cmake-based build
@@ -30,17 +28,15 @@ option(BUILD_GUI "Build Pangolin-based GUI" OFF)
 
 #option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
 
+find_package(Boost COMPONENTS thread filesystem system REQUIRED)
+find_package(Eigen3 REQUIRED)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 ## I believe the fipsified version of g2o will handle this...
 # ## I haven't packaged suitesparse yet...
 find_package(SuiteParse REQUIRED)
-# list( APPEND G2O_LIBRARIES
-#   ${CSPARSE_LIBRARY} )
-# list( APPEND G2O_INCLUDE_DIR
-#   ${CSPARSE_INCLUDE_DIR}
-#   ${CHOLMOD_INCLUDE_DIR} )
-
-find_package(Boost COMPONENTS thread filesystem system REQUIRED)
-find_package(Eigen3 REQUIRED)
+find_package( TinyXML2 REQUIRED )
 
 # FabMap
 # uncomment this part to enable fabmap
