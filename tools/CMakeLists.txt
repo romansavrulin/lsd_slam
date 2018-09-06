@@ -7,5 +7,5 @@ fips_begin_app(LSD cmdline)
   fips_files( LSD.cpp
                 ParseArgs.cpp  )
 
-  fips_deps( lsdslam videoio )
+  fips_deps( g3log g3logger lsdslam videoio )
 fips_end_app()

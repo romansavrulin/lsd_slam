@@ -6,7 +6,5 @@ gtest_begin( lsdslam )
       test_test.cpp
     )
 
-    fips_libs(lsdslam)
-
-    fips_deps(videoio)
+    fips_deps( lsdslam videoio )
 gtest_end()

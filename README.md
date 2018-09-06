@@ -1,7 +1,5 @@
 # LSD-SLAM: Large-Scale Direct Monocular SLAM
 
-[![wercker status](https://app.wercker.com/status/4c30e195acc92af03c75e1f3451b6916/m/master "wercker status")](https://app.wercker.com/project/byKey/4c30e195acc92af03c75e1f3451b6916)
-
 See my [Development Blog](http://staff.washington.edu/amarburg/site/) for current status.
 
 > __December 2017__   Not as much time as I would like to work on this

@@ -3,8 +3,8 @@ imports:
         git: https://github.com/amarburg/fips-googletest.git
     libvideoio:
         git: https://github.com/amarburg/libvideoio.git
-    liblogger:
-        git: https://github.com/amarburg/liblogger.git
+    libg3logger:
+        git: https://github.com/amarburg/libg3logger.git
     fips-g2o:
         git: https://github.com/amarburg/g2o.git
         branch: fips
