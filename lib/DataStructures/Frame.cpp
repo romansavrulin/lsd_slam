@@ -51,6 +51,9 @@ Frame::Frame(int frameId, const Configuration &conf,
 		image++;
 	}
 
+	CHECK( data.width[0] & PYRAMID_DIVISOR == 0 ) << "Image width isn't divisible by " << PYRAMID_DIVISOR;
+	CHECK( data.height[0] & PYRAMID_DIVISOR == 0 ) << "Image height isn't divisible by " << PYRAMID_DIVISOR;
+
 	data.imageValid[0] = true;
 
 	privateFrameAllocCount++;
