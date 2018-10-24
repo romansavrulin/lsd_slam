@@ -175,12 +175,14 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 
 	Timer timer;
 
+	LOG_IF(DEBUG, enablePrintDebugInfo ) << "Start tracking...";
 	SE3 newRefToFrame_poseUpdate = _tracker->trackFrame(
 																	_trackingReference,
 																	newFrame.get(),
 																	frameToReference_initialEstimate);
 
 	perf.update( timer );
+	LOG_IF(DEBUG, enablePrintDebugInfo ) << "Done tracking...";
 
 	tracking_lastResidual = _tracker->lastResidual;
 	tracking_lastUsage = _tracker->pointUsage;

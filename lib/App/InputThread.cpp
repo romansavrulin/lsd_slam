@@ -10,9 +10,9 @@ namespace lsd_slam {
                               std::shared_ptr<libvideoio::ImageSource> &src,
                               std::shared_ptr<libvideoio::Undistorter> &und )
     : system( sys ), dataSource( src ), undistorter( und ),
-    inputDone( false ),
-    inputReady(),
-    output( nullptr )
+      inputDone( false ),
+      inputReady(),
+      output( nullptr )
     {
       ;
     }
@@ -24,9 +24,17 @@ namespace lsd_slam {
 
     void InputThread::operator()() {
       // get HZ
+
+      bool runRealTime = system->conf().runRealTime;
+
       float fps = dataSource->fps();
       long int dt_us = (fps > 0) ? (1e6/fps) : 0;
-      long int dt_wiggle = 0;
+      long int dt_fudge = 0;
+
+      if( runRealTime && fps == 0 ) {
+        LOG(INFO) << "Cannot run realtime, as input FPS is not known.";
+        runRealTime = false;
+      }
 
       inputReady.notify();
 
@@ -52,7 +60,10 @@ namespace lsd_slam {
             cv::Mat imageUndist;
             undistorter->undistort(image, imageUndist);
 
-            system->trackFrame( new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data ), fps == 0 );
+            CHECK(imageUndist.data != nullptr) << "Undistorted image data is nullptr";
+            CHECK(imageUndist.type() == CV_8UC1);
+
+            system->trackFrame( new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data ), runRealTime );
 
             runningIdx++;
             fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
@@ -78,7 +89,7 @@ namespace lsd_slam {
           if( system->conf().stopOnFailedRead ) break;
         }
 
-        if( dt_us > 0 ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_wiggle ) );
+        if( dt_us > 0 && runRealTime ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_fudge ) );
       }
 
       LOG(INFO) << "Have processed all input frames.";

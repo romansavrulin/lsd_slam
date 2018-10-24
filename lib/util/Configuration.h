@@ -33,6 +33,8 @@ public:
 
   enum { NO_STEREO = 0, STEREO_ZED } doDepth;
 
+  bool runRealTime;
+
   bool stopOnFailedRead;
   bool SLAMEnabled;
   bool doKFReActivation;

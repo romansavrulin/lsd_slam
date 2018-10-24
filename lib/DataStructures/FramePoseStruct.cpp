@@ -27,7 +27,6 @@ namespace lsd_slam
 
 int FramePoseStruct::cacheValidCounter = 0;
 
-
 int privateFramePoseStructAllocCount = 0;
 
 FramePoseStruct::FramePoseStruct( Frame &f )
@@ -43,15 +42,13 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	this->graphVertex = nullptr;
 
 	privateFramePoseStructAllocCount++;
-	LOGF_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo,
-					"ALLOCATED pose %d, now there are %d", frame.id(), privateFramePoseStructAllocCount);
+	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "ALLOCATED pose " << frame.id() << ", now there are" << privateFramePoseStructAllocCount;
 }
 
 FramePoseStruct::~FramePoseStruct()
 {
 	privateFramePoseStructAllocCount--;
-	LOGF_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo,
-					"DELETED pose %d, now there are %d", frame.id(), privateFramePoseStructAllocCount);
+	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "DELETED pose" << frame.id() << ", now there are " << privateFramePoseStructAllocCount;
 }
 
 void FramePoseStruct::setPoseGraphOptResult(Sim3 camToWorld)

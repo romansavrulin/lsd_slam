@@ -13,10 +13,12 @@ namespace lsd_slam {
 
 	using active_object::ActiveIdle;
 
+	const auto optimizationDt = std::chrono::milliseconds(2000);
+
 OptimizationThread::OptimizationThread( SlamSystem &system, bool enabled )
 	: //_haveUnmergedOptimizationOffset( false ),
 		_system( system ),
-		_thread( enabled ? ActiveIdle::createActiveIdle( std::bind( &OptimizationThread::callbackIdle, this ), std::chrono::milliseconds(2000)) : NULL )
+		_thread( enabled ? ActiveIdle::createActiveIdle( std::bind( &OptimizationThread::callbackIdle, this ), optimizationDt ) : NULL )
 {
 	LOG(INFO) << "Started optimization thread";
 }

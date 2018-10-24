@@ -3,9 +3,10 @@
 namespace lsd_slam {
 
   Configuration::Configuration() :
+      runRealTime( true ),
       doDepth( NO_STEREO ),
       stopOnFailedRead( true ),
-      SLAMEnabled( true ),
+      SLAMEnabled( false ),
       doKFReActivation( true ),
       doMapping( true ),
       continuousPCOutput( true ),

@@ -116,10 +116,10 @@ void TrackingReference::makePointCloud(int level)
 	const float* pyrColorSource = keyframe->image(level);
 	const Eigen::Vector4f* pyrGradSource = keyframe->gradients(level);
 
-	if(posData[level] == nullptr) posData[level] = new Eigen::Vector3f[w*h];
+	if(posData[level] == nullptr)          posData[level] = new Eigen::Vector3f[w*h];
 	if(pointPosInXYGrid[level] == nullptr) pointPosInXYGrid[level] = new int[w*h];
-	if(gradData[level] == nullptr) gradData[level] = new Eigen::Vector2f[w*h];
-	if(colorAndVarData[level] == nullptr) colorAndVarData[level] = new Eigen::Vector2f[w*h];
+	if(gradData[level] == nullptr)         gradData[level] = new Eigen::Vector2f[w*h];
+	if(colorAndVarData[level] == nullptr)  colorAndVarData[level] = new Eigen::Vector2f[w*h];
 
 	Eigen::Vector3f* posDataPT = posData[level];
 	int* idxPT = pointPosInXYGrid[level];

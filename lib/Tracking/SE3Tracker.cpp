@@ -269,7 +269,6 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 
 
 // tracks a frame.
-// first_frame has depth, second_frame DOES NOT have depth.
 SE3 SE3Tracker::trackFrame(
 		TrackingReference* reference,
 		Frame* frame,

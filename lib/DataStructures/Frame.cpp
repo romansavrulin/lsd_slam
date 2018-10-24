@@ -45,14 +45,18 @@ Frame::Frame(int frameId, const Configuration &conf,
 	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
 	float* maxPt = data.image[0] + data.width[0]*data.height[0];
 
+	CHECK(image != nullptr ) << "Image not defined!";
+
+	//memcpy( data.image[0], image, data.width[0]*data.height[0] );
 	for(float* pt = data.image[0]; pt < maxPt; pt++)
 	{
-		*pt = *image;
-		image++;
+	       *pt = *image;
+	       image++;
 	}
 
-	CHECK( data.width[0] & PYRAMID_DIVISOR == 0 ) << "Image width isn't divisible by " << PYRAMID_DIVISOR;
-	CHECK( data.height[0] & PYRAMID_DIVISOR == 0 ) << "Image height isn't divisible by " << PYRAMID_DIVISOR;
+
+	CHECK( (data.width[0] & PYRAMID_DIVISOR) == 0 ) << "Image width " << data.width[0] << " isn't divisible by " << PYRAMID_DIVISOR;
+	CHECK( (data.height[0] & PYRAMID_DIVISOR) == 0 ) << "Image height " << data.height[0] << " isn't divisible by " << PYRAMID_DIVISOR;
 
 	data.imageValid[0] = true;
 
@@ -472,19 +476,19 @@ void Frame::buildImage(int level)
 	require(IMAGE, level - 1);
 	boost::unique_lock<boost::mutex> lock2(buildMutex);
 
-	if(data.imageValid[level])
-		return;
-
-	LOGF_IF(DEBUG,enablePrintDebugInfo && printFrameBuildDebugInfo,"CREATE Image lvl %d for frame %d", level, id());
+	if(data.imageValid[level]) return;
 
 	int width = data.width[level - 1];
 	int height = data.height[level - 1];
 	const float* source = data.image[level - 1];
 
+	LOGF_IF(DEBUG,enablePrintDebugInfo && printFrameBuildDebugInfo,"CREATE Image lvl %d for frame %d,  %f x %f", level, id(), width/2.0, height/2.0);
+
 	if (data.image[level] == 0)
 		data.image[level] = FrameMemory::getInstance().getFloatBuffer(data.width[level] * data.height[level]);
 	float* dest = data.image[level];
 
+#if defined(FOOBAR)
 #if defined(ENABLE_SSE)
 	// I assume all all subsampled width's are a multiple of 8.
 	// if this is not the case, this still works except for the last * pixel, which will produce a segfault.
@@ -582,14 +586,20 @@ void Frame::buildImage(int level)
 		return;
 	}
 #endif
+#endif
+
+	// Width and height are valid for level _above_ this one
+
+	assert( width % 2 == 0 );
+	assert( height % 2 == 0 );
 
 	int wh = width*height;
-	const float* s;
-	for(int y=0;y<wh;y+=width*2)
+	const float *s;
+	for(int y=0 ; y<height ; y+=2)
 	{
-		for(int x=0;x<width;x+=2)
+		for(int x=0 ; x<width ; x+=2)
 		{
-			s = source + x + y;
+			s = source + x + y*width;
 			*dest = (s[0] +
 					s[1] +
 					s[width] +
