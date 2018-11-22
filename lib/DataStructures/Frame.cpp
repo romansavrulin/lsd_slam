@@ -55,8 +55,9 @@ Frame::Frame(int frameId, const Configuration &conf,
 	       *pt = *image;
 	       image++;
 	}
-	CHECK( (data.width[0] & PYRAMID_DIVISOR) == 0 ) << "Image width " << data.width[0] << " isn't divisible by " << PYRAMID_DIVISOR;
-	CHECK( (data.height[0] & PYRAMID_DIVISOR) == 0 ) << "Image height " << data.height[0] << " isn't divisible by " << PYRAMID_DIVISOR;
+
+	CHECK( (data.width[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image width " << data.width[0] << " isn't divisible by " << PYRAMID_DIVISOR;
+	CHECK( (data.height[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image height " << data.height[0] << " isn't divisible by " << PYRAMID_DIVISOR;
 
 	data.imageValid[0] = true;
 
