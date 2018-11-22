@@ -60,13 +60,14 @@ using namespace lsd_slam;
 
 
 SlamSystem::SlamSystem( const Configuration &conf )
-: _finalized(),
-	perf(),
+: perf(),
 	_conf( conf ),
 	_outputWrapper( nullptr ),
+	_finalized(),
+	_initialized( false ),
 	_keyFrameGraph( new KeyFrameGraph ),
-	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph, conf ) ),
-	_initialized( false )
+	_currentKeyFrame(),
+	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph, conf ) )
 {
 
 	// Because some of these rely on conf(), need to explicitly call after

@@ -47,14 +47,14 @@ Frame::Frame(int frameId, const Configuration &conf,
 
 	CHECK(image != nullptr ) << "Image not defined!";
 
+	LOG(INFO) << "Image width " << data.width[0] << " x " << data.height[0];
+
 	//memcpy( data.image[0], image, data.width[0]*data.height[0] );
 	for(float* pt = data.image[0]; pt < maxPt; pt++)
 	{
 	       *pt = *image;
 	       image++;
 	}
-
-
 	CHECK( (data.width[0] & PYRAMID_DIVISOR) == 0 ) << "Image width " << data.width[0] << " isn't divisible by " << PYRAMID_DIVISOR;
 	CHECK( (data.height[0] & PYRAMID_DIVISOR) == 0 ) << "Image height " << data.height[0] << " isn't divisible by " << PYRAMID_DIVISOR;
 

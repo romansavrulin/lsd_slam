@@ -47,23 +47,23 @@ class Output3DWrapper
 public:
 	virtual ~Output3DWrapper() {};
 
-	virtual void publishPose( const Sophus::Sim3f &pose ) {};
+	virtual void publishPose( const Sophus::Sim3f &pose ) = 0;
 
-	virtual void publishKeyframeGraph( const std::shared_ptr<KeyFrameGraph> &graph) {};
+	virtual void publishKeyframeGraph( const std::shared_ptr<KeyFrameGraph> &graph) = 0;
 
 	// publishes a keyframe. if that frame already existis, it is overwritten, otherwise it is added.
-	virtual void publishKeyframe(const std::shared_ptr<Frame> &kf) {};
+	virtual void publishKeyframe(const std::shared_ptr<Frame> &kf) = 0;
 
-	virtual void updateDepthImage(unsigned char * data) {};
+	virtual void updateDepthImage(unsigned char * data) = 0 ;
 
 	// published a tracked frame that did not become a keyframe (yet; i.e. has no depth data)
-	virtual void publishTrackedFrame(const std::shared_ptr<Frame> &kf) {};
+	virtual void publishTrackedFrame(const std::shared_ptr<Frame> &kf) = 0;
 
 	// publishes graph and all constraints, as well as updated KF poses.
-	virtual void publishTrajectory(std::vector<Eigen::Matrix<float, 3, 1>> trajectory, std::string identifier) {};
-	virtual void publishTrajectoryIncrement(Eigen::Matrix<float, 3, 1> pt, std::string identifier) {};
+	virtual void publishTrajectory(std::vector<Eigen::Matrix<float, 3, 1>> trajectory, std::string identifier) = 0;
+	virtual void publishTrajectoryIncrement(Eigen::Matrix<float, 3, 1> pt, std::string identifier) = 0;
 
-	virtual void publishDebugInfo(Eigen::Matrix<float, 20, 1> data) {};
+	virtual void publishDebugInfo(Eigen::Matrix<float, 20, 1> data) = 0;
 
 };
 }

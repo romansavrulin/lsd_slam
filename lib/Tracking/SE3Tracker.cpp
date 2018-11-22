@@ -943,7 +943,7 @@ float SE3Tracker::calcResidualAndBuffers(
 		{
 			if(isGoodOutBuffer != 0) isGoodOutBuffer[*idxBuf] = false;
 
-			LOG_IF(DEBUG, loop < 50) << "Ref point: " << *refPoint;
+			LOG_IF(DEBUG, loop < 50) << "Ref point: " << (*refPoint)[0] << " " << (*refPoint)[1] << " " << (*refPoint)[2];
 			LOG_IF(DEBUG, loop < 50) << "Wxp :" << Wxp[0] << " " << Wxp[1] << " " << Wxp[2] << " maps to " << u_new << " " << v_new;
 			continue;
 		}
