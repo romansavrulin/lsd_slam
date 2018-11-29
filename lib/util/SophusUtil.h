@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@
 //	typedef Sophus::Vector3d Vector3;
 //	typedef Sophus::Vector4d Vector4;
 //	typedef Sophus::Vector6d Vector6;
-//	typedef Sophus::Vector7d Vector7;
+	typedef Sophus::Vector7d Vector7;
 //	typedef Sophus::Quaterniond Quaternion;
 	typedef Sophus::SE3d SE3;
 	typedef Sophus::Sim3d Sim3;
