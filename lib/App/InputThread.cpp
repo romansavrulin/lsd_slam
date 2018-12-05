@@ -25,21 +25,20 @@ namespace lsd_slam {
     void InputThread::operator()() {
       // get HZ
 
-      LOG(WARNING) << " !!! Running InputThread !!!!";
-
-      bool runRealTime = system->conf().runRealTime;
+      LOG(INFO) << " !!! Starting InputThread !!!!";
 
       float fps = dataSource->fps();
+
+      if( system->conf().runRealTime && fps == 0 ) {
+        LOG(WARNING) << "Input FPS not provided, using 30fps.";
+        fps = 30;
+      }
+
       long int dt_us = (fps > 0) ? (1e6/fps) : 0;
       long int dt_fudge = 0;
 
-      if( runRealTime && fps == 0 ) {
-        LOG(INFO) << "Cannot run realtime, as input FPS is not known.";
-        runRealTime = false;
-      }
 
       inputReady.notify();
-
       startAll.wait();
 
       int numFrames = dataSource->numFrames();
@@ -64,10 +63,12 @@ namespace lsd_slam {
 
             CHECK(imageUndist.data != nullptr) << "Undistorted image data is nullptr";
             CHECK(imageUndist.type() == CV_8UC1);
-            LOG(WARNING) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
+            //LOG(DEBUG) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
 
-            Frame *f = new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
-            system->trackFrame( f, runRealTime );
+            Frame::SharedPtr f( new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data ) );
+
+            // This will block if system->conf().runRealTime is false
+            system->trackFrame( f );
 
             runningIdx++;
             fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
@@ -93,7 +94,7 @@ namespace lsd_slam {
           if( system->conf().stopOnFailedRead ) break;
         }
 
-        if( dt_us > 0 && runRealTime ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_fudge ) );
+        if( system->conf().runRealTime && dt_us > 0 ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_fudge ) );
       }
 
       LOG(INFO) << "Have processed all input frames.";

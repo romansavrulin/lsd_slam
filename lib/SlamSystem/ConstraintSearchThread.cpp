@@ -17,6 +17,7 @@ namespace lsd_slam {
 
 ConstraintSearchThread::ConstraintSearchThread( SlamSystem &system, bool enabled )
 	: _system( system ),
+		_perf(),
 		constraintTracker( new Sim3Tracker( system.conf().slamImage ) ),
 		constraintSE3Tracker(  new SE3Tracker( system.conf().slamImage )  ),
 		_failedToRetrack( 0 ),
@@ -108,7 +109,7 @@ void ConstraintSearchThread::callbackNewKeyFrame( const Frame::SharedPtr &frame 
 		findConstraintsForNewKeyFrames( frame, true, true, 1.0);
 		_failedToRetrack=0;
 
-		_system.perf.findConstraint.update( timer );
+		_perf.findConstraint.update( timer );
 	}
 
 	FrameMemory::getInstance().pruneActiveFrames();

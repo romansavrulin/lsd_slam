@@ -111,7 +111,7 @@ public:
 
 	inline bool* refPixelWasGood();
 	inline bool* refPixelWasGoodNoCreate();
-	inline void clear_refPixelWasGood();
+	inline void  clear_refPixelWasGood();
 
 	/** Flags for use with require() and requirePyramid(). See the Frame class
 	  * documentation for their exact meaning. */
@@ -155,10 +155,10 @@ public:
 
 	// parent, the frame originally tracked on. never changes.
 	SharedPtr &setTrackingParent( const SharedPtr &newParent  ) { return _trackingParent = newParent; }
-	bool hasTrackingParent()    { return (bool)_trackingParent; }
-	SharedPtr &trackingParent()  { return _trackingParent; }
+	bool      hasTrackingParent() const     { return (bool)_trackingParent; }
+	const SharedPtr &trackingParent() const       { return _trackingParent; }
 
-	bool isTrackingParent( const SharedPtr &other );
+	bool isTrackingParent( const SharedPtr &other ) const;
 
 	Sim3 lastConstraintTrackedCamToWorld;
 

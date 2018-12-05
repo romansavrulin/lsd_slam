@@ -37,6 +37,7 @@ namespace lsd_slam
 	#define callOptimized(function, arguments) function##NEON arguments
 #else
 	#if defined(ENABLE_SSE)
+		#error "SSE Enabled!"
 		#define callOptimized(function, arguments) (USESSE ? function##SSE arguments : function arguments)
 	#else
 		#define callOptimized(function, arguments) function arguments

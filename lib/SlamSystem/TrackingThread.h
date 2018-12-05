@@ -94,16 +94,16 @@ public:
 	bool setTrackingIsBad( void )  { return _trackingIsGood = false; }
 	bool setTrackingIsGood( void ) { return _trackingIsGood = true; }
 
+	struct PerformanceData {
+		MsRateAverage track;
+	};
 
-	MsRateAverage perf;
-
-	Timer timeLastUpdate;
-
-
+	PerformanceData perf() const { return _perf; }
 
 private:
 
 	SlamSystem &_system;
+	PerformanceData _perf;
 
 	SE3Tracker* _tracker;
 

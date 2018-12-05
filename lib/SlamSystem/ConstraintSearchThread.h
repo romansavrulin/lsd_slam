@@ -31,9 +31,18 @@ public:
 
 	ThreadSynchronizer fullReConstraintTrackComplete;
 
+	struct PerformanceData {
+		MsRateAverage findConstraint;
+	};
+
+	PerformanceData perf() const { return _perf; }
+
+
 private:
 
 	SlamSystem &_system;
+
+ 	PerformanceData _perf;
 
 	Sim3Tracker* constraintTracker;
 	SE3Tracker* constraintSE3Tracker;

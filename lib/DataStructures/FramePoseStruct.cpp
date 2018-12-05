@@ -42,20 +42,19 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	this->graphVertex = nullptr;
 
 	privateFramePoseStructAllocCount++;
-	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "ALLOCATED pose " << frame.id() << ", now there are" << privateFramePoseStructAllocCount;
+	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 FramePoseStruct::~FramePoseStruct()
 {
 	privateFramePoseStructAllocCount--;
-	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "DELETED pose" << frame.id() << ", now there are " << privateFramePoseStructAllocCount;
+	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 void FramePoseStruct::setPoseGraphOptResult(Sim3 camToWorld)
 {
 	if(!isInGraph)
 		return;
-
 
 	camToWorld_new = camToWorld;
 	hasUnmergedPose = true;
@@ -65,7 +64,6 @@ void FramePoseStruct::applyPoseGraphOptResult()
 {
 	if(!hasUnmergedPose)
 		return;
-
 
 	camToWorld = camToWorld_new;
 	isOptimized = true;
@@ -85,12 +83,11 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 	// if the node is in the graph, it's absolute pose is only changed by optimization.
 	if(isOptimized) return camToWorld;
 
-
 	// return chached pose, if still valid.
 	if(cacheValidFor == cacheValidCounter)
 		return camToWorld;
 
-	// return id if there is no parent (very first frame)
+	// return identity if there is no parent (very first frame)
 	if( frame.hasTrackingParent() ) {
 			// abs. pose is computed from the parent's abs. pose, and cached.
 			cacheValidFor = cacheValidCounter;

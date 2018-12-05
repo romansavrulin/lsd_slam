@@ -59,6 +59,7 @@ using namespace lsd_slam;
 
 TrackingThread::TrackingThread( SlamSystem &system )
 : _system( system ),
+	_perf(),
 //	_system.currentKeyFrame( system.currentKeyFrame ),
 	_tracker( new SE3Tracker( system.conf().slamImage ) ),
 	_trackingReference( new TrackingReference() ),
@@ -112,8 +113,6 @@ TrackingThread::TrackingThread( SlamSystem &system )
 	// keepRunning = true;
 	// depthMapScreenshotFlag = false;
 	lastTrackingClosenessScore = 0;
-
-	timeLastUpdate.start();
 }
 
 
@@ -147,8 +146,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 		return;
 	}
 
-	// Are the following two calls atomic enough or should I lock
-	// before the next two lines?
+	// Are the following two calls atomic enough or should I lock before the next two lines?
 	bool newKeyFramePending = _system.mapThread->newKeyFramePending();	// pre-save here, to make decision afterwards.
 	Frame::SharedPtr keyframe( _system.currentKeyFrame().get() );
 
@@ -175,14 +173,14 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 
 	Timer timer;
 
-	LOG_IF(DEBUG, enablePrintDebugInfo ) << "Start tracking...";
+	LOG(DEBUG) << "Start tracking...";
 	SE3 newRefToFrame_poseUpdate = _tracker->trackFrame(
 																	_trackingReference,
 																	newFrame.get(),
 																	frameToReference_initialEstimate);
 
-	perf.update( timer );
-	LOG_IF(DEBUG, enablePrintDebugInfo ) << "Done tracking...";
+	_perf.track.update( timer );
+	LOG(DEBUG) << "Done tracking...";
 
 	tracking_lastResidual = _tracker->lastResidual;
 	tracking_lastUsage = _tracker->pointUsage;

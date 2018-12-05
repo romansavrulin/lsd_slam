@@ -59,6 +59,7 @@ if( ${ARCHITECTURE} STREQUAL "aarch64" )
 elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
   # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
 	# it has nothing to do with compiler behavior
+  message( STATUS " --> Using SSE" )
   set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -msse3 -msse2 -msse -march=native -DENABLE_SSE" )
 endif()
 

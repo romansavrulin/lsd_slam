@@ -24,13 +24,13 @@ using active_object::ActiveIdle;
 
 MappingThread::MappingThread( SlamSystem &system )
 	: relocalizer( system.conf() ),
-		_system(system ),
-		_newKeyFrame( nullptr ),
 		unmappedTrackedFrames(),
-		map( new DepthMap( system.conf() ) ),
 		unmappedTrackedFramesMutex(),
+		map( new DepthMap( system.conf() ) ),
 		trackedFramesMapped(),
 		mappingTrackingReference( new TrackingReference() ),
+		_system(system ),
+		_newKeyFrame( nullptr ),
 		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::callbackIdle, this ), std::chrono::milliseconds(200)) )
 {
 	LOG(INFO) << "Started Mapping thread";
@@ -398,8 +398,9 @@ void MappingThread::discardCurrentKeyframe()
 		boost::shared_lock_guard< boost::shared_mutex > lock( _system.keyFrameGraph()->allFramePosesMutex );
 		for(auto p : _system.keyFrameGraph()->allFramePoses)
 		{
-			if(p->frame.isTrackingParent( _system.currentKeyFrame().const_ref() ) )
+			if(p->frame.isTrackingParent( _system.currentKeyFrame().const_ref() ) ) {
 				p->frame.setTrackingParent( nullptr );
+			}
 		}
 	}
 
