@@ -331,9 +331,9 @@ inline bool Frame::hasIDepthBeenSet() const
 
 inline const float* Frame::idepth(int level)
 {
-	if (! data.hasIDepthBeenSet)
+	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame::idepth(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " << data.id << "; idepth(): idepth has not been set yet!";
 		return nullptr;
 	}
 	if (! data.idepthValid[level])
@@ -364,9 +364,9 @@ inline const float* Frame::idepthVar_reAct()
 
 inline const float* Frame::idepthVar(int level)
 {
-	if (! data.hasIDepthBeenSet)
+	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame::idepthVar(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " << data.id << "; idepthVar(): idepth has not been set yet!";
 		return nullptr;
 	}
 	if (! data.idepthVarValid[level])

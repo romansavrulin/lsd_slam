@@ -910,7 +910,6 @@ void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
 		}
 	}
 
-
 	activeKeyFrame->setDepth(currentDepthMap);
 }
 

@@ -306,6 +306,7 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
 	data.idepthValid[0] = true;
 	data.idepthVarValid[0] = true;
 	release(IDEPTH | IDEPTH_VAR, true, true);
+
 	data.hasIDepthBeenSet = true;
 	depthHasBeenUpdatedFlag = true;
 }
@@ -755,7 +756,7 @@ void Frame::releaseMaxGradients(int level)
 
 void Frame::buildIDepthAndIDepthVar(int level)
 {
-	if (! data.hasIDepthBeenSet)
+	if (! hasIDepthBeenSet())
 	{
 		LOG(WARNING) << "Frame::buildIDepthAndIDepthVar(): idepth has not been set yet!";
 		return;
