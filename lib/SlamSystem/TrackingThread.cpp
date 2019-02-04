@@ -118,21 +118,14 @@ TrackingThread::TrackingThread( SlamSystem &system )
 
 TrackingThread::~TrackingThread()
 {
-
-	delete _trackingReference;
 	delete _tracker;
 }
 
 
 void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntilMapped )
 {
-	// Create new frame
-	// std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, _conf, timestamp, image));
 
-	//LOG(INFO) << "In trackFrame";
-
-	if(!_trackingIsGood)
-	{
+	if(!_trackingIsGood) {
 		// Prod mapping to check the relocalizer
 		_system.mapThread->relocalizer.updateCurrentFrame(newFrame);
 		_system.mapThread->doIteration();
@@ -150,8 +143,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	bool newKeyFramePending = _system.mapThread->newKeyFramePending();	// pre-save here, to make decision afterwards.
 	Frame::SharedPtr keyframe( _system.currentKeyFrame().get() );
 
-	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag )
-	{
+	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag ) {
 		LOG(DEBUG) << "Importing new tracking reference from frame " << keyframe->id();
 		_trackingReference->importFrame( keyframe );
 		keyframe->depthHasBeenUpdatedFlag = false;
@@ -174,13 +166,13 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	Timer timer;
 
 	LOG(DEBUG) << "Start tracking...";
-	SE3 newRefToFrame_poseUpdate = _tracker->trackFrame(
-																	_trackingReference,
-																	newFrame.get(),
-																	frameToReference_initialEstimate);
+	SE3 newRefToFrame_poseUpdate = _tracker->trackFrame( _trackingReference,
+																										newFrame,
+																										frameToReference_initialEstimate);
 
+	LOG(DEBUG) << "Done tracking, took " << timer.stop() * 1000 << " ms";
 	_perf.track.update( timer );
-	LOG(DEBUG) << "Done tracking...";
+
 
 	tracking_lastResidual = _tracker->lastResidual;
 	tracking_lastUsage = _tracker->pointUsage;
@@ -314,7 +306,7 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 
 	_tracker->trackFrame(
 			_trackingReference,
-			result.successfulFrame.get(),
+			result.successfulFrame,
 			result.successfulFrameToKeyframe );
 
 	if(!_tracker->trackingWasGood || _tracker->lastGoodCount() / (_tracker->lastGoodCount()) < 1-0.75f*(1-MIN_GOODPERGOODBAD_PIXEL))

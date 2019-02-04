@@ -108,7 +108,7 @@ private:
 	SE3Tracker* _tracker;
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
-	TrackingReference* _trackingReference; // tracking reference for current keyframe. only used by tracking.
+	std::shared_ptr<TrackingReference> _trackingReference; // tracking reference for current keyframe. only used by tracking.
 	Frame::SharedPtr _trackingReferenceFrameSharedPT;	// only used in odometry-mode, to keep a keyframe alive until it is deleted. ONLY accessed whithin currentKeyFrameMutex lock.
 
 	bool _trackingIsGood;

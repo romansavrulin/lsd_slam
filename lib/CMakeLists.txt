@@ -20,6 +20,8 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/Sim3Tracker.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/Relocalizer.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/SE3Tracker.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/SE3Tracker_SSE.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/SE3Tracker_NEON.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/TrackingReference.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/IOWrapper/Timestamp.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/GlobalMapping/FabMap.cpp

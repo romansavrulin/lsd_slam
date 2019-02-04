@@ -133,8 +133,8 @@ Sim3Tracker::~Sim3Tracker()
 
 
 Sim3 Sim3Tracker::trackFrameSim3(
-		TrackingReference* reference,
-		Frame* frame,
+		const std::shared_ptr<TrackingReference> &reference,
+		const std::shared_ptr<Frame> &frame,
 		const Sim3& frameToReference_initialEstimate,
 		int startLevel, int finalLevel)
 {
@@ -358,8 +358,8 @@ Sim3 Sim3Tracker::trackFrameSim3(
 
 #if defined(ENABLE_SSE)
 void Sim3Tracker::calcSim3BuffersSSE(
-		const TrackingReference* reference,
-		Frame* frame,
+		const std::shared_ptr<TrackingReference> &reference,
+		const std::shared_ptr<Frame> &frame,
 		const Sim3& referenceToFrame,
 		int level, bool plotWeights)
 {
@@ -373,8 +373,8 @@ void Sim3Tracker::calcSim3BuffersSSE(
 
 #if defined(ENABLE_NEON)
 void Sim3Tracker::calcSim3BuffersNEON(
-		const TrackingReference* reference,
-		Frame* frame,
+		const std::shared_ptr<TrackingReference> &reference,
+		const std::shared_ptr<Frame> &frame,
 		const Sim3& referenceToFrame,
 		int level, bool plotWeights)
 {
@@ -388,8 +388,8 @@ void Sim3Tracker::calcSim3BuffersNEON(
 
 
 void Sim3Tracker::calcSim3Buffers(
-		const TrackingReference* reference,
-		Frame* frame,
+		const std::shared_ptr<TrackingReference> &reference,
+		const std::shared_ptr<Frame> &frame,
 		const Sim3& referenceToFrame,
 		int level, bool plotWeights)
 {

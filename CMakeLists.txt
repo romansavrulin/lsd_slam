@@ -57,10 +57,15 @@ if( ${ARCHITECTURE} STREQUAL "aarch64" )
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a") # -DENABLE_NEON" )
 
 elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
-  # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
-	# it has nothing to do with compiler behavior
-  message( STATUS " --> Using SSE" )
-  set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -msse3 -msse2 -msse -march=native -DENABLE_SSE" )
+  if( ${CMAKE_BUILD_TYPE} MATCHES RELEASE )
+    # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
+  	# it has nothing to do with compiler behavior
+    message( STATUS " --> Using SSE" )
+    ## Enable SSE on release only...
+    set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -msse3 -msse2 -msse -march=native -DENABLE_SSE" )
+  else()
+    message( STATUS " --> Not enabling SSE on x86_64 architecture for Debug build")
+  endif()
 endif()
 
 set( OPENCV_COMPONENTS core highgui imgproc video calib3d )

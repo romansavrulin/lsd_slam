@@ -44,17 +44,17 @@ private:
 
  	PerformanceData _perf;
 
-	Sim3Tracker* constraintTracker;
-	SE3Tracker* constraintSE3Tracker;
-	TrackingReference* newKFTrackingReference;
-	TrackingReference* candidateTrackingReference;
+	std::shared_ptr<Sim3Tracker>       constraintTracker;
+	std::shared_ptr<SE3Tracker>        constraintSE3Tracker;
+	std::shared_ptr<TrackingReference> newKFTrackingReference;
+	std::shared_ptr<TrackingReference> candidateTrackingReference;
 
 	int _failedToRetrack;
 	int lastNumConstraintsAddedOnFullRetrack;
 
 	//=== Callbacks ===
 	void callbackIdle( void );
-	int callbackDoFullReConstraintTrack( void );
+	int  callbackDoFullReConstraintTrack( void );
 	void callbackNewKeyFrame( const Frame::SharedPtr &frame );
 
 	//=== Internal functions ====
@@ -63,15 +63,18 @@ private:
 	std::unique_ptr<active_object::ActiveIdle> _thread;
 
 	float tryTrackSim3(
-			TrackingReference* A, TrackingReference* B,
+			const std::shared_ptr<TrackingReference> &A,
+			const std::shared_ptr<TrackingReference> &B,
 			int lvlStart, int lvlEnd,
 			bool useSSE,
-			Sim3 &AtoB, Sim3 &BtoA,
-			KFConstraintStruct* e1=0, KFConstraintStruct* e2=0);
+			Sim3 &AtoB,
+			Sim3 &BtoA,
+			KFConstraintStruct* e1=nullptr,
+			KFConstraintStruct* e2=nullptr);
 
 	void testConstraint(
 			const Frame::SharedPtr &candidate,
-			KFConstraintStruct* &e1_out, KFConstraintStruct* &e2_out,
+			KFConstraintStruct* e1_out, KFConstraintStruct* e2_out,
 			Sim3 candidateToFrame_initialEstimate,
 			float strictness);
 

@@ -58,20 +58,20 @@ public:
 
 	// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	SE3 trackFrame(
-			TrackingReference* reference,
-			Frame* frame,
+			const std::shared_ptr<TrackingReference> &reference,
+			const std::shared_ptr<Frame> &frame,
 			const SE3& frameToReference_initialEstimate);
 
 			// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	SE3 trackFrameOnPermaref(
-			Frame* reference,
-			Frame* frame,
+			const std::shared_ptr<Frame> &reference,
+			const std::shared_ptr<Frame> &frame,
 			SE3 referenceToFrame);
 
 			// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	float checkPermaRefOverlap(
-			Frame* reference,
-			SE3 referenceToFrame);
+				const std::shared_ptr<Frame> &reference,
+				SE3 referenceToFrame);
 
 
 	float pointUsage;
@@ -111,69 +111,48 @@ private:
 	int buf_warped_size;
 
 
+
+	void calculateWarpUpdate(LGS6 &ls);
+
+	float calcWeightsAndResidual(	const Sophus::SE3f& referenceToFrame);
+
 	float calcResidualAndBuffers(
 			const Eigen::Vector3f* refPoint,
 			const Eigen::Vector2f* refColVar,
 			int* idxBuf,
 			int refNum,
-			Frame* frame,
+			const std::shared_ptr<Frame> &frame,
 			const Sophus::SE3f& referenceToFrame,
 			int level,
 			bool plotResidual = false);
 
+
 #if defined(ENABLE_SSE)
+	void calculateWarpUpdateSSE(LGS6 &ls);
+	float calcWeightsAndResidualSSE(const Sophus::SE3f& referenceToFrame);
 	float calcResidualAndBuffersSSE(
 			const Eigen::Vector3f* refPoint,
 			const Eigen::Vector2f* refColVar,
 			int* idxBuf,
 			int refNum,
-			Frame* frame,
+			const std::shared_ptr<Frame> &frame,
 			const Sophus::SE3f& referenceToFrame,
 			int level,
 			bool plotResidual = false);
 #endif
+
 #if defined(ENABLE_NEON)
+	void calculateWarpUpdateNEON(LGS6 &ls);
+	float calcWeightsAndResidualNEON(const Sophus::SE3f& referenceToFrame);
 	float calcResidualAndBuffersNEON(
 			const Eigen::Vector3f* refPoint,
 			const Eigen::Vector2f* refColVar,
 			int* idxBuf,
 			int refNum,
-			Frame* frame,
+			const std::shared_ptr<Frame> &frame,
 			const Sophus::SE3f& referenceToFrame,
 			int level,
 			bool plotResidual = false);
-#endif
-
-
-
-
-
-
-	float calcWeightsAndResidual(
-			const Sophus::SE3f& referenceToFrame);
-#if defined(ENABLE_SSE)
-	float calcWeightsAndResidualSSE(
-			const Sophus::SE3f& referenceToFrame);
-#endif
-#if defined(ENABLE_NEON)
-	float calcWeightsAndResidualNEON(
-			const Sophus::SE3f& referenceToFrame);
-#endif
-
-
-
-
-
-
-	void calculateWarpUpdate(
-			LGS6 &ls);
-#if defined(ENABLE_SSE)
-	void calculateWarpUpdateSSE(
-			LGS6 &ls);
-#endif
-#if defined(ENABLE_NEON)
-	void calculateWarpUpdateNEON(
-			LGS6 &ls);
 #endif
 
 	void calcResidualAndBuffers_debugStart();

@@ -45,7 +45,7 @@ class SE3Tracker;
 
 struct TrackableKFStruct
 {
-	Frame::SharedPtr ref;
+	Frame::SharedPtr frame;
 	SE3 refToFrame;
 	float dist;
 	float angle;

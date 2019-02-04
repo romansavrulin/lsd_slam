@@ -82,7 +82,7 @@ std::vector<TrackableKFStruct> TrackableKeyFrameSearch::findEuclideanOverlapFram
 		if(dirDotProd < cosAngleTH) continue;
 
 		potentialReferenceFrames.push_back(TrackableKFStruct());
-		potentialReferenceFrames.back().ref = graph->keyframesAll[i];
+		potentialReferenceFrames.back().frame = graph->keyframesAll[i];
 		potentialReferenceFrames.back().refToFrame = se3FromSim3(graph->keyframesAll[i]->getCamToWorld().inverse() * frame->getCamToWorld()).inverse();
 		potentialReferenceFrames.back().dist = dNorm2;
 		potentialReferenceFrames.back().angle = dirDotProd;
@@ -109,15 +109,15 @@ Frame::SharedPtr TrackableKeyFrameSearch::findRePositionCandidate( const Frame::
 	int checkedSecondary = 0;
 	for(unsigned int i=0;i<potentialReferenceFrames.size();i++)
 	{
-		if(frame->isTrackingParent( potentialReferenceFrames[i].ref ) )
+		if(frame->isTrackingParent( potentialReferenceFrames[i].frame ) )
 			continue;
 
-		if(potentialReferenceFrames[i].ref->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
+		if(potentialReferenceFrames[i].frame->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
 			continue;
 
 		{
 			Timer time;
-			tracker->checkPermaRefOverlap(potentialReferenceFrames[i].ref.get(), potentialReferenceFrames[i].refToFrame);
+			tracker->checkPermaRefOverlap(potentialReferenceFrames[i].frame, potentialReferenceFrames[i].refToFrame);
 			trackPermaRef.update( time );
 		}
 
@@ -125,8 +125,8 @@ Frame::SharedPtr TrackableKeyFrameSearch::findRePositionCandidate( const Frame::
 
 		if(score < maxScore)
 		{
-			SE3 RefToFrame_tracked = tracker->trackFrameOnPermaref(potentialReferenceFrames[i].ref.get(), frame.get(), potentialReferenceFrames[i].refToFrame);
-			Sophus::Vector3d dist = RefToFrame_tracked.translation() * potentialReferenceFrames[i].ref->meanIdepth;
+			SE3 RefToFrame_tracked = tracker->trackFrameOnPermaref(potentialReferenceFrames[i].frame, frame, potentialReferenceFrames[i].refToFrame);
+			Sophus::Vector3d dist = RefToFrame_tracked.translation() * potentialReferenceFrames[i].frame->meanIdepth;
 
 			float newScore = getRefFrameScore(dist.dot(dist), tracker->pointUsage);
 			float poseDiscrepancy = (potentialReferenceFrames[i].refToFrame * RefToFrame_tracked.inverse()).log().norm();
@@ -137,7 +137,7 @@ Frame::SharedPtr TrackableKeyFrameSearch::findRePositionCandidate( const Frame::
 			{
 				bestPoseDiscrepancy = poseDiscrepancy;
 				bestScore = score;
-				bestFrame = potentialReferenceFrames[i].ref;
+				bestFrame = potentialReferenceFrames[i].frame;
 				bestRefToFrame = potentialReferenceFrames[i].refToFrame;
 				bestRefToFrame_tracked = RefToFrame_tracked;
 				bestDist = dist.dot(dist);
@@ -171,7 +171,7 @@ std::unordered_set<Frame::SharedPtr> TrackableKeyFrameSearch::findCandidates(con
 	// Add all candidates that are similar in an euclidean sense.
 	std::vector<TrackableKFStruct> potentialReferenceFrames = findEuclideanOverlapFrames(keyframe, closenessTH * 15 / (KFDistWeight*KFDistWeight), 1.0 - 0.25 * closenessTH, true);
 	for(unsigned int i=0;i<potentialReferenceFrames.size();i++)
-		results.insert(potentialReferenceFrames[i].ref);
+		results.insert(potentialReferenceFrames[i].frame);
 
 	int appearanceBased = 0;
 	fabMapResult_out = 0;

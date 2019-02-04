@@ -23,11 +23,11 @@ using active_object::ActiveIdle;
 
 
 MappingThread::MappingThread( SlamSystem &system )
-	: relocalizer( system.conf() ),
-		unmappedTrackedFrames(),
+	: unmappedTrackedFrames(),
 		unmappedTrackedFramesMutex(),
-		map( new DepthMap( system.conf() ) ),
 		trackedFramesMapped(),
+		relocalizer( system.conf() ),
+		map( new DepthMap( system.conf() ) ),
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
 		_newKeyFrame( nullptr ),

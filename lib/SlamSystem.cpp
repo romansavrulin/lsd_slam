@@ -325,7 +325,8 @@ void SlamSystem::updateDisplayDepthMap()
 	if( !conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
 
 	mapThread->map->debugPlotDepthMap();
-	double scale = 1;
+	//double scale = 1;
+
 	if( (bool)currentKeyFrame()() ) scale = currentKeyFrame()()->getCamToWorld().scale();
 
 	// debug plot depthmap
