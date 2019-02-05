@@ -101,7 +101,7 @@ public:
 	Sophus::Sim3f getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
-	MutexObject< Frame::SharedPtr >  &currentKeyFrame() { return _currentKeyFrame; };
+	Frame::SharedPtr &currentKeyFrame() { return _currentKeyFrame; };
 
 	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
 	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
@@ -123,7 +123,7 @@ public:
 	void publishPose(const Sophus::Sim3f &pose ) 	                 { if( _outputWrapper ) _outputWrapper->publishPose(pose);}
 	void publishTrackedFrame( const Frame::SharedPtr &frame )      { if( _outputWrapper ) _outputWrapper->publishTrackedFrame( frame ); }
 	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
-	void publishKeyframe(  const Frame::SharedPtr &frame )         { if( _outputWrapper ) _outputWrapper->publishKeyframe( frame ); }
+	void publishKeyframe(  const Frame::SharedPtr &frame );
 	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
 
 	void updateDisplayDepthMap();
@@ -173,7 +173,7 @@ private:
 	// == Shared data
 
 	std::shared_ptr<KeyFrameGraph> _keyFrameGraph;	  // has own locks
-	MutexObject< Frame::SharedPtr >  _currentKeyFrame;
+	Frame::SharedPtr  _currentKeyFrame;
 
 
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;

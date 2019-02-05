@@ -65,7 +65,7 @@ namespace lsd_slam {
             CHECK(imageUndist.type() == CV_8UC1);
             //LOG(DEBUG) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
 
-            Frame::SharedPtr f( new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data ) );
+            Frame::SharedPtr f = std::make_shared<Frame>( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
 
             // This will block if system->conf().runRealTime is false
             system->trackFrame( f );

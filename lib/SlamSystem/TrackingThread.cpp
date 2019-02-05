@@ -141,7 +141,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 
 	// Are the following two calls atomic enough or should I lock before the next two lines?
 	bool newKeyFramePending = _system.mapThread->newKeyFramePending();	// pre-save here, to make decision afterwards.
-	Frame::SharedPtr keyframe( _system.currentKeyFrame().get() );
+	Frame::SharedPtr keyframe( _system.currentKeyFrame() );
 
 	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag ) {
 		LOG(DEBUG) << "Importing new tracking reference from frame " << keyframe->id();
@@ -237,12 +237,12 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	// Keyframe selection
 	// latestTrackedFrame = trackingNewFrame;
 	//if (!my_createNewKeyframe && _map.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
-	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame().const_ref()->id();
-	LOG_IF( INFO, printThreadingInfo ) << _system.currentKeyFrame().const_ref()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame().const_ref()->id() << ", considering " << newFrame->id() << " as new keyframe.";
+	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
+	LOG_IF( INFO, printThreadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
-	if(!newKeyFramePending && _system.currentKeyFrame().const_ref()->numMappedOnThisTotal > MIN_NUM_MAPPED)
+	if(!newKeyFramePending && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
-		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame().const_ref()->meanIdepth;
+		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame()->meanIdepth;
 		float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
 
 		if(_system.keyFrameGraph()->size() < INITIALIZATION_PHASE_COUNT)	minVal *= 0.7;
@@ -300,7 +300,7 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 	// relocalizer.getResult(keyframe, succFrame, succFrameID, succFrameToKF_init);
 	// assert(keyframe != 0);
 
-	Frame::SharedPtr keyframe(_system.currentKeyFrame().const_ref() );
+	Frame::SharedPtr keyframe( _system.currentKeyFrame() );
 	_trackingReference->importFrame( keyframe );
 	_trackingReferenceFrameSharedPT = keyframe;
 
