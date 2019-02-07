@@ -35,7 +35,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 ## I believe the fipsified version of g2o will handle this...
 # ## I haven't packaged suitesparse yet...
-find_package(SuiteParse REQUIRED)
+find_package(SuiteSparse REQUIRED)
 find_package( TinyXML2 REQUIRED )
 
 # FabMap
