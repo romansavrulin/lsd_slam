@@ -6,7 +6,7 @@ namespace lsd_slam {
       runRealTime( true ),
       doDepth( NO_STEREO ),
       stopOnFailedRead( true ),
-      SLAMEnabled( false ),
+      SLAMEnabled( true ),
       doKFReActivation( true ),
       doMapping( true ),
       continuousPCOutput( true ),

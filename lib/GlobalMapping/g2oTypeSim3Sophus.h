@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -26,102 +26,104 @@
 #include "g2o/types/sba/types_six_dof_expmap.h"
 
 
-namespace lsd_slam
-{
+namespace g2o {
+	typedef Eigen::Matrix<double,7,1,Eigen::ColMajor>    Vector7d;
+}
 
+namespace lsd_slam {
 
-class VertexSim3 : public g2o::BaseVertex<7, Sophus::Sim3d>
-{
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-	VertexSim3();
-	virtual bool read(std::istream& is);
-	virtual bool write(std::ostream& os) const;
-
-	virtual void setToOriginImpl() {
-		_estimate = Sophus::Sim3d();
-	}
-
-	virtual void oplusImpl(const double* update_)
+	class VertexSim3 : public g2o::BaseVertex<7, Sophus::Sim3d>
 	{
-		Eigen::Map< Eigen::Matrix<double, 7, 1> > update(const_cast<double*>(update_));
+	public:
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+		VertexSim3();
+		virtual bool read(std::istream& is);
+		virtual bool write(std::ostream& os) const;
 
-		if (_fix_scale) update[6] = 0;
+		virtual void setToOriginImpl() {
+			_estimate = Sophus::Sim3d();
+		}
 
-		setEstimate(Sophus::Sim3d::exp(update) * estimate());
-	}
+		virtual void oplusImpl(const double* update_)
+		{
+			Eigen::Map< Eigen::Matrix<double, 7, 1> > update(const_cast<double*>(update_));
 
-	bool _fix_scale;
-};
+			if (_fix_scale) update[6] = 0;
 
-/**
-* \brief 7D edge between two Vertex7
-*/
-class EdgeSim3 : public g2o::BaseBinaryEdge<7, Sophus::Sim3d, VertexSim3, VertexSim3>
-{
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-	EdgeSim3();
-	
-	virtual bool read(std::istream& is);
-	virtual bool write(std::ostream& os) const;
-	
-	void computeError()
+			setEstimate(Sophus::Sim3d::exp(update) * estimate());
+		}
+
+		bool _fix_scale;
+	};
+
+	/**
+	* \brief 7D edge between two Vertex7
+	*/
+	class EdgeSim3 : public g2o::BaseBinaryEdge<7, Sophus::Sim3d, VertexSim3, VertexSim3>
 	{
-		const VertexSim3* _from = static_cast<const VertexSim3*>(_vertices[0]);
-		const VertexSim3* _to = static_cast<const VertexSim3*>(_vertices[1]);
+	public:
+		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+		EdgeSim3();
 
-		Sophus::Sim3d error_= _from->estimate().inverse() * _to->estimate() * _inverseMeasurement;
-		_error = error_.log();
+		virtual bool read(std::istream& is);
+		virtual bool write(std::ostream& os) const;
 
-	}
-	
-	void linearizeOplus()
-	{
-		const VertexSim3* _from = static_cast<const VertexSim3*>(_vertices[0]);
+		void computeError()
+		{
+			const VertexSim3* _from = static_cast<const VertexSim3*>(_vertices[0]);
+			const VertexSim3* _to = static_cast<const VertexSim3*>(_vertices[1]);
 
-		_jacobianOplusXj = _from->estimate().inverse().Adj();
-		_jacobianOplusXi = -_jacobianOplusXj;
-	}
+			Sophus::Sim3d error_= _from->estimate().inverse() * _to->estimate() * _inverseMeasurement;
+			_error = error_.log();
+
+		}
+
+		void linearizeOplus()
+		{
+			const VertexSim3* _from = static_cast<const VertexSim3*>(_vertices[0]);
+
+			_jacobianOplusXj = _from->estimate().inverse().Adj();
+			_jacobianOplusXi = -_jacobianOplusXj;
+		}
 
 
-	virtual void setMeasurement(const Sophus::Sim3d& m)
-	{
-		_measurement = m;
-		_inverseMeasurement = m.inverse();
-	}
-	
-	virtual bool setMeasurementData(const double* m)
-	{
-		Eigen::Map<const g2o::Vector7d> v(m);
-		setMeasurement(Sophus::Sim3d::exp(v));
-		return true;
-	}
-	
-	virtual bool setMeasurementFromState()
-	{
-		const VertexSim3* from = static_cast<const VertexSim3*>(_vertices[0]);
-		const VertexSim3* to   = static_cast<const VertexSim3*>(_vertices[1]);
-		Sophus::Sim3d delta = from->estimate().inverse() * to->estimate();
-		setMeasurement(delta);
-		return true;
-	}
+		virtual void setMeasurement(const Sophus::Sim3d& m)
+		{
+			_measurement = m;
+			_inverseMeasurement = m.inverse();
+		}
 
-	virtual double initialEstimatePossible(const g2o::OptimizableGraph::VertexSet& , g2o::OptimizableGraph::Vertex* ) { return 1.;}
-	
-	virtual void initialEstimate(const g2o::OptimizableGraph::VertexSet& from, g2o::OptimizableGraph::Vertex* /*to*/)
-	{
-		VertexSim3 *_from = static_cast<VertexSim3*>(_vertices[0]);
-		VertexSim3 *_to   = static_cast<VertexSim3*>(_vertices[1]);
+		virtual bool setMeasurementData(const double* m)
+		{
+			Eigen::Map<const g2o::Vector7d> v(m);
+			setMeasurement(Sophus::Sim3d::exp(v));
+			return true;
+		}
 
-		if (from.count(_from) > 0)
-			_to->setEstimate(_from->estimate() * _measurement);
-		else
-			_from->setEstimate(_to->estimate() * _inverseMeasurement);
-	}
-	
-protected:
-	Sophus::Sim3d _inverseMeasurement;
-};
+		virtual bool setMeasurementFromState()
+		{
+			const VertexSim3* from = static_cast<const VertexSim3*>(_vertices[0]);
+			const VertexSim3* to   = static_cast<const VertexSim3*>(_vertices[1]);
+			Sophus::Sim3d delta = from->estimate().inverse() * to->estimate();
+			setMeasurement(delta);
+			return true;
+		}
+
+		virtual double initialEstimatePossible(const g2o::OptimizableGraph::VertexSet& , g2o::OptimizableGraph::Vertex* ) { return 1.;}
+
+		virtual void initialEstimate(const g2o::OptimizableGraph::VertexSet& from, g2o::OptimizableGraph::Vertex* /*to*/)
+		{
+			VertexSim3 *_from = static_cast<VertexSim3*>(_vertices[0]);
+			VertexSim3 *_to   = static_cast<VertexSim3*>(_vertices[1]);
+
+			if (from.count(_from) > 0)
+				_to->setEstimate(_from->estimate() * _measurement);
+			else
+				_from->setEstimate(_to->estimate() * _inverseMeasurement);
+		}
+
+	protected:
+		Sophus::Sim3d _inverseMeasurement;
+	};
 
 }

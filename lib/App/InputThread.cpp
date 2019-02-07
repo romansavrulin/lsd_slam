@@ -14,7 +14,7 @@ namespace lsd_slam {
       inputReady(),
       output( nullptr )
     {
-      ;
+      LOG(WARNING) << "InputThread constructor";
     }
 
     void InputThread::setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out )
@@ -24,6 +24,8 @@ namespace lsd_slam {
 
     void InputThread::operator()() {
       // get HZ
+
+      LOG(WARNING) << " !!! Running InputThread !!!!";
 
       bool runRealTime = system->conf().runRealTime;
 
@@ -62,8 +64,10 @@ namespace lsd_slam {
 
             CHECK(imageUndist.data != nullptr) << "Undistorted image data is nullptr";
             CHECK(imageUndist.type() == CV_8UC1);
+            LOG(WARNING) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
 
-            system->trackFrame( new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data ), runRealTime );
+            Frame *f = new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
+            system->trackFrame( f, runRealTime );
 
             runningIdx++;
             fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;

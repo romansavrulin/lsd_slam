@@ -342,8 +342,9 @@ bool MappingThread::updateKeyframe()
 
 
 	// Why is this here?
-	if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame()() )
-			_system.publishKeyframe( _system.currentKeyFrame().const_ref() );
+	if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame()() ) {
+		_system.publishKeyframe( _system.currentKeyFrame().const_ref() );
+	}
 
 	return true;
 }
