@@ -32,6 +32,8 @@
 
 #include "util/settings.h"
 
+#include "ros/ros.h"
+
 #include "util/globalFuncs.h"
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
@@ -46,6 +48,9 @@ using namespace lsd_slam;
 
 int main( int argc, char** argv )
 {
+  //init ros
+  ros::init(argc, argv, "lsd_ros_node");
+  ros::NodeHandle nh("lsd_slam");
   libg3logger::G3Logger logWorker( argv[0] );
   logWorker.logBanner();
 
@@ -73,8 +78,12 @@ int main( int argc, char** argv )
   startAll.notify();
 
   // This is idle while(1) loop
-  while( !input.inputDone.getValue() )
-  { sleep(1); }
+  ros::Rate loop_rate(30);
+  while(ros::ok()){
+    if(input.inputDone.getValue()) break;
+    //ROS_INFO("I'm Working!");
+    loop_rate.sleep();
+  }
 
   LOG(INFO) << "Finalizing system.";
   system->finalize();

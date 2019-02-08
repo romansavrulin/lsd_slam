@@ -3,6 +3,8 @@
 #include "App/InputThread.h"
 #include "App.h"
 
+static const std::string OPENCV_WINDOW = "Image window";
+
 namespace lsd_slam {
 
 
@@ -12,9 +14,32 @@ namespace lsd_slam {
     : system( sys ), dataSource( src ), undistorter( und ),
       inputDone( false ),
       inputReady(),
-      output( nullptr )
+      output( nullptr ),
+      it_(nh_)
     {
-      LOG(WARNING) << "InputThread constructor";
+      image_sub_ = it_.subscribe("/image_raw", 1,
+        &InputThread::imageCallback, this);
+
+      cv::namedWindow(OPENCV_WINDOW);
+
+      LOG(INFO) << "InputThread constructor";
+    }
+
+  InputThread::~InputThread(){
+    cv::destroyWindow(OPENCV_WINDOW);
+  }
+
+    //ROS callback
+    void InputThread::imageCallback(const sensor_msgs::ImageConstPtr& msg){
+      try
+      {
+        cv::imshow("view", cv_bridge::toCvShare(msg, "bgr8")->image);
+        cv::waitKey(30);
+      }
+      catch (cv_bridge::Exception& e)
+      {
+        ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
+      }
     }
 
     void InputThread::setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out )
@@ -51,6 +76,7 @@ namespace lsd_slam {
 
       for(unsigned int i = 0; (numFrames < 0) || (i < (unsigned int)numFrames); ++i)
       {
+
         if(inputDone.getValue()) break;
 
         std::chrono::time_point<std::chrono::steady_clock> start(std::chrono::steady_clock::now());
