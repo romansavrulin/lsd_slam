@@ -50,7 +50,7 @@ DepthMap::DepthMap( const Configuration &conf )
 
 	activeKeyFrameIsReactivated = false;
 
-	const ImageSize &imgSize( _conf.slamImage );
+	const ImageSize &imgSize( _conf.slamImageSize );
 	const size_t imgArea( imgSize.area() );
 	const cv::Size imgCvSize( imgSize.cvSize() );
 
@@ -95,9 +95,9 @@ DepthMap::~DepthMap()
 
 void DepthMap::reset()
 {
-	for(DepthMapPixelHypothesis* pt = otherDepthMap+_conf.slamImage.area()-1; pt >= otherDepthMap; pt--)
+	for(DepthMapPixelHypothesis* pt = otherDepthMap+_conf.slamImageSize.area()-1; pt >= otherDepthMap; pt--)
 		pt->isValid = false;
-	for(DepthMapPixelHypothesis* pt = currentDepthMap+_conf.slamImage.area()-1; pt >= currentDepthMap; pt--)
+	for(DepthMapPixelHypothesis* pt = currentDepthMap+_conf.slamImageSize.area()-1; pt >= currentDepthMap; pt--)
 		pt->isValid = false;
 }
 
@@ -109,9 +109,9 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats* stats)
 	int successes = 0;
 
 	for(int y=yMin;y<yMax; y++)
-		for(int x=3;x<_conf.slamImage.width-3;x++)
+		for(int x=3;x<_conf.slamImageSize.width-3;x++)
 		{
-			int idx = x+y*_conf.slamImage.width;
+			int idx = x+y*_conf.slamImageSize.width;
 			DepthMapPixelHypothesis* target = currentDepthMap+idx;
 			bool hasHypothesis = target->isValid;
 
@@ -141,7 +141,7 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats* stats)
 void DepthMap::observeDepth()
 {
 
-	threadReducer.reduce(boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3, _conf.slamImage.height-3, 10);
+	threadReducer.reduce(boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3, _conf.slamImageSize.height-3, 10);
 
 	LOGF_IF(DEBUG, printObserveStatistics, "OBSERVE (%d): %d / %d created; %d / %d updated; %d skipped; %d init-blacklisted",
 			activeKeyFrame->id(),
@@ -169,7 +169,7 @@ void DepthMap::observeDepth()
 
 bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats)
 {
-	int idx = x+y*_conf.slamImage.width;
+	int idx = x+y*_conf.slamImageSize.width;
 
 	float fx = _conf.camera.fx,
 				fy = _conf.camera.fy,
@@ -197,7 +197,7 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
 
 	// ===== check epl-grad magnitude ======
 	float gx = activeKeyFrameImageData[idx+1] - activeKeyFrameImageData[idx-1];
-	float gy = activeKeyFrameImageData[idx+_conf.slamImage.width] - activeKeyFrameImageData[idx-_conf.slamImage.width];
+	float gy = activeKeyFrameImageData[idx+_conf.slamImageSize.width] - activeKeyFrameImageData[idx-_conf.slamImageSize.width];
 	float eplGradSquared = gx * epx + gy * epy;
 	eplGradSquared = eplGradSquared*eplGradSquared / eplLengthSquared;	// square and norm with epl-length
 
@@ -234,7 +234,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, Ru
 	if(refFrame->isTrackingParent( activeKeyFrame ) )
 	{
 		bool* wasGoodDuringTracking = refFrame->refPixelWasGoodNoCreate();
-		if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (_conf.slamImage.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
+		if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (_conf.slamImageSize.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
 		{
 			if(plotStereoImages)
 				debugImageHypothesisHandling.at<cv::Vec3b>(y, x) = cv::Vec3b(255,0,0); // BLUE for SKIPPED NOT GOOD TRACKED
@@ -311,7 +311,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 
 	if(refFrame->isTrackingParent( activeKeyFrame ) ) {
 		bool* wasGoodDuringTracking = refFrame->refPixelWasGoodNoCreate();
-		if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (_conf.slamImage.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
+		if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (_conf.slamImageSize.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
 		{
 			if(plotStereoImages)
 				debugImageHypothesisHandling.at<cv::Vec3b>(y, x) = cv::Vec3b(255,0,0); // BLUE for SKIPPED NOT GOOD TRACKED
@@ -482,7 +482,7 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 			new_keyframe->trackingParent()->id());
 
 	// wipe depthmap
-	for(DepthMapPixelHypothesis* pt = otherDepthMap+_conf.slamImage.area()-1; pt >= otherDepthMap; pt--)
+	for(DepthMapPixelHypothesis* pt = otherDepthMap+_conf.slamImageSize.area()-1; pt >= otherDepthMap; pt--)
 	{
 		pt->isValid = false;
 		pt->blacklisted = 0;
@@ -512,10 +512,10 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 				cyi = _conf.camera.cyi;
 
 	// go through all pixels of OLD image, propagating forwards.
-	for(int y=0;y< _conf.slamImage.height ;y++)
-		for(int x=0;x< _conf.slamImage.width;x++)
+	for(int y=0;y< _conf.slamImageSize.height ;y++)
+		for(int x=0;x< _conf.slamImageSize.width;x++)
 		{
-			DepthMapPixelHypothesis* source = currentDepthMap + x + y* _conf.slamImage.width;
+			DepthMapPixelHypothesis* source = currentDepthMap + x + y* _conf.slamImageSize.width;
 
 			if(!source->isValid) {
 				runningStats.num_prop_source_invalid++;
@@ -533,18 +533,18 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 			float v_new = pn[1]*new_idepth*fy + cy;
 
 			// check if still within image, if not: DROP.
-			if(!(u_new > 2.1f && v_new > 2.1f && u_new < _conf.slamImage.width-3.1f && v_new < _conf.slamImage.height-3.1f))
+			if(!(u_new > 2.1f && v_new > 2.1f && u_new < _conf.slamImageSize.width-3.1f && v_new < _conf.slamImageSize.height-3.1f))
 			{
 				runningStats.num_prop_removed_out_of_bounds++;
 				continue;
 			}
 
-			int newIDX = (int)(u_new+0.5f) + ((int)(v_new+0.5f))*_conf.slamImage.width;
+			int newIDX = (int)(u_new+0.5f) + ((int)(v_new+0.5f))*_conf.slamImageSize.width;
 			float destAbsGrad = newKFMaxGrad[newIDX];
 
 			if(trackingWasGood)
 			{
-				if(!trackingWasGood[(x >> SE3TRACKING_MIN_LEVEL) + (_conf.slamImage.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)]
+				if(!trackingWasGood[(x >> SE3TRACKING_MIN_LEVEL) + (_conf.slamImageSize.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)]
 				                    || destAbsGrad < MIN_ABS_GRAD_DECREASE)
 				{
 					runningStats.num_prop_removed_colorDiff++;
@@ -553,8 +553,8 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 			}
 			else
 			{
-				float sourceColor = activeKFImageData[x + y*_conf.slamImage.width];
-				float destColor = getInterpolatedElement(newKFImageData, u_new, v_new, _conf.slamImage.width);
+				float sourceColor = activeKFImageData[x + y*_conf.slamImageSize.width];
+				float destColor = getInterpolatedElement(newKFImageData, u_new, v_new, _conf.slamImageSize.width);
 
 				float residual = destColor - sourceColor;
 
@@ -655,11 +655,11 @@ void DepthMap::regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* 
 	// =========== regularize fill holes
 	const float* keyFrameMaxGradBuf = activeKeyFrame->maxGradients(0);
 
-	int width = _conf.slamImage.width;
+	int width = _conf.slamImageSize.width;
 
 	for(int y=yMin; y<yMax; y++)
 	{
-		for(int x=3;x< _conf.slamImage.width-2; x++)
+		for(int x=3;x< _conf.slamImageSize.width-2; x++)
 		{
 			int idx = x+y*width;
 			DepthMapPixelHypothesis* dest = otherDepthMap + idx;
@@ -710,8 +710,8 @@ void DepthMap::regularizeDepthMapFillHoles()
 
 	runningStats.num_reg_created=0;
 
-	memcpy(otherDepthMap,currentDepthMap, _conf.slamImage.area()*sizeof(DepthMapPixelHypothesis));
-	threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapFillHolesRow, this, _1, _2, _3), 3, _conf.slamImage.height-2, 10);
+	memcpy(otherDepthMap,currentDepthMap, _conf.slamImageSize.area()*sizeof(DepthMapPixelHypothesis));
+	threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapFillHolesRow, this, _1, _2, _3), 3, _conf.slamImageSize.height-2, 10);
 	LOGF_IF(INFO, enablePrintDebugInfo && printFillHolesStatistics, "FillHoles (discreteDepth): %d created\n",
 				runningStats.num_reg_created);
 }
@@ -721,13 +721,13 @@ void DepthMap::regularizeDepthMapFillHoles()
 void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stats)
 {
 	// ============ build inegral buffers
-	int* validityIntegralBufferPT = validityIntegralBuffer+yMin*_conf.slamImage.width;
-	DepthMapPixelHypothesis* ptSrc = currentDepthMap+yMin*_conf.slamImage.width;
+	int* validityIntegralBufferPT = validityIntegralBuffer+yMin*_conf.slamImageSize.width;
+	DepthMapPixelHypothesis* ptSrc = currentDepthMap+yMin*_conf.slamImageSize.width;
 	for(int y=yMin;y<yMax;y++)
 	{
 		int validityIntegralBufferSUM = 0;
 
-		for(int x=0;x< _conf.slamImage.width ;x++)
+		for(int x=0;x< _conf.slamImageSize.width ;x++)
 		{
 			if(ptSrc->isValid)
 				validityIntegralBufferSUM += ptSrc->validity_counter;
@@ -741,13 +741,13 @@ void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stat
 
 void DepthMap::buildRegIntegralBuffer()
 {
-	threadReducer.reduce(boost::bind(&DepthMap::buildRegIntegralBufferRow1, this, _1, _2,_3), 0, _conf.slamImage.height);
+	threadReducer.reduce(boost::bind(&DepthMap::buildRegIntegralBufferRow1, this, _1, _2,_3), 0, _conf.slamImageSize.height);
 
 	int* validityIntegralBufferPT = validityIntegralBuffer;
-	int* validityIntegralBufferPT_T = validityIntegralBuffer+_conf.slamImage.width;
+	int* validityIntegralBufferPT_T = validityIntegralBuffer+_conf.slamImageSize.width;
 
-	int wh =  _conf.slamImage.area();
-	for(int idx= _conf.slamImage.width; idx<wh;idx++)
+	int wh =  _conf.slamImageSize.area();
+	for(int idx= _conf.slamImageSize.width; idx<wh;idx++)
 		*(validityIntegralBufferPT_T++) += *(validityIntegralBufferPT++);
 
 }
@@ -762,10 +762,10 @@ template<bool removeOcclusions> void DepthMap::regularizeDepthMapRow(int validit
 
 	for(int y=yMin;y<yMax;y++)
 	{
-		for(int x=regularize_radius; x < (_conf.slamImage.width-regularize_radius); x++)
+		for(int x=regularize_radius; x < (_conf.slamImageSize.width-regularize_radius); x++)
 		{
-			DepthMapPixelHypothesis* dest = currentDepthMap + x + y*_conf.slamImage.width;
-			DepthMapPixelHypothesis* destRead = otherDepthMap + x + y*_conf.slamImage.width;
+			DepthMapPixelHypothesis* dest = currentDepthMap + x + y*_conf.slamImageSize.width;
+			DepthMapPixelHypothesis* destRead = otherDepthMap + x + y*_conf.slamImageSize.width;
 
 			// if isValid need to do better examination and then update.
 
@@ -781,7 +781,7 @@ template<bool removeOcclusions> void DepthMap::regularizeDepthMapRow(int validit
 			for(int dx=-regularize_radius; dx<=regularize_radius;dx++)
 				for(int dy=-regularize_radius; dy<=regularize_radius;dy++)
 				{
-					DepthMapPixelHypothesis* source = destRead + dx + dy*_conf.slamImage.width;
+					DepthMapPixelHypothesis* source = destRead + dx + dy*_conf.slamImageSize.width;
 
 					if(!source->isValid) continue;
 //					stats->num_reg_total++;
@@ -858,13 +858,13 @@ void DepthMap::regularizeDepthMap(bool removeOcclusions, int validityTH)
 	runningStats.num_reg_blacklisted=0;
 	runningStats.num_reg_setBlacklisted=0;
 
-	memcpy(otherDepthMap,currentDepthMap,_conf.slamImage.area()*sizeof(DepthMapPixelHypothesis));
+	memcpy(otherDepthMap,currentDepthMap,_conf.slamImageSize.area()*sizeof(DepthMapPixelHypothesis));
 
 
 	if(removeOcclusions)
-		threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapRow<true>, this, validityTH, _1, _2, _3), 2, _conf.slamImage.height-2, 10);
+		threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapRow<true>, this, validityTH, _1, _2, _3), 2, _conf.slamImageSize.height-2, 10);
 	else
-		threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapRow<false>, this, validityTH, _1, _2, _3), 2, _conf.slamImage.height-2, 10);
+		threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapRow<false>, this, validityTH, _1, _2, _3), 2, _conf.slamImageSize.height-2, 10);
 
 	LOGF_IF(INFO, enablePrintDebugInfo && printRegularizeStatistics, "REGULARIZE (%d): %d smeared; %d blacklisted /%d new); %d deleted; %d occluded; %d filled\n",
 			activeKeyFrame->id(),
@@ -886,11 +886,11 @@ void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
 
 	const float* maxGradients = new_frame->maxGradients();
 
-	for(int y=1; y<(_conf.slamImage.height-1); y++)
+	for(int y=1; y<(_conf.slamImageSize.height-1); y++)
 	{
-		for(int x=1; x<(_conf.slamImage.width-1); x++)
+		for(int x=1; x<(_conf.slamImageSize.width-1); x++)
 		{
-			int idx = x+y*_conf.slamImage.width;
+			int idx = x+y*_conf.slamImageSize.width;
 			if(maxGradients[idx] > MIN_ABS_GRAD_CREATE)
 			{
 				float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
@@ -932,11 +932,11 @@ void DepthMap::setFromExistingKF( const Frame::SharedPtr &kf)
 	activeKeyFrameImageData = activeKeyFrame->image(0);
 	activeKeyFrameIsReactivated = true;
 
-	for(int y=0;y<_conf.slamImage.height;y++)
+	for(int y=0;y<_conf.slamImageSize.height;y++)
 	{
-		for(int x=0;x<_conf.slamImage.width;x++)
+		for(int x=0;x<_conf.slamImageSize.width;x++)
 		{
-			int idx = x + y*_conf.slamImage.width;
+			int idx = x + y*_conf.slamImageSize.width;
 			if(*idepthVar > 0)
 			{
 				*pt = DepthMapPixelHypothesis(
@@ -976,11 +976,11 @@ void DepthMap::initializeFromGTDepth( const Frame::SharedPtr &new_frame)
 
 	float averageGTIDepthSum = 0;
 	int averageGTIDepthNum = 0;
-	for(int y=0;y<_conf.slamImage.height;y++)
+	for(int y=0;y<_conf.slamImageSize.height;y++)
 	{
-		for(int x=0;x<_conf.slamImage.width;x++)
+		for(int x=0;x<_conf.slamImageSize.width;x++)
 		{
-			float idepthValue = idepth[x+y*_conf.slamImage.width];
+			float idepthValue = idepth[x+y*_conf.slamImageSize.width];
 			if(!isnanf(idepthValue) && idepthValue > 0)
 			{
 				averageGTIDepthSum += idepthValue;
@@ -990,11 +990,11 @@ void DepthMap::initializeFromGTDepth( const Frame::SharedPtr &new_frame)
 	}
 
 
-	for(int y=0;y<_conf.slamImage.height;y++)
+	for(int y=0;y<_conf.slamImageSize.height;y++)
 	{
-		for(int x=0;x<_conf.slamImage.width;x++)
+		for(int x=0;x<_conf.slamImageSize.width;x++)
 		{
-			int idx = x+y*_conf.slamImage.width;
+			int idx = x+y*_conf.slamImageSize.width;
 			float idepthValue = idepth[idx];
 
 			if(!isnanf(idepthValue) && idepthValue > 0)
@@ -1269,7 +1269,7 @@ void DepthMap::createKeyFrame( const Frame::SharedPtr &new_keyframe)
 
 	// make mean inverse depth be one.
 	float sumIdepth=0, numIdepth=0;
-	for(DepthMapPixelHypothesis* source = currentDepthMap; source < currentDepthMap+_conf.slamImage.area(); source++)
+	for(DepthMapPixelHypothesis* source = currentDepthMap; source < currentDepthMap+_conf.slamImageSize.area(); source++)
 	{
 		if(!source->isValid)
 			continue;
@@ -1278,7 +1278,7 @@ void DepthMap::createKeyFrame( const Frame::SharedPtr &new_keyframe)
 	}
 	float rescaleFactor = numIdepth / sumIdepth;
 	float rescaleFactor2 = rescaleFactor*rescaleFactor;
-	for(DepthMapPixelHypothesis* source = currentDepthMap; source < currentDepthMap+_conf.slamImage.area(); source++)
+	for(DepthMapPixelHypothesis* source = currentDepthMap; source < currentDepthMap+_conf.slamImageSize.area(); source++)
 	{
 		if(!source->isValid)
 			continue;
@@ -1367,10 +1367,10 @@ int DepthMap::debugPlotDepthMap()
 	int refID = referenceFrameByID_offset;
 
 
-	for(int y=0;y<(_conf.slamImage.height);y++)
-		for(int x=0;x<(_conf.slamImage.width);x++)
+	for(int y=0;y<(_conf.slamImageSize.height);y++)
+		for(int x=0;x<(_conf.slamImageSize.width);x++)
 		{
-			int idx = x + y*_conf.slamImage.width;
+			int idx = x + y*_conf.slamImageSize.width;
 
 			if(currentDepthMap[idx].blacklisted < MIN_BLACKLIST && _conf.debugDisplay == 2)
 				debugImageDepth.at<cv::Vec3b>(y,x) = cv::Vec3b(0,0,255);
@@ -1406,7 +1406,7 @@ inline float DepthMap::doLineStereo(
 {
 	if(enablePrintDebugInfo) stats->num_stereo_calls++;
 
-	int width = _conf.slamImage.width, height = _conf.slamImage.height;
+	int width = _conf.slamImageSize.width, height = _conf.slamImageSize.height;
 
 	// calculate epipolar line start and end point in old image
 	Eigen::Vector3f KinvP = Eigen::Vector3f(_conf.camera.fxi*u+_conf.camera.cxi,_conf.camera.fyi*v+_conf.camera.cyi,1.0f);

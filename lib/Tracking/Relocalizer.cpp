@@ -160,7 +160,7 @@ void Relocalizer::threadLoop(int idx)
 {
 	if(!multiThreading && idx != 0) return;
 
-	SE3Tracker* tracker = new SE3Tracker(_conf.slamImage );
+	SE3Tracker* tracker = new SE3Tracker(_conf.slamImageSize );
 
 	boost::unique_lock<boost::mutex> lock(exMutex);
 	while(continueRunning)

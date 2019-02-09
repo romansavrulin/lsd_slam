@@ -61,7 +61,7 @@ TrackingThread::TrackingThread( SlamSystem &system )
 : _system( system ),
 	_perf(),
 //	_system.currentKeyFrame( system.currentKeyFrame ),
-	_tracker( new SE3Tracker( system.conf().slamImage ) ),
+	_tracker( new SE3Tracker( system.conf().slamImageSize ) ),
 	_trackingReference( new TrackingReference() ),
 	_trackingIsGood( true )
 {

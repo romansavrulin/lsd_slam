@@ -49,7 +49,7 @@ private:
 		Data() = delete;
 		Data( const Data & ) = delete;
 
-		Data( int id, double timestamp, const Camera &camera, const SlamImageSize &slamImageSize );
+		Data( int id, double timestamp, const Camera &camera, const ImageSize &slamImageSize );
 
 		int id;
 

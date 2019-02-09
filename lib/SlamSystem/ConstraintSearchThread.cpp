@@ -18,8 +18,8 @@ namespace lsd_slam {
 ConstraintSearchThread::ConstraintSearchThread( SlamSystem &system, bool enabled )
 	: _system( system ),
 		_perf(),
-		constraintTracker( new Sim3Tracker( system.conf().slamImage ) ),
-		constraintSE3Tracker(  new SE3Tracker( system.conf().slamImage )  ),
+		constraintTracker( new Sim3Tracker( system.conf().slamImageSize ) ),
+		constraintSE3Tracker(  new SE3Tracker( system.conf().slamImageSize )  ),
 		newKFTrackingReference(  new TrackingReference()  ),
 		candidateTrackingReference(  new TrackingReference()  ),
 		_failedToRetrack( 0 ),

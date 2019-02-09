@@ -44,7 +44,7 @@ namespace lsd_slam {
       int numFrames = dataSource->numFrames();
       LOG_IF( INFO, numFrames > 0 ) << "Running for " << numFrames << " frames at " << fps << " fps";
 
-      cv::Mat image = cv::Mat(system->conf().slamImage.cvSize(), CV_8U);
+      cv::Mat image = cv::Mat(system->conf().slamImageSize.cvSize(), CV_8U);
       int runningIdx=0;
       float fakeTimeStamp = 0;
 

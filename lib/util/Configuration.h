@@ -18,7 +18,6 @@ namespace lsd_slam {
 
   using libvideoio::Camera;
   using libvideoio::ImageSize;
-  using libvideoio::SlamImageSize;
 
 // Slow migration from the global settings.[h,cpp] model to a Configuration
 // object.
@@ -27,8 +26,9 @@ public:
 
   Configuration();
 
-  ImageSize inputImage;
-  SlamImageSize slamImage;
+  // Does additional validation on sz
+  const ImageSize &setSlamImageSize( const ImageSize &sz );
+  ImageSize slamImageSize;
   Camera camera;
 
   enum { NO_STEREO = 0, STEREO_ZED } doDepth;

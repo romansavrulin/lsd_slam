@@ -36,7 +36,7 @@ int privateFrameAllocCount = 0;
 Frame::Frame(int frameId, const Configuration &conf,
 							double timestamp, const unsigned char* image )
 	: 	pose( new FramePoseStruct(*this) ),
-			data( frameId, timestamp, conf.camera, conf.slamImage ),
+			data( frameId, timestamp, conf.camera, conf.slamImageSize ),
 			_trackingParent( nullptr ),
 			_conf( conf )
 {
@@ -71,7 +71,7 @@ Frame::Frame(int frameId, const Configuration &conf,
 Frame::Frame(int frameId, const Configuration &conf,
 							double timestamp, const float* image )
 	: pose( new FramePoseStruct(*this)),
-		data( frameId, timestamp, conf.camera, conf.slamImage  ),
+		data( frameId, timestamp, conf.camera, conf.slamImageSize  ),
 		_trackingParent( nullptr ),
 		_conf( conf )
 {
@@ -884,7 +884,7 @@ void Frame::releaseIDepthVar(int level)
 
 //====================
 
-Frame::Data::Data( int i, double ts, const Camera &cam, const SlamImageSize &slamImageSize )
+Frame::Data::Data( int i, double ts, const Camera &cam, const ImageSize &slamImageSize )
 	: id( i ), timestamp( ts )
 	{
 

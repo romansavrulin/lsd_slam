@@ -31,10 +31,10 @@ namespace lsd_slam
 
 TrackableKeyFrameSearch::TrackableKeyFrameSearch( const std::shared_ptr<KeyFrameGraph> &graph, const Configuration &conf )
 : graph(graph),
-	tracker( new SE3Tracker( conf.slamImage ) )
+	tracker( new SE3Tracker( conf.slamImageSize ) )
 {
-	fowX = 2 * atanf(float(conf.slamImage.width) * conf.camera.fxi / 2.0f );
-	fowY = 2 * atanf(float(conf.slamImage.height) * conf.camera.fyi / 2.0f );
+	fowX = 2 * atanf(float(conf.slamImageSize.width) * conf.camera.fxi / 2.0f );
+	fowY = 2 * atanf(float(conf.slamImageSize.height) * conf.camera.fyi / 2.0f );
 
 	LOGF_IF(INFO, enablePrintDebugInfo && printRelocalizationInfo,
 					"Relocalization Values: fowX %f, fowY %f\n", fowX, fowY);
