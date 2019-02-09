@@ -78,7 +78,6 @@ public:
 	// during re-localization used
 	Relocalizer relocalizer;
 
-	DepthMap* map;
 	TrackingReference* mappingTrackingReference;
 
 	ThreadSynchronizer optimizationUpdateMerged;

@@ -53,11 +53,10 @@ int main( int argc, char** argv )
   ParseArgs args( argc, argv );
 
   // Load the configuration object
-  conf.inputImage = args.undistorter->inputImageSize();
-  conf.slamImage  = args.undistorter->outputImageSize();
+  conf.setSlamImageSize( args.undistorter->outputImageSize() );
   conf.camera     = args.undistorter->getCamera();
 
-  LOG(INFO) << "Slam image: " << conf.slamImage.width << " x " << conf.slamImage.height;
+  LOG(INFO) << "Slam image: " << conf.slamImageSize.width << " x " << conf.slamImageSize.height;
 
   CHECK( (conf.camera.fx) > 0 && (conf.camera.fy > 0) ) << "Camera focal length is zero";
 

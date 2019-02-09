@@ -122,7 +122,7 @@ TrackingThread::~TrackingThread()
 }
 
 
-void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntilMapped )
+void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame )
 {
 
 	if(!_trackingIsGood) {
@@ -274,7 +274,7 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	// }
 
 	// If blocking is requested...
-	if(blockUntilMapped && trackingIsGood() ){
+	if( !_system.conf().runRealTime && trackingIsGood() ){
 		while( _system.mapThread->unmappedTrackedFrames.size() > 0 ) {
 			_system.mapThread->trackedFramesMapped.wait( );
 		}

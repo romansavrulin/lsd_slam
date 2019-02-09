@@ -67,4 +67,22 @@ public:
 	virtual void publishDebugInfo(Eigen::Matrix<float, 20, 1> data) = 0;
 
 };
+
+
+class NullOutput3DWrapper : public Output3DWrapper
+{
+public:
+ virtual ~NullOutput3DWrapper() {};
+
+ virtual void publishPose( const Sophus::Sim3f &pose ) {;}
+ virtual void publishKeyframeGraph( const std::shared_ptr<KeyFrameGraph> &graph) {;}
+ virtual void publishKeyframe(const Frame::SharedPtr &kf) {;}
+ virtual void updateDepthImage(unsigned char * data) {;}
+ virtual void publishTrackedFrame(const Frame::SharedPtr &kf) {;}
+ virtual void publishTrajectory(std::vector<Eigen::Matrix<float, 3, 1>> trajectory, std::string identifier) {;}
+ virtual void publishTrajectoryIncrement(Eigen::Matrix<float, 3, 1> pt, std::string identifier) {;}
+ virtual void publishDebugInfo(Eigen::Matrix<float, 20, 1> data) {;}
+
+};
+
 }

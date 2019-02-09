@@ -20,24 +20,6 @@
 */
 
 #pragma once
-// #include <vector>
-//#include <mutex>
-// #include <thread>
-// #include <condition_variable>
-// #include <memory>
-// #include <chrono>
-//
-// #include <boost/thread/shared_mutex.hpp>
-//
-// #include "util/settings.h"
-// #include "IOWrapper/Timestamp.h"
-// #include "opencv2/core/core.hpp"
-//
-// #include "util/SophusUtil.h"
-// #include "util/Configuration.h"
-// #include "util/Timer.h"
-// #include "util/ThreadMutexObject.h"
-
 
 #include "Tracking/Relocalizer.h"
 #include "util/MovingAverage.h"
@@ -49,14 +31,6 @@ class SlamSystem;
 class TrackingReference;
 // class KeyFrameGraph;
 class SE3Tracker;
-// class Sim3Tracker;
-// class DepthMap;
-// class Frame;
-// class DataSet;
-// class LiveSLAMWrapper;
-// class Output3DWrapper;
-// class FramePoseStruct;
-//struct KFConstraintStruct;
 
 
 typedef Eigen::Matrix<float, 7, 7> Matrix7x7;
@@ -75,8 +49,8 @@ public:
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
-	void trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntilMapped );
-	void trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp );
+	void trackFrame(std::shared_ptr<Frame> newFrame );
+	//void trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp );
 
 
 	/** Sets the visualization where point clouds and camera poses will be sent to. */

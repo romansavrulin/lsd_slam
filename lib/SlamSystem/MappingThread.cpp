@@ -27,7 +27,6 @@ MappingThread::MappingThread( SlamSystem &system )
 		unmappedTrackedFramesMutex(),
 		trackedFramesMapped(),
 		relocalizer( system.conf() ),
-		map( new DepthMap( system.conf() ) ),
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
 		_newKeyFrame( nullptr ),
@@ -41,7 +40,6 @@ MappingThread::~MappingThread()
 	if( _thread ) delete _thread.release();
 
 	delete mappingTrackingReference;
-	delete map;
 
 	// make sure to reset all shared pointers to all frames before deleting the keyframegraph!
 	unmappedTrackedFrames.clear();
@@ -137,25 +135,6 @@ void MappingThread::callbackMergeOptimizationOffset()
 
 //==== Actual meat ====
 
-void MappingThread::gtDepthInit( const Frame::SharedPtr &frame )
-{
-	// For a newly-imported frame, this will only be true if the depth
-	// has been set explicitly
-	CHECK( frame->hasIDepthBeenSet() );
-
-	map->initializeFromGTDepth( _system.currentKeyFrame() );
-
-	_system.updateDisplayDepthMap();
-}
-
-
-void MappingThread::randomInit( const Frame::SharedPtr &frame )
-{
-	map->initializeRandomly( frame );
-
-	_system.updateDisplayDepthMap();
-}
-
 
 bool MappingThread::doMappingIteration()
 {
@@ -226,14 +205,14 @@ bool MappingThread::doMappingIteration()
 		LOG(INFO) << "Tracking is bad";
 
 		// invalidate map if it was valid.
-		if(map->isValid())
+		if(_system.depthMap()->isValid())
 		{
 			if( _system.currentKeyFrame()->numMappedOnThisTotal >= MIN_NUM_MAPPED)
 				finishCurrentKeyframe();
 			else
 				discardCurrentKeyframe();
 
-			map->invalidate();
+			_system.depthMap()->invalidate();
 		}
 
 		// start relocalizer if it isnt running already
@@ -302,7 +281,7 @@ bool MappingThread::updateKeyframe()
 		LOGF_IF( INFO, printThreadingInfo,
 			"MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame()->id());
 
-		map->updateKeyframe(references);
+		_system.depthMap()->updateKeyframe(references);
 
 		popped->clear_refPixelWasGood();
 		references.clear();
@@ -343,11 +322,11 @@ bool MappingThread::updateKeyframe()
 
 
 
-	// Why is this here?
-	if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame() ) {
-		LOG(DEBUG) << "Map updated, publishing keyframe " << _system.currentKeyFrame()->id();
-		_system.publishKeyframe( _system.currentKeyFrame() );
-	}
+	// // Why is this here?
+	// if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame() ) {
+	// 	LOG(DEBUG) << "Map updated, publishing keyframe " << _system.currentKeyFrame()->id();
+	_system.publishCurrentKeyframe();
+	// }
 
 	return true;
 }
@@ -359,7 +338,7 @@ void MappingThread::finishCurrentKeyframe()
 {
 	LOG_IF(DEBUG, printThreadingInfo) << "FINALIZING KF " << _system.currentKeyFrame()->id();
 
-	map->finalizeKeyFrame();
+	_system.depthMap()->finalizeKeyFrame();
 
 	if(_system.conf().SLAMEnabled)
 	{
@@ -381,7 +360,7 @@ void MappingThread::finishCurrentKeyframe()
 	}
 
 	LOG(DEBUG) << "Finishing current keyframe, publishing keyframe " << _system.currentKeyFrame()->id();
-	_system.publishKeyframe(_system.currentKeyFrame() );
+	_system.publishCurrentKeyframe();
 }
 
 void MappingThread::discardCurrentKeyframe()
@@ -396,7 +375,7 @@ void MappingThread::discardCurrentKeyframe()
 	}
 
 
-	map->invalidate();
+	_system.depthMap()->invalidate();
 
 	_system.keyFrameGraph()->dropKeyFrame( _system.currentKeyFrame() );
 
