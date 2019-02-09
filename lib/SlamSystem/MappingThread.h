@@ -78,7 +78,7 @@ public:
 	// during re-localization used
 	Relocalizer relocalizer;
 
-	TrackingReference* mappingTrackingReference;
+	std::unique_ptr<TrackingReference> mappingTrackingReference;
 
 	ThreadSynchronizer optimizationUpdateMerged;
 

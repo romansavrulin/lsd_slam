@@ -196,7 +196,7 @@ public:
   // For SLAM-like features, KeyFrames can own their own TrackingReference
 	// this is copied into the keyframe when the keyframe is finalized
 	// This used for loop closure and re-localization
-	void setPermaRef(TrackingReference* reference);
+	void setPermaRef( const std::unique_ptr<TrackingReference> &reference);
 	void takeReActivationData(DepthMapPixelHypothesis* depthMap);
 
 

@@ -79,7 +79,7 @@ private:
 	SlamSystem &_system;
 	PerformanceData _perf;
 
-	SE3Tracker* _tracker;
+	std::unique_ptr<SE3Tracker> _tracker;
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
 	std::shared_ptr<TrackingReference> _trackingReference; // tracking reference for current keyframe. only used by tracking.

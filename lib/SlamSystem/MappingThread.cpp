@@ -39,18 +39,10 @@ MappingThread::~MappingThread()
 {
 	if( _thread ) delete _thread.release();
 
-	delete mappingTrackingReference;
+	//delete mappingTrackingReference;
 
 	// make sure to reset all shared pointers to all frames before deleting the keyframegraph!
 	unmappedTrackedFrames.clear();
-
-	// latestFrameTriedForReloc.reset();
-	// latestTrackedFrame.reset();
-
-	// currentKeyFrame().reset();
-	//trackingReferenceFrameSharedPT.reset();
-
-	//LOG(INFO) << "Exited Mapping thread";
 }
 
 //==== Callbacks ======

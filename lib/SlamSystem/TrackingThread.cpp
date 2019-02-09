@@ -60,7 +60,6 @@ using namespace lsd_slam;
 TrackingThread::TrackingThread( SlamSystem &system )
 : _system( system ),
 	_perf(),
-//	_system.currentKeyFrame( system.currentKeyFrame ),
 	_tracker( new SE3Tracker( system.conf().slamImageSize ) ),
 	_trackingReference( new TrackingReference() ),
 	_trackingIsGood( true )
@@ -118,7 +117,6 @@ TrackingThread::TrackingThread( SlamSystem &system )
 
 TrackingThread::~TrackingThread()
 {
-	delete _tracker;
 }
 
 
