@@ -71,9 +71,8 @@ int main( int argc, char** argv )
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-  // This is idle while(1) loop
-  while( !input.inputDone.getValue() )
-  { sleep(1); }
+  // This is idle loop
+  while( !input.inputDone.getValue() )  { sleep(1); }
 
   LOG(INFO) << "Finalizing system.";
   system->finalize();

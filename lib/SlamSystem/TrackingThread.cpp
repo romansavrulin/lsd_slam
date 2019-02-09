@@ -120,7 +120,12 @@ TrackingThread::~TrackingThread()
 }
 
 
-void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame )
+void TrackingThread::trackSet( std::shared_ptr<ImageSet> set )
+{
+	trackFrame( set->refFrame() );
+}
+
+void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 {
 
 	if(!_trackingIsGood) {
