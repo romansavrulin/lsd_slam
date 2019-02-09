@@ -99,6 +99,8 @@ public:
 
 	/** Adds a new KeyFrame to the graph. */
 	void addKeyFrame( const Frame::SharedPtr &frame);
+	void dropKeyFrame( const Frame::SharedPtr &frame );
+
 
 	/** Adds a new Frame to the graph. Doesnt actually keep the frame, but only it's pose-struct. */
 	void addFrame(const Frame::SharedPtr &frame);

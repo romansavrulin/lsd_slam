@@ -18,6 +18,8 @@
 * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <boost/thread/shared_lock_guard.hpp>
+
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "DataStructures/Frame.h"
 
@@ -107,6 +109,30 @@ void KeyFrameGraph::addFrame(const Frame::SharedPtr &frame)
 	allFramePosesMutex.lock();
 	allFramePoses.push_back(frame->pose);
 	allFramePosesMutex.unlock();
+
+	// if( conf().SLAMEnabled )
+	{
+		boost::shared_lock_guard<boost::shared_mutex> lock( idToKeyFrameMutex );
+		idToKeyFrame.insert(std::make_pair( frame->id(), frame ));
+	}
+}
+
+void KeyFrameGraph::dropKeyFrame(const Frame::SharedPtr &frame)
+{
+	{
+		boost::shared_lock_guard< boost::shared_mutex > lock( allFramePosesMutex );
+		for(auto p : allFramePoses)
+		{
+			if(p->frame.isTrackingParent( frame ) ) {
+				p->frame.setTrackingParent( nullptr );
+			}
+		}
+	}
+
+	{
+		boost::shared_lock_guard< boost::shared_mutex > lock(idToKeyFrameMutex);
+		idToKeyFrame.erase(frame->id());
+	}
 }
 
 void KeyFrameGraph::dumpMap(std::string folder)

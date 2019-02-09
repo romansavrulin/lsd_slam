@@ -89,7 +89,6 @@ public:
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
-	void trackFrame(const Frame::SharedPtr &newFrame );//, bool blockUntilMapped );
 	//void trackFrame( Frame *newFrame ); //, bool blockUntilMapped );
 
 	void nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam );
@@ -166,10 +165,8 @@ private:
 	ThreadSynchronizer _finalized;
 
 	bool _initialized;
-	bool initialized( void ) const { return _initialized; }
-	bool setInitialized( bool i ) { _initialized = i; return _initialized; }
 
-	void initialize( const Frame::SharedPtr &frame );
+	void initialize( const std::shared_ptr<ImageSet> &set );
 
 	// ======= Functions =====
 

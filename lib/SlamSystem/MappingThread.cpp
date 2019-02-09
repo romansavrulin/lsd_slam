@@ -398,20 +398,7 @@ void MappingThread::discardCurrentKeyframe()
 
 	map->invalidate();
 
-	{
-		boost::shared_lock_guard< boost::shared_mutex > lock( _system.keyFrameGraph()->allFramePosesMutex );
-		for(auto p : _system.keyFrameGraph()->allFramePoses)
-		{
-			if(p->frame.isTrackingParent( _system.currentKeyFrame() ) ) {
-				p->frame.setTrackingParent( nullptr );
-			}
-		}
-	}
-
-	{
-		boost::shared_lock_guard< boost::shared_mutex > lock(_system.keyFrameGraph()->idToKeyFrameMutex);
-		_system.keyFrameGraph()->idToKeyFrame.erase(_system.currentKeyFrame()->id());
-	}
+	_system.keyFrameGraph()->dropKeyFrame( _system.currentKeyFrame() );
 
 }
 

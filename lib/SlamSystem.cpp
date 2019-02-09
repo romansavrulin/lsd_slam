@@ -173,48 +173,32 @@ void SlamSystem::finalize()
 // 	depthMapScreenshotFlag = true;
 // }
 
-void SlamSystem::initialize( const Frame::SharedPtr &frame )
+void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 {
 	LOG_IF(FATAL, !conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
 
-	_currentKeyFrame = frame;
+	_currentKeyFrame = set->refFrame();
 
-	if( frame->hasIDepthBeenSet() ) {
+	// Todo.  If multiple images are available in the set,
+	// use stereo disparity to initialize?
+	if( currentKeyFrame()->hasIDepthBeenSet() ) {
 		LOG(INFO) << "Using initial Depth estimate in first frame.";
-		mapThread->gtDepthInit( frame );
+		mapThread->gtDepthInit( currentKeyFrame() );
 	} else {
 		LOG(INFO) << "Doing Random initialization!";
-		mapThread->randomInit( frame );
+		mapThread->randomInit( currentKeyFrame() );
 	}
 
-	keyFrameGraph()->addFrame( frame );
+	keyFrameGraph()->addFrame( currentKeyFrame() );
 
-	if( conf().SLAMEnabled ) {
-		boost::lock_guard<boost::shared_mutex> lock( keyFrameGraph()->idToKeyFrameMutex );
-		keyFrameGraph()->idToKeyFrame.insert(std::make_pair( currentKeyFrame()->id(), currentKeyFrame() ));
-	}
-
-	if( _conf.continuousPCOutput) {
+	if( conf().continuousPCOutput) {
 		LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
 		publishKeyframe( currentKeyFrame() );
 	}
 
-	setInitialized( true );
+	_initialized = true;
 }
 
-
-
-void SlamSystem::trackFrame(const Frame::SharedPtr &newFrame ) //, bool blockUntilMapped )
-{
-	if( !initialized() ) initialize( newFrame );
-
-	//LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
-
-	trackingThread->trackFrame( newFrame, !_conf.runRealTime );
-
-	//TODO: At present only happens at frame rate.  Push to a thread?
-	logPerformanceData();
-}
 
 void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam )
 {
@@ -223,7 +207,16 @@ void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoi
 
 void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
 {
-		trackFrame( set->refFrame() );
+	if( !_initialized ) {
+		initialize( set );
+		return;
+	}
+
+	//LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
+	trackingThread->trackFrame( set->refFrame(), !_conf.runRealTime );
+
+	//TODO: At present only happens at frame rate.  Push to a thread?
+	logPerformanceData();
 }
 
 
