@@ -32,6 +32,8 @@
 namespace lsd_slam
 {
 
+using libvideoio::Camera;
+using libvideoio::ImageSize;
 
 class DepthMapPixelHypothesis;
 class TrackingReference;
@@ -111,8 +113,8 @@ public:
 	Frame() = delete;
 	Frame( const Frame & ) = delete;
 
-	Frame(int id, const Configuration &conf, double timestamp, const unsigned char* image );
-	Frame(int id, const Configuration &conf, double timestamp, const float* image );
+	Frame(int id, const Camera &cam, const ImageSize &sz, double timestamp, const unsigned char* image );
+	Frame(int id, const Camera &cam, const ImageSize &sz, double timestamp, const float* image );
 
 	~Frame();
 
@@ -276,7 +278,6 @@ public:
 private:
 
 	SharedPtr _trackingParent;
-	const Configuration &_conf;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);

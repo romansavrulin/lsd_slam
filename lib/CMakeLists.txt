@@ -8,6 +8,7 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/App/App.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/App/InputThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/Frame.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/ImageSet.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp

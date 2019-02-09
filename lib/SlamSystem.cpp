@@ -18,6 +18,9 @@
 * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
+
+#include <memory>
+
 #include "SlamSystem.h"
 
 #include <boost/thread/shared_lock_guard.hpp>
@@ -212,6 +215,17 @@ void SlamSystem::trackFrame(const Frame::SharedPtr &newFrame ) //, bool blockUnt
 	//TODO: At present only happens at frame rate.  Push to a thread?
 	logPerformanceData();
 }
+
+void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam )
+{
+	nextImageSet( std::make_shared<ImageSet>(id, img, cam) );
+}
+
+void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
+{
+		trackFrame( set->refFrame() );
+}
+
 
 
 //=== Keyframe maintenance functions ====

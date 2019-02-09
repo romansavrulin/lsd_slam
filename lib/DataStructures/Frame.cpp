@@ -33,12 +33,11 @@ namespace lsd_slam
 
 int privateFrameAllocCount = 0;
 
-Frame::Frame(int frameId, const Configuration &conf,
+Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const unsigned char* image )
 	: 	pose( new FramePoseStruct(*this) ),
-			data( frameId, timestamp, conf.camera, conf.slamImageSize ),
-			_trackingParent( nullptr ),
-			_conf( conf )
+			data( frameId, timestamp, cam, sz ),
+			_trackingParent( nullptr )
 {
 	initialize(timestamp);
 
@@ -68,12 +67,11 @@ Frame::Frame(int frameId, const Configuration &conf,
 						<< ", now there are " << privateFrameAllocCount;
 }
 
-Frame::Frame(int frameId, const Configuration &conf,
+Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const float* image )
 	: pose( new FramePoseStruct(*this)),
-		data( frameId, timestamp, conf.camera, conf.slamImageSize  ),
-		_trackingParent( nullptr ),
-		_conf( conf )
+		data( frameId, timestamp, cam, sz ),
+		_trackingParent( nullptr )
 {
 	initialize(timestamp);
 

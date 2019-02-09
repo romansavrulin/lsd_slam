@@ -34,6 +34,8 @@
 #include "IOWrapper/Output3DWrapper.h"
 
 #include "DataStructures/Frame.h"
+#include "DataStructures/ImageSet.h"
+
 
 #include "util/SophusUtil.h"
 #include "util/MovingAverage.h"
@@ -83,12 +85,15 @@ public:
 	// Creates a new SlamSystem, and passes over relevant configuration info
 	SlamSystem *fullReset();
 
-	// tracks a frame.
+	// OLD API: tracks a frame.
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
 	void trackFrame(const Frame::SharedPtr &newFrame );//, bool blockUntilMapped );
 	//void trackFrame( Frame *newFrame ); //, bool blockUntilMapped );
+
+	void nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam );
+	void nextImageSet( const std::shared_ptr<ImageSet> &set );
 
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
