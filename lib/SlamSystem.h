@@ -100,9 +100,9 @@ public:
 	ThreadSynchronizer &finalized() { return _finalized; }
 
 	/** Returns the current pose estimate. */
-	SE3 getCurrentPoseEstimate();
+	Sophus::SE3d getCurrentPoseEstimate();
 
-	Sophus::Sim3f getCurrentPoseEstimateScale();
+	Sophus::Sim3d getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
 	Frame::SharedPtr &currentKeyFrame() { return _currentKeyFrame; };

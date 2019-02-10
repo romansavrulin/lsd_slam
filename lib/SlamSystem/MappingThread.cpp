@@ -17,7 +17,7 @@
 
 namespace lsd_slam {
 
-using active_object::ActiveIdle;
+using active_object::Active;
 
 // static const bool depthMapScreenshotFlag = true;
 
@@ -30,7 +30,7 @@ MappingThread::MappingThread( SlamSystem &system )
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
 		_newKeyFrame( nullptr ),
-		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::callbackIdle, this ), std::chrono::milliseconds(200)) )
+		_thread( Active::createActive() )
 {
 	LOG(INFO) << "Started Mapping thread";
 }
@@ -47,14 +47,6 @@ MappingThread::~MappingThread()
 
 //==== Callbacks ======
 
-
-void MappingThread::callbackIdle( void )
-{
-	//LOG(INFO) << "Mapping thread idle callback";
-	//while( doMappingIteration() ) {
-	//	unmappedTrackedFrames.notifyAll();
-	//}
-}
 
 void MappingThread::callbackUnmappedTrackedFrames( void )
 {

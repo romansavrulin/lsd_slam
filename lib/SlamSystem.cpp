@@ -371,22 +371,22 @@ void SlamSystem::updateDisplayDepthMap()
 
 
 
-SE3 SlamSystem::getCurrentPoseEstimate()
+Sophus::SE3d SlamSystem::getCurrentPoseEstimate()
 {
 	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->allFramePosesMutex );
 	if( keyFrameGraph()->allFramePoses.size() > 0)
 		return se3FromSim3(keyFrameGraph()->allFramePoses.back()->getCamToWorld());
 
-	return Sophus::SE3();
+	return Sophus::SE3d();
 }
 
-Sophus::Sim3f SlamSystem::getCurrentPoseEstimateScale()
+Sophus::Sim3d SlamSystem::getCurrentPoseEstimateScale()
 {
 	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->allFramePosesMutex );
 	if(keyFrameGraph()->allFramePoses.size() > 0)
-		return keyFrameGraph()->allFramePoses.back()->getCamToWorld().cast<float>();
+		return keyFrameGraph()->allFramePoses.back()->getCamToWorld().cast<double>();
 
-	return Sophus::Sim3f();
+	return Sophus::Sim3d();
 }
 
 std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()

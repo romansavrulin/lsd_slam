@@ -131,7 +131,7 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	if(!_trackingIsGood) {
 		// Prod mapping to check the relocalizer
 		_system.mapThread->relocalizer.updateCurrentFrame(newFrame);
-		_system.mapThread->doIteration();
+		_system.mapThread->pushDoIteration();
 
 //		unmappedTrackedFrames.notifyAll();
 
@@ -143,7 +143,6 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	}
 
 	// Are the following two calls atomic enough or should I lock before the next two lines?
-	bool newKeyFramePending = _system.mapThread->newKeyFramePending();	// pre-save here, to make decision afterwards.
 	Frame::SharedPtr keyframe( _system.currentKeyFrame() );
 
 	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag ) {
@@ -199,7 +198,7 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 		//nextRelocIdx = -1;  // What does this do?
 
 		// Kick over the mapping thread
-		_system.mapThread->doIteration();
+		_system.mapThread->pushDoIteration();
 		// unmappedTrackedFrames.notifyAll();
 
 		// unmappedTrackedFramesMutex.lock();
@@ -243,7 +242,7 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
 	LOG_IF( INFO, printThreadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
-	if(!newKeyFramePending && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
+	if(!_system.mapThread->newKeyFramePending() && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
 		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame()->meanIdepth;
 		float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);

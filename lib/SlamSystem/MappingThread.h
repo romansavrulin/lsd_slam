@@ -30,6 +30,11 @@ public:
 	~MappingThread();
 
 	//=== Callbacks into the thread ===
+	void pushDoIteration()
+	{
+		if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
+	}
+
 	void pushUnmappedTrackedFrame( const Frame::SharedPtr &frame )
 	{
 		{
@@ -37,31 +42,24 @@ public:
 			unmappedTrackedFrames.push_back( frame );
 		}
 
-		if( _thread ) {
-			_thread->send( std::bind( &MappingThread::callbackUnmappedTrackedFrames, this ));
-		}
+		if( _thread ) _thread->send( std::bind( &MappingThread::callbackUnmappedTrackedFrames, this ));
 	}
 
-	void doIteration( void )
-	{ if( _thread ) _thread->send( std::bind( &MappingThread::callbackIdle, this )); }
-
 	void mergeOptimizationUpdate( void )
-	{ optimizationUpdateMerged.reset();
-		if( _thread ) _thread->send( std::bind( &MappingThread::callbackMergeOptimizationOffset, this )); }
+	{
+		optimizationUpdateMerged.reset();
+		if( _thread ) _thread->send( std::bind( &MappingThread::callbackMergeOptimizationOffset, this ));
+	}
 
 	void createNewKeyFrame( const Frame::SharedPtr &frame )
 	{
-		if( _newKeyFrame.get() != nullptr ) LOG(WARNING) << "Asked to make " << frame->id() << " a keyframe when " << _newKeyFrame()->id() << " is already pending";
+		if( newKeyFramePending() ) LOG(WARNING) << "Asked to make " << frame->id() << " a keyframe when " << _newKeyFrame()->id() << " is already pending";
 		_newKeyFrame = frame;
-		//if( _thread ) {
-		//		_thread->send( std::bind( &MappingThread::callbackCreateNewKeyFrame, this, frame ));
-		//		LOG(INFO) << "Mq now " << _thread->size();
-		//}
 	}
 
 	bool newKeyFramePending( void )
 	{
-			return _newKeyFrame.get() != nullptr;
+			return (bool)(_newKeyFrame.get());
 	}
 
 	void gtDepthInit( const Frame::SharedPtr &frame );
@@ -89,14 +87,14 @@ private:
 	MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
-	void callbackIdle( void );
 	void callbackUnmappedTrackedFrames( void );
 	//void callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame );
 
 	// == Local functions ==
-	void callbackMergeOptimizationOffset();
 
 	bool doMappingIteration();
+
+	void callbackMergeOptimizationOffset();
 
 	bool updateKeyframe();
 
@@ -113,7 +111,7 @@ private:
 	// //int nextRelocIdx;
 	// std::shared_ptr<Frame> latestFrameTriedForReloc;
 
-	std::unique_ptr<active_object::ActiveIdle> _thread;
+	std::unique_ptr<active_object::Active> _thread;
 
 };
 

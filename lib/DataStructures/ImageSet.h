@@ -53,7 +53,7 @@ namespace lsd_slam
     unsigned int _refFrame;
 
     std::vector<Frame::SharedPtr> _frames;
-    std::vector<Sophus::SE3> _se3FromFirst;
+    std::vector<Sophus::SE3d> _se3FromFirst;
 
   };
 
