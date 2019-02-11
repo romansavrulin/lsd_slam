@@ -93,7 +93,8 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 			cacheValidFor = cacheValidCounter;
 			return camToWorld = frame.trackingParent()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 	} else {
-		return camToWorld = Sim3();}
+		return camToWorld = Sim3();
+	}
 }
 
 }
