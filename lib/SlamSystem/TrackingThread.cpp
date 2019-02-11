@@ -60,7 +60,7 @@ using namespace lsd_slam;
 TrackingThread::TrackingThread( SlamSystem &system )
 : _system( system ),
 	_perf(),
-	_tracker( new SE3Tracker( system.conf().slamImageSize ) ),
+	_tracker( new SE3Tracker( Conf().slamImageSize ) ),
 	_trackingReference( new TrackingReference() ),
 	_trackingIsGood( true )
 {
@@ -106,7 +106,7 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	FramePoseStruct &trackingReferencePose( *_trackingReference->keyframe->pose);
 
 	// DO TRACKING & Show tracking result.
-	LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo) << "TRACKING frame " << newFrame->id() << " onto ref. " << _trackingReference->frameID;
+	LOG_IF(DEBUG, Conf().print.threadingInfo) << "TRACKING frame " << newFrame->id() << " onto ref. " << _trackingReference->frameID;
 
 
 	SE3 frameToReference_initialEstimate;
@@ -159,14 +159,14 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	//Sim3 lastTrackedCamToWorld = mostCurrentTrackedFrame->getCamToWorld();
 //  mostCurrentTrackedFrame->TrackingParent->getCamToWorld() * sim3FromSE3(mostCurrentTrackedFrame->thisToParent_SE3TrackingResult, 1.0);
 
-	LOG_IF( DEBUG,  enablePrintDebugInfo && printThreadingInfo ) << "Publishing tracked frame";
+	LOG_IF( DEBUG,  Conf().print.threadingInfo ) << "Publishing tracked frame";
 	_system.publishTrackedFrame(newFrame);
 	_system.publishPose(newFrame->getCamToWorld().cast<float>());
 
 	// Keyframe selection
 	// latestTrackedFrame = trackingNewFrame;
 	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
-	LOG_IF( INFO, printThreadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
+	LOG_IF( INFO, Conf().print.threadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
 	if(!_system.mapThread->newKeyFramePending() && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
@@ -184,18 +184,18 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 			LOG(INFO) << "Telling mapping thread to make " << newFrame->id() << " the new keyframe.";
 			_system.mapThread->pushNewKeyFrame( newFrame );
 
-			LOGF_IF( INFO, printKeyframeSelectionInfo,
+			LOGF_IF( INFO, Conf().print.keyframeSelectionInfo,
 							"SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
 		}
 		else
 		{
-			LOGF_IF( INFO, printKeyframeSelectionInfo,
+			LOGF_IF( INFO, Conf().print.keyframeSelectionInfo,
 							"SKIPPD KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
 
 		}
 	}
 
-	LOG_IF( DEBUG, printThreadingInfo ) << "Push unmapped tracked frame.";
+	LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Push unmapped tracked frame.";
 	_system.mapThread->pushTrackedFrameToMapping( newFrame );
 
 	// unmappedTrackedFrames.notifyAll();
@@ -203,13 +203,13 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	// }
 
 	// If blocking is requested...
-	if( !_system.conf().runRealTime && trackingIsGood() ){
+	if( !Conf().runRealTime && trackingIsGood() ){
 		while( _system.mapThread->unmappedTrackedFrames.size() > 0 ) {
 			_system.mapThread->trackedFramesMapped.wait( );
 		}
 	}
 
-	LOG_IF( DEBUG, printThreadingInfo ) << "Exiting trackFrame";
+	LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Exiting trackFrame";
 
 }
 
@@ -240,7 +240,7 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 
 	if(!_tracker->trackingWasGood || _tracker->lastGoodCount() / (_tracker->lastGoodCount()) < 1-0.75f*(1-MIN_GOODPERGOODBAD_PIXEL))
 	{
-		LOG_IF(DEBUG, enablePrintDebugInfo && printRelocalizationInfo) << "RELOCALIZATION FAILED BADLY! discarding result.";
+		LOG_IF(DEBUG, Conf().print.relocalizationInfo) << "RELOCALIZATION FAILED BADLY! discarding result.";
 		_trackingReference->invalidate();
 	}
 	else

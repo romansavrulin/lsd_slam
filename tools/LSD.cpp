@@ -49,18 +49,17 @@ int main( int argc, char** argv )
   libg3logger::G3Logger logWorker( argv[0] );
   logWorker.logBanner();
 
-  Configuration conf;
   ParseArgs args( argc, argv );
 
   // Load the configuration object
-  conf.setSlamImageSize( args.undistorter->outputImageSize() );
-  conf.camera     = args.undistorter->getCamera();
+  Conf().setSlamImageSize( args.undistorter->outputImageSize() );
+  Conf().camera     = args.undistorter->getCamera();
 
-  LOG(INFO) << "Slam image: " << conf.slamImageSize.width << " x " << conf.slamImageSize.height;
+  LOG(INFO) << "Slam image: " << Conf().slamImageSize.width << " x " << Conf().slamImageSize.height;
 
-  CHECK( (conf.camera.fx) > 0 && (conf.camera.fy > 0) ) << "Camera focal length is zero";
+  CHECK( (Conf().camera.fx) > 0 && (Conf().camera.fy > 0) ) << "Camera focal length is zero";
 
-	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
+	std::shared_ptr<SlamSystem> system( new SlamSystem() );
 
   LOG(INFO) << "Starting input thread.";
   InputThread input( system, args.dataSource, args.undistorter );

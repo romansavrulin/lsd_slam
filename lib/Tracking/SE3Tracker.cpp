@@ -105,7 +105,6 @@ SE3Tracker::~SE3Tracker()
 }
 
 
-
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
 float SE3Tracker::checkPermaRefOverlap(
@@ -392,13 +391,13 @@ SE3 SE3Tracker::trackFrame(
 					}
 
 
-					LOGF_IF(DEBUG,printTrackingIterationInfo,"(%d-%d): ACCEPTED increment of %f with lambda %.1f, residual: %f > %f",
+					LOGF_IF(DEBUG, Conf().print.trackingIterationInfo,"(%d-%d): ACCEPTED increment of %f with lambda %.1f, residual: %f > %f",
 							lvl,iteration, sqrt(inc.dot(inc)), LM_lambda, lastErr, error);
 
 					// converged?
 					if(error / lastErr > settings.convergenceEps[lvl])
 					{
-						LOGF_IF(DEBUG,printTrackingIterationInfo,"(%d-%d): FINISHED pyramid level (last residual reduction too small).",
+						LOGF_IF(DEBUG, Conf().print.trackingIterationInfo,"(%d-%d): FINISHED pyramid level (last residual reduction too small).",
 								lvl,iteration);
 						iteration = settings.maxItsPerLvl[lvl];
 					}
@@ -416,12 +415,12 @@ SE3 SE3Tracker::trackFrame(
 				else
 				{
 
-					LOGF_IF(DEBUG,printTrackingIterationInfo,"(%d-%d): REJECTED increment of %f with lambda %.1f, (residual: %f < %f).",
+					LOGF_IF(DEBUG,Conf().print.trackingIterationInfo,"(%d-%d): REJECTED increment of %f with lambda %.1f, (residual: %f < %f).",
 							lvl,iteration, sqrt(inc.dot(inc)), LM_lambda, lastErr, error);
 
 					if(!(inc.dot(inc) > settings.stepSizeMin[lvl]))
 					{
-						LOGF_IF(DEBUG,printTrackingIterationInfo,"(%d-%d): FINISHED pyramid level (stepsize too small).",
+						LOGF_IF(DEBUG,Conf().print.trackingIterationInfo,"(%d-%d): FINISHED pyramid level (stepsize too small).",
 								lvl,iteration);
 
 						iteration = settings.maxItsPerLvl[lvl];
@@ -442,7 +441,7 @@ SE3 SE3Tracker::trackFrame(
 		Util::displayImage("TrackingResidual", debugImageResiduals, false);
 
 
-	if(printTrackingIterationInfo)
+	if(Conf().print.trackingIterationInfo)
 	{
 		stringstream outstr;
 		outstr << "SE3 Tracking: ";

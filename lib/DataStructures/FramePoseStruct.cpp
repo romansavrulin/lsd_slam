@@ -42,13 +42,13 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	this->graphVertex = nullptr;
 
 	privateFramePoseStructAllocCount++;
-	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 FramePoseStruct::~FramePoseStruct()
 {
 	privateFramePoseStructAllocCount--;
-	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 void FramePoseStruct::setPoseGraphOptResult(Sim3 camToWorld)

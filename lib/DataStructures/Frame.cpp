@@ -37,7 +37,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const unsigned char* image )
 	: 	pose( new FramePoseStruct(*this) ),
 			data( frameId, timestamp, cam, sz ),
-			_trackingParent( nullptr )
+			_trackingParent( nullptr ),
+			_printMemoryDebugInfo( false ), _printFrameBuildDebugInfo( false )
 {
 	initialize(timestamp);
 
@@ -62,7 +63,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
 	privateFrameAllocCount++;
 
-	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo)
+	LOG_IF(INFO, _printMemoryDebugInfo )
 						<< "ALLOCATED frame " << id()
 						<< ", now there are " << privateFrameAllocCount;
 }
@@ -71,7 +72,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const float* image )
 	: pose( new FramePoseStruct(*this)),
 		data( frameId, timestamp, cam, sz ),
-		_trackingParent( nullptr )
+		_trackingParent( nullptr ),
+		_printMemoryDebugInfo( false ), _printFrameBuildDebugInfo( false )
 {
 	initialize(timestamp);
 
@@ -81,11 +83,10 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
 	privateFrameAllocCount++;
 
-	LOG_IF(INFO, printMemoryDebugInfo)
+	LOG_IF(INFO, _printMemoryDebugInfo )
 						<< "ALLOCATED frame " << id()
 						<< ", now there are " << privateFrameAllocCount;
 }
-
 
 
 void Frame::initialize(double timestamp)
@@ -132,7 +133,7 @@ void Frame::initialize(double timestamp)
 Frame::~Frame()
 {
 
-	LOGF_IF(INFO,printMemoryDebugInfo,"DELETING frame %d", this->id());
+	LOGF_IF(INFO, _printMemoryDebugInfo,"DELETING frame %d", this->id());
 
 	FrameMemory::getInstance().deactivateFrame(this);
 
@@ -160,7 +161,7 @@ Frame::~Frame()
 		delete permaRef_posData;
 
 	privateFrameAllocCount--;
-	LOGF_IF(DEBUG, enablePrintDebugInfo && printMemoryDebugInfo, "DELETED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
+	LOGF_IF(DEBUG, _printMemoryDebugInfo, "DELETED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
 bool Frame::isTrackingParent( const SharedPtr &other ) const
@@ -446,7 +447,7 @@ bool Frame::minimizeInMemory()
 	if(activeMutex.timed_lock(boost::posix_time::milliseconds(10)))
 	{
 		buildMutex.lock();
-		LOGF_IF(DEBUG, enablePrintDebugInfo && printMemoryDebugInfo, "minimizing frame %d\n",id());
+		LOGF_IF(DEBUG, _printMemoryDebugInfo, "minimizing frame %d\n",id());
 
 		release(IMAGE | IDEPTH | IDEPTH_VAR, true, false);
 		release(GRADIENTS | MAX_GRADIENTS, false, false);
@@ -482,7 +483,7 @@ void Frame::buildImage(int level)
 	int height = data.height[level - 1];
 	const float* source = data.image[level - 1];
 
-	LOGF_IF(DEBUG,enablePrintDebugInfo && printFrameBuildDebugInfo,"CREATE Image lvl %d for frame %d,  %f x %f", level, id(), width/2.0, height/2.0);
+	LOGF_IF(DEBUG, _printFrameBuildDebugInfo,"CREATE Image lvl %d for frame %d,  %f x %f", level, id(), width/2.0, height/2.0);
 
 	if (data.image[level] == 0)
 		data.image[level] = FrameMemory::getInstance().getFloatBuffer(data.width[level] * data.height[level]);
@@ -630,7 +631,7 @@ void Frame::buildGradients(int level)
 	if(data.gradientsValid[level])
 		return;
 
-	LOGF_IF(DEBUG,enablePrintDebugInfo && printFrameBuildDebugInfo,"CREATE Gradients lvl %d for frame %d", level, id());
+	LOGF_IF(DEBUG, _printFrameBuildDebugInfo,"CREATE Gradients lvl %d for frame %d", level, id());
 
 	int width = data.width[level];
 	int height = data.height[level];
@@ -675,7 +676,7 @@ void Frame::buildMaxGradients(int level)
 
 	if(data.maxGradientsValid[level]) return;
 
-	LOGF_IF(DEBUG,enablePrintDebugInfo && printFrameBuildDebugInfo,"CREATE AbsGrad lvl %d for frame %d", level, id());
+	LOGF_IF(DEBUG, _printFrameBuildDebugInfo,"CREATE AbsGrad lvl %d for frame %d", level, id());
 
 	int width = data.width[level];
 	int height = data.height[level];
@@ -771,7 +772,7 @@ void Frame::buildIDepthAndIDepthVar(int level)
 	if(data.idepthValid[level] && data.idepthVarValid[level])
 		return;
 
-	LOGF_IF(DEBUG,enablePrintDebugInfo && printFrameBuildDebugInfo,"CREATE IDepth lvl %d for frame %d", level, id());
+	LOGF_IF(DEBUG, _printFrameBuildDebugInfo,"CREATE IDepth lvl %d for frame %d", level, id());
 
 	int width = data.width[level];
 	int height = data.height[level];

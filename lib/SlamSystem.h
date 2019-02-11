@@ -75,7 +75,7 @@ class SlamSystem {
 friend class IntegrationTest;
 public:
 
-	SlamSystem( const Configuration &conf );
+	SlamSystem();
 
 	SlamSystem( const SlamSystem&) = delete;
 	SlamSystem& operator=(const SlamSystem&) = delete;
@@ -117,8 +117,6 @@ public:
 
 	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
-	const Configuration &conf( void ) const     { return _conf; }
-
 	//=== Debugging output functions =====
 	unique_ptr<Output3DWrapper> &outputWrapper( void ) 					         { return _outputWrapper; }
 	void set3DOutputWrapper( Output3DWrapper* outputWrapper )            {	_outputWrapper.reset(outputWrapper); }
@@ -150,8 +148,6 @@ public:
 
 
 private:
-
-	const Configuration &_conf;
 
 	struct PerformanceData {
 		MsRateAverage findReferences;

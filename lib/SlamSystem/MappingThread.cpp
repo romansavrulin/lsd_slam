@@ -26,7 +26,7 @@ MappingThread::MappingThread( SlamSystem &system )
 	: unmappedTrackedFrames(),
 		unmappedTrackedFramesMutex(),
 		trackedFramesMapped(),
-		relocalizer( system.conf() ),
+		relocalizer(),
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
 		_newKeyFramePending( false ),
@@ -240,7 +240,7 @@ bool MappingThread::updateKeyframe()
 		unmappedTrackedFrames.pop_front();
 		unmappedTrackedFramesMutex.unlock();
 
-		LOGF_IF( INFO, printThreadingInfo,
+		LOGF_IF( INFO, Conf().print.threadingInfo,
 			"MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame()->id());
 
 		_system.depthMap()->updateKeyframe(references);
@@ -298,11 +298,11 @@ bool MappingThread::updateKeyframe()
 
 void MappingThread::finishCurrentKeyframe()
 {
-	LOG_IF(DEBUG, printThreadingInfo) << "FINALIZING KF " << _system.currentKeyFrame()->id();
+	LOG_IF(DEBUG, Conf().print.threadingInfo) << "FINALIZING KF " << _system.currentKeyFrame()->id();
 
 	_system.depthMap()->finalizeKeyFrame();
 
-	if(_system.conf().SLAMEnabled)
+	if(Conf().SLAMEnabled)
 	{
 		mappingTrackingReference->importFrame(_system.currentKeyFrame());
 		_system.currentKeyFrame()->setPermaRef(mappingTrackingReference);
@@ -327,7 +327,7 @@ void MappingThread::finishCurrentKeyframe()
 
 void MappingThread::discardCurrentKeyframe()
 {
-	LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
+	LOG_IF(DEBUG, Conf().print.threadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
 
 	if(_system.currentKeyFrame()->idxInKeyframes >= 0)
 	{

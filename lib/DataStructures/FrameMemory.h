@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -45,25 +45,24 @@ public:
 	/** Allocates or fetches a buffer with length: size * sizeof(float).
 	  * Corresponds to "buffer = new float[size]". */
 	void* getBuffer(unsigned int sizeInByte);
-	
+
 	/** Returns an allocated buffer back to the global storage for re-use.
 	  * Corresponds to "delete[] buffer". */
 	void returnBuffer(void* buffer);
-	
+
 
 	boost::shared_lock<boost::shared_mutex> activateFrame(Frame* frame);
 	void deactivateFrame(Frame* frame);
 	void pruneActiveFrames();
 
-	void releaseBuffes();
+	void releaseBuffers();
 private:
 	FrameMemory();
 	void* allocateBuffer(unsigned int sizeInByte);
-	
+
 	boost::mutex accessMutex;
 	std::unordered_map< void*, unsigned int > bufferSizes;
 	std::unordered_map< unsigned int, std::vector< void* > > availableBuffers;
-
 
 	boost::mutex activeFramesMutex;
 	std::list<Frame*> activeFrames;

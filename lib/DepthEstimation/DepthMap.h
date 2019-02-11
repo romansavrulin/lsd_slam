@@ -46,7 +46,7 @@ class KeyFrameGraph;
 class DepthMap
 {
 public:
-	DepthMap(const Configuration &conf );
+	DepthMap();
 	DepthMap(const DepthMap&) = delete;
 	DepthMap& operator=(const DepthMap&) = delete;
 	~DepthMap();
@@ -101,8 +101,6 @@ public:
 	IndexThreadReduce threadReducer;
 
 private:
-
-	const Configuration &_conf;
 
  	PerformanceData _perf;
 

@@ -65,7 +65,6 @@ private:
 
 		double timestamp;
 
-
 		float* image[PYRAMID_LEVELS];
 		bool imageValid[PYRAMID_LEVELS];
 
@@ -117,7 +116,6 @@ public:
 	Frame(int id, const Camera &cam, const ImageSize &sz, double timestamp, const float* image );
 
 	~Frame();
-
 
 	/** Sets or updates idepth and idepthVar on level zero. Invalidates higher levels. */
 	void setDepth(const DepthMapPixelHypothesis* newDepth);
@@ -298,7 +296,6 @@ private:
 	void releaseIDepth(int level);
 	void releaseIDepthVar(int level);
 
-
 	// used internally. locked while something is being built, such that no
 	// two threads build anything simultaneously. not locked on require() if nothing is changed.
 	boost::mutex buildMutex;
@@ -311,6 +308,8 @@ private:
 	  * ONLY CALL THIS, if an exclusive lock on activeMutex is owned! */
 	bool minimizeInMemory();
 
+
+	bool _printMemoryDebugInfo, _printFrameBuildDebugInfo;
 
 
 };

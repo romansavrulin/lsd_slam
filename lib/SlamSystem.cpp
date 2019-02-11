@@ -62,23 +62,22 @@ using namespace lsd_slam;
 
 
 
-SlamSystem::SlamSystem( const Configuration &conf )
-: _conf( conf ),
-	_perf(),
+SlamSystem::SlamSystem( )
+: _perf(),
 	_outputWrapper( new NullOutput3DWrapper() ),
 	_finalized(),
 	_initialized( false ),
 	_keyFrameGraph( new KeyFrameGraph ),
 	_currentKeyFrame( nullptr ),
-	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph, conf ) ),
-	_depthMap( new DepthMap( _conf ) )
+	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph ) ),
+	_depthMap( new DepthMap( ) )
 {
 
-	// Because some of these rely on conf(), need to explicitly call after
+	// Because some of these rely on Conf(), need to explicitly call after
  	// static initialization.  Is this true?
-	optThread.reset( new OptimizationThread( *this, conf.SLAMEnabled ) );
+	optThread.reset( new OptimizationThread( *this, Conf().SLAMEnabled ) );
 	mapThread.reset( new MappingThread( *this ) );
-	constraintThread.reset( new ConstraintSearchThread( *this, conf.SLAMEnabled ) );
+	constraintThread.reset( new ConstraintSearchThread( *this, Conf().SLAMEnabled ) );
 	trackingThread.reset( new TrackingThread( *this ) );
 
 	timeLastUpdate.start();
@@ -105,14 +104,14 @@ SlamSystem::~SlamSystem()
 	trackingThread.reset();
 	LOG(INFO) << "DONE waiting for all threads to exit";
 
-	FrameMemory::getInstance().releaseBuffes();
+	FrameMemory::getInstance().releaseBuffers();
 
 	// Util::closeAllWindows();
 }
 
 SlamSystem *SlamSystem::fullReset( void )
 {
-	SlamSystem *newSystem = new SlamSystem( conf() );
+	SlamSystem *newSystem = new SlamSystem( );
 	newSystem->set3DOutputWrapper( _outputWrapper );
 	return newSystem;
 }
@@ -176,7 +175,7 @@ void SlamSystem::finalize()
 
 void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 {
-	LOG_IF(FATAL, !conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
+	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
 
 	_currentKeyFrame = set->refFrame();
 
@@ -193,7 +192,7 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 
 	keyFrameGraph()->addFrame( currentKeyFrame() );
 
-	if( conf().continuousPCOutput) {
+	if( Conf().continuousPCOutput) {
 		LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
 		publishCurrentKeyframe();
 	}
@@ -215,7 +214,7 @@ void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
 	}
 
 	//LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
-	trackingThread->trackFrame( set->refFrame() );
+	trackingThread->trackSet( set );
 
 	//TODO: At present only happens at frame rate.  Push to a thread?
 	logPerformanceData();
@@ -229,7 +228,7 @@ void SlamSystem::changeKeyframe( const Frame::SharedPtr &candidate, bool noCreat
 {
 	Frame::SharedPtr newReferenceKF(nullptr);
 
-	if( conf().doKFReActivation && conf().SLAMEnabled )
+	if( Conf().doKFReActivation && Conf().SLAMEnabled )
 	{
 		Timer timer;
 		newReferenceKF = trackableKeyFrameSearch()->findRePositionCandidate( candidate, maxScore );
@@ -265,7 +264,7 @@ void SlamSystem::loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad)
 
 	depthMap()->setFromExistingKF(keyframeToLoad);
 
-	LOG_IF(DEBUG, enablePrintDebugInfo && printRegularizeStatistics ) << "re-activate frame " << keyframeToLoad->id() << "!";
+	LOG_IF(DEBUG, Conf().print.regularizeStatistics ) << "re-activate frame " << keyframeToLoad->id() << "!";
 
 	_currentKeyFrame = keyFrameGraph()->idToKeyFrame.find(keyframeToLoad->id())->second;
 	currentKeyFrame()->depthHasBeenUpdatedFlag = false;
@@ -274,9 +273,9 @@ void SlamSystem::loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad)
 
 void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate)
 {
-	LOG_IF(INFO, printThreadingInfo) << "CREATE NEW KF " << newKeyframeCandidate->id() << ", replacing " << currentKeyFrame()->id();
+	LOG_IF(INFO, Conf().print.threadingInfo) << "CREATE NEW KF " << newKeyframeCandidate->id() << ", replacing " << currentKeyFrame()->id();
 
-	if( conf().SLAMEnabled)
+	if( Conf().SLAMEnabled)
 	{
 		boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->idToKeyFrameMutex );
 		keyFrameGraph()->idToKeyFrame.insert(std::make_pair(newKeyframeCandidate->id(), newKeyframeCandidate));
@@ -293,7 +292,7 @@ void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCa
 	//
 	// 	Eigen::Matrix<float, 20, 1> data;
 	// 	data.setZero();
-	// 	data[0] = runningStats.num_prop_attempts / ((float)_conf.slamImage.area());
+	// 	data[0] = runningStats.num_prop_attempts / ((float)_Conf().slamImage.area());
 	// 	data[1] = (runningStats.num_prop_created + runningStats.num_prop_merged) / (float)runningStats.num_prop_attempts;
 	// 	data[2] = runningStats.num_prop_removed_colorDiff / (float)runningStats.num_prop_attempts;
 	//
@@ -334,7 +333,7 @@ void SlamSystem::logPerformanceData()
 
 void SlamSystem::updateDisplayDepthMap()
 {
-	if( !conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
+	if( !Conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
 
 	depthMap()->debugPlotDepthMap();
 	double scale = 1;
@@ -351,7 +350,7 @@ void SlamSystem::updateDisplayDepthMap()
 			currentKeyFrame()->numFramesTrackedOnThis, currentKeyFrame()->numMappedOnThis ); //, (int)unmappedTrackedFrames().size());
 
 	// snprintf(buf2,200,"dens %2.0f%%; good %2.0f%%; scale %2.2f; res %2.1f/; usg %2.0f%%; Map: %d F, %d KF, %d E, %.1fm Pts",
-	// 		100*currentKeyFrame->numPoints/(float)(conf().slamImage.area()),
+	// 		100*currentKeyFrame->numPoints/(float)(Conf().slamImage.area()),
 	// 		100*tracking_lastGoodPerBad,
 	// 		scale,
 	// 		tracking_lastResidual,
@@ -362,7 +361,7 @@ void SlamSystem::updateDisplayDepthMap()
 	// 		1e-6 * (float)keyFrameGraph()->totalPoints);
 
 
-	if( conf().onSceenInfoDisplay )
+	if( Conf().onSceenInfoDisplay )
 		printMessageOnCVImage(depthMap()->debugImageDepth, buf1, buf2);
 
 	CHECK( depthMap()->debugImageDepth.data != NULL );

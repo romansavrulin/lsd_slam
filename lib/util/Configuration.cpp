@@ -1,6 +1,14 @@
 #include "Configuration.h"
 
+#include "DataStructures/FrameMemory.h"
+
 namespace lsd_slam {
+
+  Configuration &Conf()
+  {
+    static Configuration TheInstance;
+    return TheInstance;
+  }
 
   Configuration::Configuration() :
       runRealTime( true ),
@@ -20,7 +28,8 @@ namespace lsd_slam {
       displayDepthMap( true ),
       dumpMap( false ),
       doFullReConstraintTrack( false )
-  {;}
+  {
+  }
 
 
   const ImageSize &Configuration::setSlamImageSize( const ImageSize &sz ) {

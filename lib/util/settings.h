@@ -186,27 +186,26 @@ namespace lsd_slam
 
 
 // dyn config
-extern bool printPropagationStatistics;
-extern bool printFillHolesStatistics;
-extern bool printObserveStatistics;
-extern bool printObservePurgeStatistics;
-extern bool printRegularizeStatistics;
-extern bool printLineStereoStatistics;
-extern bool printLineStereoFails;
+// extern bool printFillHolesStatistics;
+// extern bool printObserveStatistics;
+// extern bool printObservePurgeStatistics;
+// extern bool printRegularizeStatistics;
+// extern bool printLineStereoStatistics;
+// extern bool printLineStereoFails;
 
-extern bool printTrackingIterationInfo;
-extern bool printThreadingInfo;
-
-extern bool printKeyframeSelectionInfo;
-extern bool printConstraintSearchInfo;
-extern bool printOptimizationInfo;
-extern bool printRelocalizationInfo;
-
-extern bool printFrameBuildDebugInfo;
-extern bool printMemoryDebugInfo;
-
-extern bool printMappingTiming;
-extern bool printOverallTiming;
+// extern bool printTrackingIterationInfo;
+// extern bool printThreadingInfo;
+//
+// extern bool printKeyframeSelectionInfo;
+// extern bool printConstraintSearchInfo;
+// extern bool printOptimizationInfo;
+// extern bool printRelocalizationInfo;
+//
+// extern bool printFrameBuildDebugInfo;
+// extern bool printMemoryDebugInfo;
+//
+// extern bool printMappingTiming;
+// extern bool printOverallTiming;
 extern bool plotTrackingIterationInfo;
 extern bool plotSim3TrackingIterationInfo;
 extern bool plotStereoImages;
@@ -400,5 +399,4 @@ public:
 
 extern RunningStats runningStats;
 
-void handleKey(char k);
 }

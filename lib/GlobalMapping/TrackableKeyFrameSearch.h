@@ -60,7 +60,7 @@ class TrackableKeyFrameSearch
 {
 public:
 	/** Constructor. */
-	TrackableKeyFrameSearch( const std::shared_ptr<KeyFrameGraph> &graph, const Configuration &conf );
+	TrackableKeyFrameSearch( const std::shared_ptr<KeyFrameGraph> &graph );
 	~TrackableKeyFrameSearch();
 
 	/**

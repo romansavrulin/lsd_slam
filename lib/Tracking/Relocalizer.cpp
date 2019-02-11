@@ -27,9 +27,8 @@ namespace lsd_slam
 {
 
 
-Relocalizer::Relocalizer( const Configuration &conf )
+Relocalizer::Relocalizer()
 	: isRunning( false ),
-		_conf( conf ),
 	  KFForReloc(),
 	  nextRelocIDX( 0 ),
 	  maxRelocIDX( 0 ),
@@ -37,7 +36,8 @@ Relocalizer::Relocalizer( const Configuration &conf )
 		hasResult( false ),
 		resultKF( nullptr ),
 		resultFrameID( 0 ),
-		resultFrameToKeyframe( SE3() )
+		resultFrameToKeyframe( SE3() ),
+		_printRelocalizationInfo( false )
 {
 	for(int i=0;i<RELOCALIZE_THREADS;i++)
 		running[i] = false;
@@ -82,7 +82,7 @@ void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 	newCurrentFrameSignal.notify_all();
 	lock.unlock();
 
-//	printf("tried last on %d. set new current frame %d. trying %d to %d!\n",
+//	f("tried last on %d. set new current frame %d. trying %d to %d!\n",
 //			doneLast,
 //			currentFrame->id(), nextRelocIDX, maxRelocIDX);
 
@@ -160,7 +160,7 @@ void Relocalizer::threadLoop(int idx)
 {
 	if(!multiThreading && idx != 0) return;
 
-	SE3Tracker* tracker = new SE3Tracker(_conf.slamImageSize );
+	SE3Tracker* tracker = new SE3Tracker(Conf().slamImageSize );
 
 	boost::unique_lock<boost::mutex> lock(exMutex);
 	while(continueRunning)
@@ -212,7 +212,7 @@ void Relocalizer::threadLoop(int idx)
 
 				if(numGoodNeighbours > numBadNeighbours || numGoodNeighbours >= 5)
 				{
-					if(enablePrintDebugInfo && printRelocalizationInfo)
+					if(_printRelocalizationInfo)
 						printf("RELOCALIZED! frame %d on %d (bestNeighbour %d): good %2.1f%%, usage %2.1f%%, GoodNeighbours %d / %d\n",
 								myRelocFrame->id(), todo->id(), bestKF->id(),
 								100*bestNeightbourGoodVal, 100*bestNeighbourUsage,
@@ -231,7 +231,7 @@ void Relocalizer::threadLoop(int idx)
 				}
 				else
 				{
-					if(enablePrintDebugInfo && printRelocalizationInfo)
+					if(_printRelocalizationInfo)
 						printf("FAILED RELOCALIZE! frame %d on %d (bestNeighbour %d): good %2.1f%%, usage %2.1f%%, GoodNeighbours %d / %d\n",
 								myRelocFrame->id(), todo->id(), bestKF->id(),
 								100*bestNeightbourGoodVal, 100*bestNeighbourUsage,

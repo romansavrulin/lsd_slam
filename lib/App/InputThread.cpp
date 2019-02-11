@@ -29,7 +29,7 @@ namespace lsd_slam {
 
       float fps = dataSource->fps();
 
-      if( system->conf().runRealTime && fps == 0 ) {
+      if( Conf().runRealTime && fps == 0 ) {
         LOG(WARNING) << "Input FPS not provided, using 30fps.";
         fps = 30;
       }
@@ -44,7 +44,7 @@ namespace lsd_slam {
       int numFrames = dataSource->numFrames();
       LOG_IF( INFO, numFrames > 0 ) << "Running for " << numFrames << " frames at " << fps << " fps";
 
-      cv::Mat image = cv::Mat(system->conf().slamImageSize.cvSize(), CV_8U);
+      cv::Mat image = cv::Mat(Conf().slamImageSize.cvSize(), CV_8U);
       int runningIdx=0;
       float fakeTimeStamp = 0;
 
@@ -68,7 +68,7 @@ namespace lsd_slam {
 //            Frame::SharedPtr f = std::make_shared<Frame>( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
 
             // This will block if system->conf().runRealTime is false
-            system->nextImage( runningIdx, imageUndist, system->conf().camera );
+            system->nextImage( runningIdx, imageUndist, Conf().camera );
 
             runningIdx++;
             fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
@@ -91,10 +91,10 @@ namespace lsd_slam {
 
         } else {
           LOG(INFO) << "Bad read, still running...";
-          if( system->conf().stopOnFailedRead ) break;
+          if( Conf().stopOnFailedRead ) break;
         }
 
-        if( system->conf().runRealTime && dt_us > 0 ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_fudge ) );
+        if( Conf().runRealTime && dt_us > 0 ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_fudge ) );
       }
 
       LOG(INFO) << "Have processed all input frames.";

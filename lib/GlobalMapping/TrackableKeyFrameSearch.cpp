@@ -29,14 +29,14 @@ namespace lsd_slam
 {
 
 
-TrackableKeyFrameSearch::TrackableKeyFrameSearch( const std::shared_ptr<KeyFrameGraph> &graph, const Configuration &conf )
+TrackableKeyFrameSearch::TrackableKeyFrameSearch( const std::shared_ptr<KeyFrameGraph> &graph )
 : graph(graph),
-	tracker( new SE3Tracker( conf.slamImageSize ) )
+	tracker( new SE3Tracker( Conf().slamImageSize ) )
 {
-	fowX = 2 * atanf(float(conf.slamImageSize.width) * conf.camera.fxi / 2.0f );
-	fowY = 2 * atanf(float(conf.slamImageSize.height) * conf.camera.fyi / 2.0f );
+	fowX = 2 * atanf(float(Conf().slamImageSize.width) * Conf().camera.fxi / 2.0f );
+	fowY = 2 * atanf(float(Conf().slamImageSize.height) * Conf().camera.fyi / 2.0f );
 
-	LOGF_IF(INFO, enablePrintDebugInfo && printRelocalizationInfo,
+	LOGF_IF(INFO, Conf().print.relocalizationInfo,
 					"Relocalization Values: fowX %f, fowY %f\n", fowX, fowY);
 }
 
@@ -148,7 +148,7 @@ Frame::SharedPtr TrackableKeyFrameSearch::findRePositionCandidate( const Frame::
 
 	if(bestFrame != 0)
 	{
-		if(enablePrintDebugInfo && printRelocalizationInfo)
+		if(Conf().print.relocalizationInfo)
 			printf("FindReferences for %d: Checked %d (%d). dist %.3f + usage %.3f = %.3f. pose discrepancy %.2f. TAKE %d!\n",
 					(int)frame->id(), (int)potentialReferenceFrames.size(), checkedSecondary,
 					bestDist, bestUsage, bestScore,
@@ -157,7 +157,7 @@ Frame::SharedPtr TrackableKeyFrameSearch::findRePositionCandidate( const Frame::
 	}
 	else
 	{
-		if(enablePrintDebugInfo && printRelocalizationInfo)
+		if(Conf().print.relocalizationInfo)
 			printf("FindReferences for %d: Checked %d (%d), bestScore %.2f. MAKE NEW\n",
 					(int)frame->id(), (int)potentialReferenceFrames.size(), checkedSecondary, bestScore);
 		return 0;
@@ -187,8 +187,7 @@ std::unordered_set<Frame::SharedPtr> TrackableKeyFrameSearch::findCandidates(con
 		}
 	}
 
-	if (enablePrintDebugInfo && printConstraintSearchInfo)
-		printf("Early LoopClosure-Candidates for %d: %d euclidean, %d appearance-based, %d total\n",
+	LOGF_IF(DEBUG, Conf().print.constraintSearchInfo, "Early LoopClosure-Candidates for %d: %d euclidean, %d appearance-based, %d total\n",
 				(int)keyframe->id(), (int)potentialReferenceFrames.size(), appearanceBased, (int)results.size());
 
 	return results;
@@ -218,8 +217,7 @@ Frame::SharedPtr TrackableKeyFrameSearch::findAppearanceBasedCandidate( const Fr
 	else
 		return nullptr;
 #else
-	if(useFabMap)
-		printf("Warning: Compiled without FabMap, but useFabMap is enabled... ignoring.\n");
+	LOG_IF(WARNING, useFabMap) << "Warning: Compiled without FabMap, but useFabMap is enabled... ignoring.";
 	return nullptr;
 #endif
 }
