@@ -912,7 +912,7 @@ void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
 
 
 
-void DepthMap::setFromExistingKF( const Frame::SharedPtr &kf)
+void DepthMap::activateExistingKF( const Frame::SharedPtr &kf)
 {
 	assert(kf->hasIDepthBeenSet());
 

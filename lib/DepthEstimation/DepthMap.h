@@ -65,7 +65,7 @@ public:
 	/**
 	 * does propagation and whole-filling-regularization (no observation, for that need to call updateKeyframe()!)
 	 **/
-	void createKeyFrame( const Frame::SharedPtr &new_keyframe);
+	void createKeyFrame( const Frame::SharedPtr &new_keyframe );
 
 	/**
 	 * does one fill holes iteration
@@ -86,7 +86,7 @@ public:
 	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
 	void initializeRandomly( const std::shared_ptr<Frame> &new_frame);
 
-	void setFromExistingKF(const Frame::SharedPtr &kf);
+	void activateExistingKF(const Frame::SharedPtr &kf);
 
 	void logPerformanceData();
 

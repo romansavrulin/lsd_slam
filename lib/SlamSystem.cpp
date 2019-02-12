@@ -262,7 +262,7 @@ void SlamSystem::loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad)
 
 	// LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo ) << "RE-ACTIVATE KF " << keyframeToLoad->id();
 
-	depthMap()->setFromExistingKF(keyframeToLoad);
+	depthMap()->activateExistingKF(keyframeToLoad);
 
 	LOG_IF(DEBUG, Conf().print.regularizeStatistics ) << "re-activate frame " << keyframeToLoad->id() << "!";
 
