@@ -119,8 +119,8 @@ public:
 
 
 	Sim3 trackFrameSim3(
-			TrackingReference* reference,
-			Frame* frame,
+			const std::shared_ptr<TrackingReference> &reference,
+			const std::shared_ptr<Frame> &frame,
 			const Sim3& frameToReference_initialEstimate,
 			int startLevel, int finalLevel);
 
@@ -141,23 +141,23 @@ private:
 	const ImageSize &_imgSize;
 
 	void calcSim3Buffers(
-			const TrackingReference* reference,
-			Frame* frame,
+			const std::shared_ptr<TrackingReference> &reference,
+			const std::shared_ptr<Frame> &frame,
 			const Sim3& referenceToFrame,
 			int level,
 			bool plotWeights = false);
 #if defined(ENABLE_SSE)
 	void calcSim3BuffersSSE(
-			const TrackingReference* reference,
-			Frame* frame,
+			const std::shared_ptr<TrackingReference> &reference,
+			const std::shared_ptr<Frame> &frame,
 			const Sim3& referenceToFrame,
 			int level,
 			bool plotWeights = false);
 #endif
 #if defined(ENABLE_NEON)
 	void calcSim3BuffersNEON(
-			const TrackingReference* reference,
-			Frame* frame,
+			const std::shared_ptr<TrackingReference> &reference,
+			const std::shared_ptr<Frame> &frame,
 			const Sim3& referenceToFrame,
 			int level,
 			bool plotWeights = false);

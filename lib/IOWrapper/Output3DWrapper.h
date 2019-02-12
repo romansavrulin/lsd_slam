@@ -23,6 +23,7 @@
 #include <vector>
 #include <memory>
 
+#include "DataStructures/Frame.h"
 #include "util/SophusUtil.h"
 
 namespace cv {
@@ -51,13 +52,13 @@ public:
 
 	virtual void publishKeyframeGraph( const std::shared_ptr<KeyFrameGraph> &graph) = 0;
 
-	// publishes a keyframe. if that frame already existis, it is overwritten, otherwise it is added.
-	virtual void publishKeyframe(const std::shared_ptr<Frame> &kf) = 0;
+	// publishes a keyframe. if that frame already exists, it is overwritten, otherwise it is added.
+	virtual void publishKeyframe(const Frame::SharedPtr &kf) = 0;
 
 	virtual void updateDepthImage(unsigned char * data) = 0 ;
 
 	// published a tracked frame that did not become a keyframe (yet; i.e. has no depth data)
-	virtual void publishTrackedFrame(const std::shared_ptr<Frame> &kf) = 0;
+	virtual void publishTrackedFrame(const Frame::SharedPtr &kf) = 0;
 
 	// publishes graph and all constraints, as well as updated KF poses.
 	virtual void publishTrajectory(std::vector<Eigen::Matrix<float, 3, 1>> trajectory, std::string identifier) = 0;

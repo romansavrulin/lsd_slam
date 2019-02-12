@@ -70,10 +70,10 @@ Frame::Frame(int frameId, const Configuration &conf,
 
 Frame::Frame(int frameId, const Configuration &conf,
 							double timestamp, const float* image )
-	: _trackingParent( nullptr ),
-		_conf( conf ),
-		pose( new FramePoseStruct(*this)),
-		data( frameId, timestamp, conf.camera, conf.slamImage  )
+	: pose( new FramePoseStruct(*this)),
+		data( frameId, timestamp, conf.camera, conf.slamImage  ),
+		_trackingParent( nullptr ),
+		_conf( conf )
 {
 	initialize(timestamp);
 
@@ -165,7 +165,7 @@ Frame::~Frame()
 	LOGF_IF(DEBUG, enablePrintDebugInfo && printMemoryDebugInfo, "DELETED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
-bool Frame::isTrackingParent( const SharedPtr &other )
+bool Frame::isTrackingParent( const SharedPtr &other ) const
 {
 	//LOG(INFO) << "Comparing my id " << id() << " to " << other->id();
 	return hasTrackingParent() && ( other->id() == trackingParent()->id() );
@@ -306,6 +306,7 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
 	data.idepthValid[0] = true;
 	data.idepthVarValid[0] = true;
 	release(IDEPTH | IDEPTH_VAR, true, true);
+
 	data.hasIDepthBeenSet = true;
 	depthHasBeenUpdatedFlag = true;
 }
@@ -755,7 +756,7 @@ void Frame::releaseMaxGradients(int level)
 
 void Frame::buildIDepthAndIDepthVar(int level)
 {
-	if (! data.hasIDepthBeenSet)
+	if (! hasIDepthBeenSet())
 	{
 		LOG(WARNING) << "Frame::buildIDepthAndIDepthVar(): idepth has not been set yet!";
 		return;

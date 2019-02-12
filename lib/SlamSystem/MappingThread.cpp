@@ -23,14 +23,14 @@ using active_object::ActiveIdle;
 
 
 MappingThread::MappingThread( SlamSystem &system )
-	: relocalizer( system.conf() ),
-		_system(system ),
-		_newKeyFrame( nullptr ),
-		unmappedTrackedFrames(),
-		map( new DepthMap( system.conf() ) ),
+	: unmappedTrackedFrames(),
 		unmappedTrackedFramesMutex(),
 		trackedFramesMapped(),
+		relocalizer( system.conf() ),
+		map( new DepthMap( system.conf() ) ),
 		mappingTrackingReference( new TrackingReference() ),
+		_system(system ),
+		_newKeyFrame( nullptr ),
 		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::callbackIdle, this ), std::chrono::milliseconds(200)) )
 {
 	LOG(INFO) << "Started Mapping thread";
@@ -103,7 +103,7 @@ void MappingThread::callbackMergeOptimizationOffset()
 {
 	LOG(DEBUG) << "Merging optimization offset";
 
-	// Bool lets us put the publishKeyframeGraph outside the mutex lock
+	// lets us put the publishKeyframeGraph outside the mutex lock
 	bool didUpdate = false;
 
 	// if(_optThread->haveUnmergedOptimizationOffset())
@@ -119,7 +119,9 @@ void MappingThread::callbackMergeOptimizationOffset()
 		didUpdate = true;
 	}
 
-	if ( didUpdate ) _system.publishKeyframeGraph();
+	if ( didUpdate ) {
+		_system.publishKeyframeGraph();
+	}
 
 	optimizationUpdateMerged.notify();
 }
@@ -141,7 +143,7 @@ void MappingThread::gtDepthInit( const Frame::SharedPtr &frame )
 	// has been set explicitly
 	CHECK( frame->hasIDepthBeenSet() );
 
-	map->initializeFromGTDepth( _system.currentKeyFrame().const_ref() );
+	map->initializeFromGTDepth( _system.currentKeyFrame() );
 
 	_system.updateDisplayDepthMap();
 }
@@ -158,7 +160,7 @@ void MappingThread::randomInit( const Frame::SharedPtr &frame )
 bool MappingThread::doMappingIteration()
 {
 	// If there's no keyframe, then give up
-	if( !(bool)_system.currentKeyFrame().const_ref() ) {
+	if( !(bool)_system.currentKeyFrame() ) {
 		LOG(INFO) << "Nothing to map: no keyframe";
 		return false;
 	}
@@ -226,7 +228,7 @@ bool MappingThread::doMappingIteration()
 		// invalidate map if it was valid.
 		if(map->isValid())
 		{
-			if( _system.currentKeyFrame()()->numMappedOnThisTotal >= MIN_NUM_MAPPED)
+			if( _system.currentKeyFrame()->numMappedOnThisTotal >= MIN_NUM_MAPPED)
 				finishCurrentKeyframe();
 			else
 				discardCurrentKeyframe();
@@ -274,11 +276,11 @@ bool MappingThread::updateKeyframe()
 	// Drops frames that have a different tracking parent.
 	while(unmappedTrackedFrames.size() > 0 &&
 			  (!unmappedTrackedFrames.front()->hasTrackingParent() ||
-			   !unmappedTrackedFrames.front()->isTrackingParent( _system.currentKeyFrame().const_ref() ) ) ) {
+			   !unmappedTrackedFrames.front()->isTrackingParent( _system.currentKeyFrame() ) ) ) {
 					 if( unmappedTrackedFrames.front()->hasTrackingParent() ) {
 					 LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id()
 					  				<< " its has tracking parent " << unmappedTrackedFrames.front()->trackingParent()->id()
-										<< " current keyframe is " << _system.currentKeyFrame().const_ref()->id();
+										<< " current keyframe is " << _system.currentKeyFrame()->id();
 						} else {
 							LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id() << " which doesn't have a tracking parent";
 						}
@@ -298,7 +300,7 @@ bool MappingThread::updateKeyframe()
 		unmappedTrackedFramesMutex.unlock();
 
 		LOGF_IF( INFO, printThreadingInfo,
-			"MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame().const_ref()->id());
+			"MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame()->id());
 
 		map->updateKeyframe(references);
 
@@ -342,8 +344,9 @@ bool MappingThread::updateKeyframe()
 
 
 	// Why is this here?
-	if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame()() ) {
-		_system.publishKeyframe( _system.currentKeyFrame().const_ref() );
+	if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame() ) {
+		LOG(DEBUG) << "Map updated, publishing keyframe " << _system.currentKeyFrame()->id();
+		_system.publishKeyframe( _system.currentKeyFrame() );
 	}
 
 	return true;
@@ -354,37 +357,38 @@ bool MappingThread::updateKeyframe()
 
 void MappingThread::finishCurrentKeyframe()
 {
-	LOG_IF(DEBUG, printThreadingInfo) << "FINALIZING KF " << _system.currentKeyFrame().const_ref()->id();
+	LOG_IF(DEBUG, printThreadingInfo) << "FINALIZING KF " << _system.currentKeyFrame()->id();
 
 	map->finalizeKeyFrame();
 
 	if(_system.conf().SLAMEnabled)
 	{
-		mappingTrackingReference->importFrame(_system.currentKeyFrame().const_ref());
-		_system.currentKeyFrame()()->setPermaRef(mappingTrackingReference);
+		mappingTrackingReference->importFrame(_system.currentKeyFrame());
+		_system.currentKeyFrame()->setPermaRef(mappingTrackingReference);
 		mappingTrackingReference->invalidate();
 
-		if(_system.currentKeyFrame().const_ref()->idxInKeyframes < 0)
+		if(_system.currentKeyFrame()->idxInKeyframes < 0)
 		{
 			_system.keyFrameGraph()->keyframesAllMutex.lock();
-			_system.currentKeyFrame()()->idxInKeyframes = _system.keyFrameGraph()->keyframesAll.size();
-			_system.keyFrameGraph()->keyframesAll.push_back(_system.currentKeyFrame().const_ref() );
-			_system.keyFrameGraph()->totalPoints += _system.currentKeyFrame().const_ref()->numPoints;
+			_system.currentKeyFrame()->idxInKeyframes = _system.keyFrameGraph()->keyframesAll.size();
+			_system.keyFrameGraph()->keyframesAll.push_back(_system.currentKeyFrame() );
+			_system.keyFrameGraph()->totalPoints += _system.currentKeyFrame()->numPoints;
 			_system.keyFrameGraph()->totalVertices ++;
 			_system.keyFrameGraph()->keyframesAllMutex.unlock();
 
-			_system.constraintThread->newKeyFrame( _system.currentKeyFrame().const_ref() );
+			_system.constraintThread->newKeyFrame( _system.currentKeyFrame() );
 		}
 	}
 
-	_system.publishKeyframe(_system.currentKeyFrame().const_ref() );
+	LOG(DEBUG) << "Finishing current keyframe, publishing keyframe " << _system.currentKeyFrame()->id();
+	_system.publishKeyframe(_system.currentKeyFrame() );
 }
 
 void MappingThread::discardCurrentKeyframe()
 {
-	LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo) << "DISCARDING KF " << _system.currentKeyFrame().const_ref()->id();
+	LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
 
-	if(_system.currentKeyFrame().const_ref()->idxInKeyframes >= 0)
+	if(_system.currentKeyFrame()->idxInKeyframes >= 0)
 	{
 		LOG(WARNING) << "WARNING: trying to discard a KF that has already been added to the graph... finalizing instead.";
 		finishCurrentKeyframe();
@@ -398,14 +402,15 @@ void MappingThread::discardCurrentKeyframe()
 		boost::shared_lock_guard< boost::shared_mutex > lock( _system.keyFrameGraph()->allFramePosesMutex );
 		for(auto p : _system.keyFrameGraph()->allFramePoses)
 		{
-			if(p->frame.isTrackingParent( _system.currentKeyFrame().const_ref() ) )
+			if(p->frame.isTrackingParent( _system.currentKeyFrame() ) ) {
 				p->frame.setTrackingParent( nullptr );
+			}
 		}
 	}
 
 	{
 		boost::shared_lock_guard< boost::shared_mutex > lock(_system.keyFrameGraph()->idToKeyFrameMutex);
-		_system.keyFrameGraph()->idToKeyFrame.erase(_system.currentKeyFrame().const_ref()->id());
+		_system.keyFrameGraph()->idToKeyFrame.erase(_system.currentKeyFrame()->id());
 	}
 
 }

@@ -17,12 +17,13 @@ namespace lsd_slam {
       output( nullptr ),
       it_(nh_)
     {
-      image_sub_ = it_.subscribe("/image_raw", 1,
-        &InputThread::imageCallback, this);
 
       cv::namedWindow(OPENCV_WINDOW);
+      //ros::spin();
+      //cv::waitKey(0);
 
-      LOG(INFO) << "InputThread constructor";
+
+      LOG(WARNING) << "InputThread constructor";
     }
 
   InputThread::~InputThread(){
@@ -33,8 +34,7 @@ namespace lsd_slam {
     void InputThread::imageCallback(const sensor_msgs::ImageConstPtr& msg){
       try
       {
-        cv::imshow("view", cv_bridge::toCvShare(msg, "bgr8")->image);
-        cv::waitKey(30);
+        callbackImage = cv_bridge::toCvShare(msg, "bgr8")->image;
       }
       catch (cv_bridge::Exception& e)
       {
@@ -49,81 +49,70 @@ namespace lsd_slam {
 
     void InputThread::operator()() {
       // get HZ
-
-      LOG(WARNING) << " !!! Running InputThread !!!!";
-
-      bool runRealTime = system->conf().runRealTime;
-
+      LOG(INFO) << " !!! Starting InputThread !!!!";
       float fps = dataSource->fps();
-      long int dt_us = (fps > 0) ? (1e6/fps) : 0;
-      long int dt_fudge = 0;
-
-      if( runRealTime && fps == 0 ) {
-        LOG(INFO) << "Cannot run realtime, as input FPS is not known.";
-        runRealTime = false;
+      if( system->conf().runRealTime && fps == 0 ) {
+        LOG(WARNING) << "Input FPS not provided, using 30fps.";
+        fps = 30;
       }
 
+      //Setup
+      long int dt_us = (fps > 0) ? (1e6/fps) : 0;
+      long int dt_fudge = 0;
       inputReady.notify();
-
       startAll.wait();
 
-      int numFrames = dataSource->numFrames();
-      LOG_IF( INFO, numFrames > 0 ) << "Running for " << numFrames << " frames at " << fps << " fps";
-
+      //Setup Image
       cv::Mat image = cv::Mat(system->conf().slamImage.cvSize(), CV_8U);
       int runningIdx=0;
       float fakeTimeStamp = 0;
-
-      for(unsigned int i = 0; (numFrames < 0) || (i < (unsigned int)numFrames); ++i)
-      {
-
-        if(inputDone.getValue()) break;
-
+      ros::Rate loop_rate(10);
+      while (ros::ok()){
         std::chrono::time_point<std::chrono::steady_clock> start(std::chrono::steady_clock::now());
+        if (callbackImage.size() == system->conf().slamImage.cvSize()){
+          //Uncomment to show images...
+          cv::imshow(OPENCV_WINDOW, callbackImage);
+          cv::waitKey(30);
+          cvtColor(callbackImage,image,CV_RGB2GRAY);
+          CHECK(image.type() == CV_8UC1);
 
-        if( dataSource->grab() ) {
-          if( dataSource->getImage( image ) >= 0 ) {
-            CHECK(image.type() == CV_8UC1);
+          cv::Mat imageUndist;
+          undistorter->undistort(image, imageUndist);
 
-            cv::Mat imageUndist;
-            undistorter->undistort(image, imageUndist);
+          CHECK(imageUndist.data != nullptr) << "Undistorted image data is nullptr";
+          CHECK(imageUndist.type() == CV_8UC1);
+          //LOG(DEBUG) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
 
-            CHECK(imageUndist.data != nullptr) << "Undistorted image data is nullptr";
-            CHECK(imageUndist.type() == CV_8UC1);
-            LOG(WARNING) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
+          Frame::SharedPtr f = std::make_shared<Frame>( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
 
-            Frame *f = new Frame( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
-            system->trackFrame( f, runRealTime );
+          // This will block if system->conf().runRealTime is false
+          system->trackFrame( f );
 
-            runningIdx++;
-            fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
+          runningIdx++;
+          fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;
 
-            if( output ) {
-              output->updateFrameNumber( runningIdx );
-              output->updateLiveImage( imageUndist );
-            }
-
+          if( output ) {
+            output->updateFrameNumber( runningIdx );
+            output->updateLiveImage( imageUndist );
           }
 
-          if(fullResetRequested)
-          {
-            LOG(WARNING) << "FULL RESET!";
-            system.reset( system->fullReset() );
+        if(fullResetRequested)
+        {
+          LOG(WARNING) << "FULL RESET!";
+          system.reset( system->fullReset() );
 
-            fullResetRequested = false;
-            runningIdx = 0;
-          }
-
-        } else {
-          LOG(INFO) << "Bad read, still running...";
-          if( system->conf().stopOnFailedRead ) break;
+          fullResetRequested = false;
+          runningIdx = 0;
         }
 
-        if( dt_us > 0 && runRealTime ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_fudge ) );
-      }
+        }
 
-      LOG(INFO) << "Have processed all input frames.";
-      inputDone.assignValue(true);
+        if( system->conf().runRealTime && dt_us > 0 ) std::this_thread::sleep_until( start + std::chrono::microseconds( dt_us + dt_fudge ) );
+        ros::spinOnce();
+      }
+      //Pretty sure these are worthless now...
+      //LOG(INFO) << "Have processed all input frames.";
+      //inputDone.assignValue(true);
     }
 
   }

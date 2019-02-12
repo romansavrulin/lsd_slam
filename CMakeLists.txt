@@ -53,13 +53,38 @@ option( CUDA_VERSION "Use CUDA" "")
 EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 message( STATUS "Architecture: ${ARCHITECTURE}" )
 if( ${ARCHITECTURE} STREQUAL "aarch64" )
+<<<<<<< HEAD
+=======
+	# Jetson version uses OpenCV4Tegra from NVidia
+
+>>>>>>> 64f439a15ad1d41fee21dffdf5a96f8605bf30e6
 	## For compilation on Jetson TX1
 	set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a") # -DENABLE_NEON" )
 
 elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
-  # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
-	# it has nothing to do with compiler behavior
-  set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -msse3 -msse2 -msse -march=native -DENABLE_SSE" )
+<<<<<<< HEAD
+  if( ${CMAKE_BUILD_TYPE} MATCHES RELEASE )
+    # -DENABLE_SSE enables Jakob's original SSE optimizations in his code,
+  	# it has nothing to do with compiler behavior
+    message( STATUS " --> Using SSE" )
+    ## Enable SSE on release only...
+    set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -msse4.1 -msse3 -msse2 -msse -march=native -DENABLE_SSE" )
+  else()
+    message( STATUS " --> Not enabling SSE on x86_64 architecture for Debug build")
+  endif()
+endif()
+
+set( OPENCV_COMPONENTS core highgui imgproc video calib3d )
+find_package(OpenCV COMPONENTS ${OPENCV_COMPONENTS} REQUIRED)
+=======
+>>>>>>> 64f439a15ad1d41fee21dffdf5a96f8605bf30e6
+
+if( OpenCV_VERSION_MAJOR EQUAL "3" )
+  message( STATUS "Using OpenCV 3.x")
+  add_definitions( -DOPENCV3 )
+else()
+  message( STATUS "Using OpenCV 2.x")
+  add_definitions( -DOPENCV2 )
 endif()
 
 set( OPENCV_COMPONENTS core highgui imgproc video calib3d )

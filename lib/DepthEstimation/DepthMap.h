@@ -85,30 +85,27 @@ public:
 
 	void setFromExistingKF(const Frame::SharedPtr &kf);
 
-	void addTimingSample();
-	Timer timeLastUpdate;
-	// float msUpdate, msCreate, msFinalize;
-	// float msObserve, msRegularize, msPropagate, msFillHoles, msSetDepth;
-	// int nUpdate, nCreate, nFinalize;
-	// int nObserve, nRegularize, nPropagate, nFillHoles, nSetDepth;
-	// struct timeval lastHzUpdate;
-	// float nAvgUpdate, nAvgCreate, nAvgFinalize;
-	// float nAvgObserve, nAvgRegularize, nAvgPropagate, nAvgFillHoles, nAvgSetDepth;
+	void logPerformanceData();
+
 
 	struct PerformanceData {
 		PerformanceData( void ) {;}
 
 		MsRateAverage update, create, finalize, observe, regularize, propagate, fillHoles, setDepth;
-	} _perf;
+	};
 
+	PerformanceData perf() const { return _perf; }
 
 
 	// pointer to global keyframe graph
 	IndexThreadReduce threadReducer;
 
 private:
-	
+
 	const Configuration &_conf;
+
+ 	PerformanceData _perf;
+
 
 	// ============= parameter copies for convenience ===========================
 	// these are just copies of the pointers given to this function, for convenience.

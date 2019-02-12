@@ -19,7 +19,9 @@ namespace lsd_slam {
   class InputThread {
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
-  image_transport::Subscriber image_sub_;
+  cv::Mat callbackImage;
+  ros::Subscriber sub =nh_.subscribe("/image_raw", 1,
+    &InputThread::imageCallback, this);
 
   public:
 
@@ -42,6 +44,7 @@ namespace lsd_slam {
 
     //ROS callback
     void imageCallback(const sensor_msgs::ImageConstPtr& msg);
+
 
   protected:
     std::shared_ptr<lsd_slam::OutputIOWrapper> output;

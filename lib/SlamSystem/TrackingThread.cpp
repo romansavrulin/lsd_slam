@@ -59,6 +59,7 @@ using namespace lsd_slam;
 
 TrackingThread::TrackingThread( SlamSystem &system )
 : _system( system ),
+	_perf(),
 //	_system.currentKeyFrame( system.currentKeyFrame ),
 	_tracker( new SE3Tracker( system.conf().slamImage ) ),
 	_trackingReference( new TrackingReference() ),
@@ -112,28 +113,19 @@ TrackingThread::TrackingThread( SlamSystem &system )
 	// keepRunning = true;
 	// depthMapScreenshotFlag = false;
 	lastTrackingClosenessScore = 0;
-
-	timeLastUpdate.start();
 }
 
 
 TrackingThread::~TrackingThread()
 {
-
-	delete _trackingReference;
 	delete _tracker;
 }
 
 
 void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntilMapped )
 {
-	// Create new frame
-	// std::shared_ptr<Frame> trackingNewFrame(new Frame(frameID, _conf, timestamp, image));
 
-	//LOG(INFO) << "In trackFrame";
-
-	if(!_trackingIsGood)
-	{
+	if(!_trackingIsGood) {
 		// Prod mapping to check the relocalizer
 		_system.mapThread->relocalizer.updateCurrentFrame(newFrame);
 		_system.mapThread->doIteration();
@@ -147,13 +139,11 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 		return;
 	}
 
-	// Are the following two calls atomic enough or should I lock
-	// before the next two lines?
+	// Are the following two calls atomic enough or should I lock before the next two lines?
 	bool newKeyFramePending = _system.mapThread->newKeyFramePending();	// pre-save here, to make decision afterwards.
-	Frame::SharedPtr keyframe( _system.currentKeyFrame().get() );
+	Frame::SharedPtr keyframe( _system.currentKeyFrame() );
 
-	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag )
-	{
+	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag ) {
 		LOG(DEBUG) << "Importing new tracking reference from frame " << keyframe->id();
 		_trackingReference->importFrame( keyframe );
 		keyframe->depthHasBeenUpdatedFlag = false;
@@ -175,14 +165,14 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 
 	Timer timer;
 
-	LOG_IF(DEBUG, enablePrintDebugInfo ) << "Start tracking...";
-	SE3 newRefToFrame_poseUpdate = _tracker->trackFrame(
-																	_trackingReference,
-																	newFrame.get(),
-																	frameToReference_initialEstimate);
+	LOG(DEBUG) << "Start tracking...";
+	SE3 newRefToFrame_poseUpdate = _tracker->trackFrame( _trackingReference,
+																										newFrame,
+																										frameToReference_initialEstimate);
 
-	perf.update( timer );
-	LOG_IF(DEBUG, enablePrintDebugInfo ) << "Done tracking...";
+	LOG(DEBUG) << "Done tracking, took " << timer.stop() * 1000 << " ms";
+	_perf.track.update( timer );
+
 
 	tracking_lastResidual = _tracker->lastResidual;
 	tracking_lastUsage = _tracker->pointUsage;
@@ -247,12 +237,12 @@ void TrackingThread::trackFrame(std::shared_ptr<Frame> newFrame, bool blockUntil
 	// Keyframe selection
 	// latestTrackedFrame = trackingNewFrame;
 	//if (!my_createNewKeyframe && _map.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
-	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame().const_ref()->id();
-	LOG_IF( INFO, printThreadingInfo ) << _system.currentKeyFrame().const_ref()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame().const_ref()->id() << ", considering " << newFrame->id() << " as new keyframe.";
+	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
+	LOG_IF( INFO, printThreadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
-	if(!newKeyFramePending && _system.currentKeyFrame().const_ref()->numMappedOnThisTotal > MIN_NUM_MAPPED)
+	if(!newKeyFramePending && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
-		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame().const_ref()->meanIdepth;
+		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame()->meanIdepth;
 		float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
 
 		if(_system.keyFrameGraph()->size() < INITIALIZATION_PHASE_COUNT)	minVal *= 0.7;
@@ -310,13 +300,13 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 	// relocalizer.getResult(keyframe, succFrame, succFrameID, succFrameToKF_init);
 	// assert(keyframe != 0);
 
-	Frame::SharedPtr keyframe(_system.currentKeyFrame().const_ref() );
+	Frame::SharedPtr keyframe( _system.currentKeyFrame() );
 	_trackingReference->importFrame( keyframe );
 	_trackingReferenceFrameSharedPT = keyframe;
 
 	_tracker->trackFrame(
 			_trackingReference,
-			result.successfulFrame.get(),
+			result.successfulFrame,
 			result.successfulFrameToKeyframe );
 
 	if(!_tracker->trackingWasGood || _tracker->lastGoodCount() / (_tracker->lastGoodCount()) < 1-0.75f*(1-MIN_GOODPERGOODBAD_PIXEL))

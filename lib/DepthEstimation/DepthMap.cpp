@@ -42,6 +42,7 @@ namespace lsd_slam
 
 DepthMap::DepthMap( const Configuration &conf )
 	: _conf( conf ),
+		_perf(),
 		activeKeyFrame( nullptr ),
 		oldest_referenceFrame( nullptr ),
 		newest_referenceFrame( nullptr )
@@ -63,8 +64,6 @@ DepthMap::DepthMap( const Configuration &conf )
 	debugImageDepth = cv::Mat(imgCvSize, CV_8UC3);
 
 	reset();
-
-	timeLastUpdate.start();
 
 	// msUpdate =  msCreate =  msFinalize = 0;
 	// msObserve =  msRegularize =  msPropagate =  msFillHoles =  msSetDepth = 0;
@@ -911,7 +910,6 @@ void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
 		}
 	}
 
-
 	activeKeyFrame->setDepth(currentDepthMap);
 }
 
@@ -1310,12 +1308,9 @@ void DepthMap::createKeyFrame( const Frame::SharedPtr &new_keyframe)
 
 }
 
-void DepthMap::addTimingSample()
+void DepthMap::logPerformanceData()
 {
-	float sPassed = timeLastUpdate.reset();
-	if(sPassed > 1.0f)
-	{
-		LOGF_IF(DEBUG, enablePrintDebugInfo && printMappingTiming, "Upd %3.1fms (%.1fHz); Create %3.1fms (%.1fHz); Final %3.1fms (%.1fHz) // Obs %3.1fms (%.1fHz); Reg %3.1fms (%.1fHz); Prop %3.1fms (%.1fHz); Fill %3.1fms (%.1fHz); Set %3.1fms (%.1fHz)\n",
+		LOGF_IF(DEBUG, printMappingTiming, "Upd %3.1fms (%.1fHz); Create %3.1fms (%.1fHz); Final %3.1fms (%.1fHz) // Obs %3.1fms (%.1fHz); Reg %3.1fms (%.1fHz); Prop %3.1fms (%.1fHz); Fill %3.1fms (%.1fHz); Set %3.1fms (%.1fHz)\n",
 				_perf.update.ms(), _perf.update.rate(),
 				_perf.create.ms(), _perf.create.rate(),
 				_perf.finalize.ms(), _perf.finalize.rate(),
@@ -1324,9 +1319,6 @@ void DepthMap::addTimingSample()
 				_perf.propagate.ms(), _perf.propagate.rate(),
 				_perf.fillHoles.ms(), _perf.fillHoles.rate(),
 				_perf.setDepth.ms(), _perf.setDepth.rate() );
-	}
-
-
 }
 
 void DepthMap::finalizeKeyFrame()

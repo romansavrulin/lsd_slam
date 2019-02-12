@@ -42,8 +42,8 @@ public:
 	// and is changed only once, when the frame becomes a KF (->rescale).
 	Sim3 thisToParent_raw;
 
- Frame &frame;
-	// int frameID;
+ 	Frame &frame;
+	//int frameID;
 
 	// whether this poseStruct is registered in the Graph. if true MEMORY WILL BE HANDLED BY GRAPH
 	bool isRegisteredToGraph;

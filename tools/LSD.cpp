@@ -77,11 +77,16 @@ int main( int argc, char** argv )
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
+
+
+
   // This is idle while(1) loop
   ros::Rate loop_rate(30);
-  while(ros::ok()){
-    if(input.inputDone.getValue()) break;
+    while(ros::ok()){
+      if(input.inputDone.getValue()) break;
+
     //ROS_INFO("I'm Working!");
+
     loop_rate.sleep();
   }
 

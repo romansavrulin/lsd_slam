@@ -40,6 +40,66 @@ class TrackingReference;
 
 class Frame
 {
+private:
+	//!!! Had strange alignement issues if this was at the end of the class.  Something to
+	// do with Eigen alignment?
+	struct Data
+	{
+		// Explicitly delete default and copy constructors
+		Data() = delete;
+		Data( const Data & ) = delete;
+
+		Data( int id, double timestamp, const Camera &camera, const SlamImageSize &slamImageSize );
+
+		int id;
+
+		int width[PYRAMID_LEVELS], height[PYRAMID_LEVELS];
+
+		Camera camera[PYRAMID_LEVELS];
+
+		// Eigen::Matrix3f K[PYRAMID_LEVELS], KInv[PYRAMID_LEVELS];
+		// float fx[PYRAMID_LEVELS], fy[PYRAMID_LEVELS], cx[PYRAMID_LEVELS], cy[PYRAMID_LEVELS];
+		// float fxInv[PYRAMID_LEVELS], fyInv[PYRAMID_LEVELS], cxInv[PYRAMID_LEVELS], cyInv[PYRAMID_LEVELS];
+
+		double timestamp;
+
+
+		float* image[PYRAMID_LEVELS];
+		bool imageValid[PYRAMID_LEVELS];
+
+		Eigen::Vector4f* gradients[PYRAMID_LEVELS];
+		bool gradientsValid[PYRAMID_LEVELS];
+
+		float* maxGradients[PYRAMID_LEVELS];
+		bool maxGradientsValid[PYRAMID_LEVELS];
+
+
+		bool hasIDepthBeenSet;
+
+		// negative depthvalues are actually allowed, so setting this to -1 does NOT invalidate the pixel's depth.
+		// a pixel is valid iff idepthVar[i] > 0.
+		float* idepth[PYRAMID_LEVELS];
+		bool idepthValid[PYRAMID_LEVELS];
+
+		// MUST contain -1 for invalid pixel (that dont have depth)!!
+		float* idepthVar[PYRAMID_LEVELS];
+		bool idepthVarValid[PYRAMID_LEVELS];
+
+		// data needed for re-activating the frame. theoretically, this is all data the
+		// frame contains.
+		unsigned char* validity_reAct;
+		float* idepth_reAct;
+		float* idepthVar_reAct;
+		bool reActivationDataValid;
+
+
+		// data from initial tracking, indicating which pixels in the reference frame ware good or not.
+		// deleted as soon as frame is used for mapping.
+		bool* refPixelWasGood;
+	} data;
+
+
+
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class FrameMemory;
@@ -47,8 +107,11 @@ public:
 	typedef std::shared_ptr<Frame> SharedPtr;
 
 
-	Frame(int id, const Configuration &conf, double timestamp, const unsigned char* image );
+	// Explicitly delete default and copy constructors
+	Frame() = delete;
+	Frame( const Frame & ) = delete;
 
+	Frame(int id, const Configuration &conf, double timestamp, const unsigned char* image );
 	Frame(int id, const Configuration &conf, double timestamp, const float* image );
 
 	~Frame();
@@ -111,7 +174,7 @@ public:
 
 	inline bool* refPixelWasGood();
 	inline bool* refPixelWasGoodNoCreate();
-	inline void clear_refPixelWasGood();
+	inline void  clear_refPixelWasGood();
 
 	/** Flags for use with require() and requirePyramid(). See the Frame class
 	  * documentation for their exact meaning. */
@@ -155,10 +218,10 @@ public:
 
 	// parent, the frame originally tracked on. never changes.
 	SharedPtr &setTrackingParent( const SharedPtr &newParent  ) { return _trackingParent = newParent; }
-	bool hasTrackingParent()    { return (bool)_trackingParent; }
-	SharedPtr &trackingParent()  { return _trackingParent; }
+	bool      hasTrackingParent() const     { return (bool)_trackingParent; }
+	const SharedPtr &trackingParent() const       { return _trackingParent; }
 
-	bool isTrackingParent( const SharedPtr &other );
+	bool isTrackingParent( const SharedPtr &other ) const;
 
 	Sim3 lastConstraintTrackedCamToWorld;
 
@@ -234,57 +297,6 @@ private:
 	void releaseIDepth(int level);
 	void releaseIDepthVar(int level);
 
-	struct Data
-	{
-		Data( int id, double timestamp, const Camera &camera, const SlamImageSize &slamImageSize );
-
-		int id;
-
-		int width[PYRAMID_LEVELS], height[PYRAMID_LEVELS];
-
-		Camera camera[PYRAMID_LEVELS];
-
-		// Eigen::Matrix3f K[PYRAMID_LEVELS], KInv[PYRAMID_LEVELS];
-		// float fx[PYRAMID_LEVELS], fy[PYRAMID_LEVELS], cx[PYRAMID_LEVELS], cy[PYRAMID_LEVELS];
-		// float fxInv[PYRAMID_LEVELS], fyInv[PYRAMID_LEVELS], cxInv[PYRAMID_LEVELS], cyInv[PYRAMID_LEVELS];
-
-		double timestamp;
-
-
-		float* image[PYRAMID_LEVELS];
-		bool imageValid[PYRAMID_LEVELS];
-
-		Eigen::Vector4f* gradients[PYRAMID_LEVELS];
-		bool gradientsValid[PYRAMID_LEVELS];
-
-		float* maxGradients[PYRAMID_LEVELS];
-		bool maxGradientsValid[PYRAMID_LEVELS];
-
-
-		bool hasIDepthBeenSet;
-
-		// negative depthvalues are actually allowed, so setting this to -1 does NOT invalidate the pixel's depth.
-		// a pixel is valid iff idepthVar[i] > 0.
-		float* idepth[PYRAMID_LEVELS];
-		bool idepthValid[PYRAMID_LEVELS];
-
-		// MUST contain -1 for invalid pixel (that dont have depth)!!
-		float* idepthVar[PYRAMID_LEVELS];
-		bool idepthVarValid[PYRAMID_LEVELS];
-
-		// data needed for re-activating the frame. theoretically, this is all data the
-		// frame contains.
-		unsigned char* validity_reAct;
-		float* idepth_reAct;
-		float* idepthVar_reAct;
-		bool reActivationDataValid;
-
-
-		// data from initial tracking, indicating which pixels in the reference frame ware good or not.
-		// deleted as soon as frame is used for mapping.
-		bool* refPixelWasGood;
-	} data;
-
 
 	// used internally. locked while something is being built, such that no
 	// two threads build anything simultaneously. not locked on require() if nothing is changed.
@@ -331,9 +343,9 @@ inline bool Frame::hasIDepthBeenSet() const
 
 inline const float* Frame::idepth(int level)
 {
-	if (! data.hasIDepthBeenSet)
+	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame::idepth(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " << data.id << "; idepth(): idepth has not been set yet!";
 		return nullptr;
 	}
 	if (! data.idepthValid[level])
@@ -364,9 +376,9 @@ inline const float* Frame::idepthVar_reAct()
 
 inline const float* Frame::idepthVar(int level)
 {
-	if (! data.hasIDepthBeenSet)
+	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame::idepthVar(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " << data.id << "; idepthVar(): idepth has not been set yet!";
 		return nullptr;
 	}
 	if (! data.idepthVarValid[level])

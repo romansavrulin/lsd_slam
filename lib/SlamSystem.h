@@ -87,8 +87,8 @@ public:
 	// first frame will return Identity = camToWord.
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
-	void trackFrame(const Frame::SharedPtr &newFrame, bool blockUntilMapped );
-	void trackFrame( Frame *newFrame, bool blockUntilMapped );
+	void trackFrame(const Frame::SharedPtr &newFrame );//, bool blockUntilMapped );
+	//void trackFrame( Frame *newFrame ); //, bool blockUntilMapped );
 
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
@@ -101,7 +101,7 @@ public:
 	Sophus::Sim3f getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
-	MutexObject< Frame::SharedPtr >  &currentKeyFrame() { return _currentKeyFrame; };
+	Frame::SharedPtr &currentKeyFrame() { return _currentKeyFrame; };
 
 	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
 	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
@@ -113,14 +113,6 @@ public:
 
 	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
-	struct PerformanceData {
-		PerformanceData( void ) {;}
-
-		MsRateAverage findConstraint, findReferences;
-	} perf;
-
-	Timer timeLastUpdate;
-
 	const Configuration &conf( void ) const     { return _conf; }
 
 	//=== Debugging output functions =====
@@ -131,9 +123,8 @@ public:
 	void publishPose(const Sophus::Sim3f &pose ) 	                 { if( _outputWrapper ) _outputWrapper->publishPose(pose);}
 	void publishTrackedFrame( const Frame::SharedPtr &frame )      { if( _outputWrapper ) _outputWrapper->publishTrackedFrame( frame ); }
 	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
-	void publishKeyframe(  const Frame::SharedPtr &frame )         { if( _outputWrapper ) _outputWrapper->publishKeyframe( frame ); }
+	void publishKeyframe(  const Frame::SharedPtr &frame );
 	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
-
 
 	void updateDisplayDepthMap();
 
@@ -156,6 +147,14 @@ private:
 
 	const Configuration &_conf;
 
+	struct PerformanceData {
+		MsRateAverage findReferences;
+	} _perf;
+
+	Timer timeLastUpdate;
+
+
+
 	// Individual / no locking
 	shared_ptr<Output3DWrapper> _outputWrapper;	// no lock required
 
@@ -169,12 +168,12 @@ private:
 
 	// ======= Functions =====
 
-	void addTimingSamples();
+	void logPerformanceData();
 
 	// == Shared data
 
 	std::shared_ptr<KeyFrameGraph> _keyFrameGraph;	  // has own locks
-	MutexObject< Frame::SharedPtr >  _currentKeyFrame;
+	Frame::SharedPtr  _currentKeyFrame;
 
 
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;

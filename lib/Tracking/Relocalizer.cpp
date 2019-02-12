@@ -177,7 +177,7 @@ void Relocalizer::threadLoop(int idx)
 			lock.unlock();
 
 			// initial Alignment
-			SE3 todoToFrame = tracker->trackFrameOnPermaref(todo.get(), myRelocFrame.get(), SE3());
+			SE3 todoToFrame = tracker->trackFrameOnPermaref(todo, myRelocFrame, SE3());
 
 			// try neighbours
 			float todoGoodVal = tracker->pointUsage * tracker->lastGoodCount() / (tracker->lastGoodCount()+tracker->lastBadCount());
@@ -193,7 +193,7 @@ void Relocalizer::threadLoop(int idx)
 				for(auto nkf : todo->neighbors)
 				{
 					SE3 nkfToFrame_init = se3FromSim3((nkf->getCamToWorld().inverse() * todo->getCamToWorld() * sim3FromSE3(todoToFrame.inverse(), 1))).inverse();
-					SE3 nkfToFrame = tracker->trackFrameOnPermaref(nkf.get(), myRelocFrame.get(), nkfToFrame_init);
+					SE3 nkfToFrame = tracker->trackFrameOnPermaref(nkf, myRelocFrame, nkfToFrame_init);
 
 					float goodVal = tracker->pointUsage * tracker->lastGoodCount() / (tracker->lastGoodCount()+tracker->lastBadCount());
 					if(goodVal > relocalizationTH*0.8 && (nkfToFrame * nkfToFrame_init.inverse()).log().norm() < 0.1)
