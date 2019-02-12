@@ -19,6 +19,7 @@
 */
 
 #include "SlamSystem.h"
+#include "ros/ros.h"
 
 #include <boost/thread/shared_lock_guard.hpp>
 

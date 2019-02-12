@@ -38,6 +38,10 @@
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
 
+#include "IOWrapper/ROS/ROSImageStreamThread.h"
+#include "IOWrapper/ROS/ROSOutput3DWrapper.h"
+//#include "IOWrapper/ROS/rosReconfigure.h"
+
 #include "App/App.h"
 #include "App/InputThread.h"
 #include "ParseArgs.h"
@@ -76,9 +80,6 @@ int main( int argc, char** argv )
   // Wait for all threads to be ready.
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
-
-
-
 
   // This is idle while(1) loop
   ros::Rate loop_rate(30);

@@ -17,6 +17,7 @@
 namespace lsd_slam {
 
   class InputThread {
+    
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   cv::Mat callbackImage;
