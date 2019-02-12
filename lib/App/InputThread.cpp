@@ -19,11 +19,7 @@ namespace lsd_slam {
     {
 
       cv::namedWindow(OPENCV_WINDOW);
-      //ros::spin();
-      //cv::waitKey(0);
-
-
-      LOG(WARNING) << "InputThread constructor";
+      LOG(INFO) << "InputThread constructor";
     }
 
   InputThread::~InputThread(){
@@ -81,7 +77,7 @@ namespace lsd_slam {
 
           CHECK(imageUndist.data != nullptr) << "Undistorted image data is nullptr";
           CHECK(imageUndist.type() == CV_8UC1);
-          //LOG(DEBUG) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
+          LOG(DEBUG) << "Image size: " << imageUndist.cols << " x " << imageUndist.rows;
 
           Frame::SharedPtr f = std::make_shared<Frame>( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
 
