@@ -101,7 +101,6 @@ public:
 
 	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
 
-	// pointer to global keyframe graph
 	IndexThreadReduce threadReducer;
 
 private:
@@ -142,6 +141,7 @@ private:
 			float &result_idepth, float &result_var, float &result_eplLength,
 			RunningStats* const stats);
 
+	// Reset currentDepthMap by re-projecting is from activeKeyFrame to new_keyframe
 	void propagateDepth( const Frame::SharedPtr &new_keyframe);
 
 

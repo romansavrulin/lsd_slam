@@ -126,8 +126,9 @@ public:
 	/** Sets ground truth depth (real, not inverse!) from a float array on level zero. Invalidates higher levels. */
 	void setDepthFromGroundTruth(const float* depth, float cov_scale = 1.0f);
 
-	/** Prepares this frame for stereo comparisons with the other frame (computes some intermediate values that will be needed) */
-	void prepareForStereoWith(Frame* other, Sim3 thisToOther, const Eigen::Matrix3f& K, const int level);
+	/** Prepares this frame for stereo comparisons with the other frame
+	//(computes some intermediate values that will be needed) */
+	void prepareForStereoWith( const Frame::SharedPtr &other, Sim3 thisToOther, const int level);
 
 
 
@@ -147,6 +148,8 @@ public:
 	DATA_LEVEL_READER( int, width )
 	DATA_LEVEL_READER( int, height )
 	DATA_LEVEL_READER( const Camera &, camera )
+
+	inline int area( int level = 0 ) { return width(level) * height(level); }
 
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, K )
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, Kinv )
@@ -245,7 +248,7 @@ public:
 
 
 
-	// Temporary values
+	// A bunch of state which is created by prepareForStereoWith()
 	int referenceID;
 	int referenceLevel;
 	float distSquared;

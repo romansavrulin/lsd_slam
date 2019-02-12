@@ -17,7 +17,7 @@
 
 namespace lsd_slam {
 
-using active_object::Active;
+using active_object::ActiveIdle;
 
 // static const bool depthMapScreenshotFlag = true;
 
@@ -30,7 +30,7 @@ MappingThread::MappingThread( SlamSystem &system )
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
 		_newKeyFramePending( false ),
-		_thread( Active::createActive() )
+		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::doProcessTrackedFrames, this ), std::chrono::milliseconds(200)) )
 {
 	LOG(INFO) << "Started Mapping thread";
 }
@@ -38,17 +38,12 @@ MappingThread::MappingThread( SlamSystem &system )
 MappingThread::~MappingThread()
 {
 	if( _thread ) delete _thread.release();
-
-	//delete mappingTrackingReference;
-
-	// make sure to reset all shared pointers to all frames before deleting the keyframegraph!
 	unmappedTrackedFrames.clear();
 }
 
 //==== Callbacks ======
 
-
-void MappingThread::doTrackedFrameToMap( void )
+void MappingThread::doProcessTrackedFrames( void )
 {
 	bool nMapped = false;
 	size_t sz = 0;
@@ -65,7 +60,26 @@ void MappingThread::doTrackedFrameToMap( void )
 	if(sz < 50 ||
 	  (sz < 100 && nMapped) ) {
 
-		while( doGoodTrackingIteration() ) { ; }
+		bool didSomething = true;
+		while( didSomething ) {
+
+			// If there's no keyframe, then give up
+			if( !(bool)_system.currentKeyFrame() ) {
+				LOG(INFO) << "Nothing to map: no keyframe";
+				break;
+			}
+
+			if( !_system.trackingThread->trackingIsGood() ) {
+				LOG(DEBUG) << "Supposed to do good tracking iteration .. but tracking has become bad in the meantime";
+			}
+
+			// Process all of unmappedTrackedFrames
+			didSomething = updateKeyframe();
+
+			_system.updateDisplayDepthMap();
+
+			LOG(DEBUG) << "Tracking is good, updating key frame, " << (didSomething ? "DID" : "DIDN'T") << " do something";
+		}
 
 		// TODO:  Was originally in the while() loop above.  However, there are
 		// circumstances (if there's one untracked thread in the queue referenced
@@ -108,41 +122,8 @@ void MappingThread::doMergeOptimizationOffset()
 	optimizationUpdateMerged.notify();
 }
 
-// void MappingThread::callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame )
-// {
-// 	LOG(INFO) << "Set " << frame->id() << " as new key frame";
-// 	finishCurrentKeyframe();
-// 	_system.changeKeyframe(frame, false, true, 1.0f);
-//
-// 	_system.updateDisplayDepthMap();
-// }
-
-
 
 //==== Actual meat ====
-
-
-bool MappingThread::doGoodTrackingIteration()
-{
-	// If there's no keyframe, then give up
-	if( !(bool)_system.currentKeyFrame() ) {
-		LOG(INFO) << "Nothing to map: no keyframe";
-		return false;
-	}
-
-	if( !_system.trackingThread->trackingIsGood() ) {
-		LOG(DEBUG) << "Supposed to do good tracking iteration .. but tracking has become bad in the meantime";
-	}
-
-	bool didSomething = true;
-	didSomething = updateKeyframe();
-
-	_system.updateDisplayDepthMap();
-
-	LOG(DEBUG) << "Tracking is good, updating key frame, " << (didSomething ? "DID" : "DIDN'T") << " do something";
-
-	return didSomething;
-}
 
 void MappingThread::doNewKeyFrame( const Frame::SharedPtr &newFrame )
 {
@@ -254,41 +235,7 @@ bool MappingThread::updateKeyframe()
 		return false;
 	}
 
-
-	// if( outputWrapper ) {
-	//
-	// if( enablePrintDebugInfo && printRegularizeStatistics)
-	// {
-	// 	Eigen::Matrix<float, 20, 1> data;
-	// 	data.setZero();
-	// 	data[0] = runningStats.num_reg_created;
-	// 	data[2] = runningStats.num_reg_smeared;
-	// 	data[3] = runningStats.num_reg_deleted_secondary;
-	// 	data[4] = runningStats.num_reg_deleted_occluded;
-	// 	data[5] = runningStats.num_reg_blacklisted;
-	//
-	// 	data[6] = runningStats.num_observe_created;
-	// 	data[7] = runningStats.num_observe_create_attempted;
-	// 	data[8] = runningStats.num_observe_updated;
-	// 	data[9] = runningStats.num_observe_update_attempted;
-	//
-	//
-	// 	data[10] = runningStats.num_observe_good;
-	// 	data[11] = runningStats.num_observe_inconsistent;
-	// 	data[12] = runningStats.num_observe_notfound;
-	// 	data[13] = runningStats.num_observe_skip_oob;
-	// 	data[14] = runningStats.num_observe_skip_fail;
-	//
-	// 	outputWrapper->publishDebugInfo(data);
-	// }
-
-
-
-	// // Why is this here?
-	// if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame() ) {
-	// 	LOG(DEBUG) << "Map updated, publishing keyframe " << _system.currentKeyFrame()->id();
 	_system.publishCurrentKeyframe();
-	// }
 
 	return true;
 }
