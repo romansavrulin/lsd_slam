@@ -41,7 +41,7 @@ ROSImageStreamThread::ROSImageStreamThread()
 {
 	// subscribe
 	vid_channel = nh_.resolveName("image");
-	vid_sub          = nh_.subscribe(vid_channel,1, &ROSImageStreamThread::vidCb, this);
+	vid_sub = nh_.subscribe(vid_channel,1, &ROSImageStreamThread::vidCb, this);
 
 
 	// wait for cam calib
@@ -77,9 +77,9 @@ void ROSImageStreamThread::setCalibration(std::string file)
 	}
 	else
 	{
-		//TODO Undistorter this won't link? Shouldn't matter for now...
-		//undistorter = Undistorter::getUndistorterForFile(file.c_str());
 
+		//TODO why isn't this linking?
+		//undistorter = Undistorter::getUndistorterForFile(file.c_str());
 		//if(undistorter==0)
 		//{
 			//printf("Failed to read camera calibration from file... wrong syntax?\n");

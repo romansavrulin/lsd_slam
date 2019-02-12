@@ -9,6 +9,7 @@
 #include "libvideoio/ImageSource.h"
 #include "libvideoio/Undistorter.h"
 
+#include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 #include "ros/ros.h"
 #include <image_transport/image_transport.h>
 #include <opencv2/highgui/highgui.hpp>
@@ -17,7 +18,7 @@
 namespace lsd_slam {
 
   class InputThread {
-    
+
   ros::NodeHandle nh_;
   image_transport::ImageTransport it_;
   cv::Mat callbackImage;
@@ -29,6 +30,12 @@ namespace lsd_slam {
     InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &system,
                    std::shared_ptr<libvideoio::ImageSource> &dataSource,
                    std::shared_ptr<libvideoio::Undistorter> &undistorter );
+
+    InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &system,
+                  std::shared_ptr<lsd_slam::ROSOutput3DWrapper> &outputWrapper,
+                  std::shared_ptr<libvideoio::ImageSource> &dataSource,
+                  std::shared_ptr<libvideoio::Undistorter> &undistorter );
+
     ~InputThread();
 
     void setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out );
@@ -37,6 +44,7 @@ namespace lsd_slam {
     void operator()();
 
     std::shared_ptr<lsd_slam::SlamSystem> &system;
+    std::shared_ptr<lsd_slam::ROSOutput3DWrapper> outputWrapper;
     std::shared_ptr<libvideoio::ImageSource> dataSource;
     std::shared_ptr<libvideoio::Undistorter> undistorter;
 

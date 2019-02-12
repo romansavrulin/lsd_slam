@@ -67,25 +67,25 @@ ROSOutput3DWrapper::~ROSOutput3DWrapper()
 }
 
 
-void ROSOutput3DWrapper::publishKeyframe(Frame* f)
+void ROSOutput3DWrapper::publishKeyframe(const Frame::SharedPtr &kf)
 {
 	lsd_slam_core::keyframeMsg fMsg;
 
 
-	boost::shared_lock<boost::shared_mutex> lock = f->getActiveLock();
+	boost::shared_lock<boost::shared_mutex> lock = kf->getActiveLock();
 
-	fMsg.id = f->id();
-	fMsg.time = f->timestamp();
+	fMsg.id = kf->id();
+	fMsg.time = kf->timestamp();
 	fMsg.isKeyframe = true;
 
-	int w = f->width(publishLvl);
-	int h = f->height(publishLvl);
+	int w = kf->width(publishLvl);
+	int h = kf->height(publishLvl);
 
-	memcpy(fMsg.camToWorld.data(),f->getCamToWorld().cast<float>().data(),sizeof(float)*7);
-	fMsg.fx = f->fx(publishLvl);
-	fMsg.fy = f->fy(publishLvl);
-	fMsg.cx = f->cx(publishLvl);
-	fMsg.cy = f->cy(publishLvl);
+	memcpy(fMsg.camToWorld.data(),kf->getCamToWorld().cast<float>().data(),sizeof(float)*7);
+	fMsg.fx = kf->fx(publishLvl);
+	fMsg.fy = kf->fy(publishLvl);
+	fMsg.cx = kf->cx(publishLvl);
+	fMsg.cy = kf->cy(publishLvl);
 	fMsg.width = w;
 	fMsg.height = h;
 
@@ -94,9 +94,9 @@ void ROSOutput3DWrapper::publishKeyframe(Frame* f)
 
 	InputPointDense* pc = (InputPointDense*)fMsg.pointcloud.data();
 
-	const float* idepth = f->idepth(publishLvl);
-	const float* idepthVar = f->idepthVar(publishLvl);
-	const float* color = f->image(publishLvl);
+	const float* idepth = kf->idepth(publishLvl);
+	const float* idepthVar = kf->idepthVar(publishLvl);
+	const float* color = kf->image(publishLvl);
 
 	for(int idx=0;idx < w*h; idx++)
 	{
@@ -111,7 +111,7 @@ void ROSOutput3DWrapper::publishKeyframe(Frame* f)
 	keyframe_publisher.publish(fMsg);
 }
 
-void ROSOutput3DWrapper::publishTrackedFrame(Frame* kf)
+void ROSOutput3DWrapper::publishTrackedFrame(const Frame::SharedPtr &kf)
 {
 	lsd_slam_core::keyframeMsg fMsg;
 
@@ -161,7 +161,7 @@ void ROSOutput3DWrapper::publishTrackedFrame(Frame* kf)
 
 
 
-void ROSOutput3DWrapper::publishKeyframeGraph(KeyFrameGraph* graph)
+void ROSOutput3DWrapper::publishKeyframeGraph(const std::shared_ptr<KeyFrameGraph> &graph)
 {
 	lsd_slam_core::keyframeGraphMsg gMsg;
 
@@ -198,6 +198,16 @@ void ROSOutput3DWrapper::publishTrajectory(std::vector<Eigen::Matrix<float, 3, 1
 }
 
 void ROSOutput3DWrapper::publishTrajectoryIncrement(Eigen::Matrix<float, 3, 1> pt, std::string identifier)
+{
+	// unimplemented ... do i need it?
+}
+
+void ROSOutput3DWrapper::updateDepthImage(unsigned char * data)
+{
+	// unimplemented ... do i need it?
+}
+
+void ROSOutput3DWrapper::publishPose( const Sophus::Sim3f &pose )
 {
 	// unimplemented ... do i need it?
 }

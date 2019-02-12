@@ -8,7 +8,7 @@ static const std::string OPENCV_WINDOW = "Image window";
 namespace lsd_slam {
 
 
-  InputThread::InputThread(  std::shared_ptr<lsd_slam::SlamSystem> &sys,
+  InputThread::InputThread(   std::shared_ptr<lsd_slam::SlamSystem> &sys,
                               std::shared_ptr<libvideoio::ImageSource> &src,
                               std::shared_ptr<libvideoio::Undistorter> &und )
     : system( sys ), dataSource( src ), undistorter( und ),
@@ -21,6 +21,21 @@ namespace lsd_slam {
       cv::namedWindow(OPENCV_WINDOW);
       LOG(INFO) << "InputThread constructor";
     }
+
+  InputThread::InputThread(   std::shared_ptr<lsd_slam::SlamSystem> &sys,
+                              std::shared_ptr<lsd_slam::ROSOutput3DWrapper> &owrap,
+                              std::shared_ptr<libvideoio::ImageSource> &src,
+                              std::shared_ptr<libvideoio::Undistorter> &und )
+      : system( sys ), outputWrapper( owrap), dataSource( src ), undistorter( und ),
+        inputDone( false ),
+        inputReady(),
+        output( nullptr ),
+        it_(nh_)
+      {
+
+        cv::namedWindow(OPENCV_WINDOW);
+        LOG(INFO) << "InputThread constructor";
+      }
 
   InputThread::~InputThread(){
     cv::destroyWindow(OPENCV_WINDOW);

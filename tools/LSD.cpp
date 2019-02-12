@@ -38,7 +38,7 @@
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
 
-#include "IOWrapper/ROS/ROSImageStreamThread.h"
+//#include "IOWrapper/ROS/ROSImageStreamThread.h"
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 //#include "IOWrapper/ROS/rosReconfigure.h"
 
@@ -71,6 +71,7 @@ int main( int argc, char** argv )
   CHECK( (conf.camera.fx) > 0 && (conf.camera.fy > 0) ) << "Camera focal length is zero";
 
 	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
+  std::shared_ptr<ROSOutput3DWrapper> outputWrapper( new ROSOutput3DWrapper(args.undistorter->inputImageSize().width, args.undistorter->inputImageSize().height) );
 
   LOG(INFO) << "Starting input thread.";
   InputThread input( system, args.dataSource, args.undistorter );
