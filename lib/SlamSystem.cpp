@@ -68,7 +68,7 @@ SlamSystem::SlamSystem( )
 	_finalized(),
 	_initialized( false ),
 	_keyFrameGraph( new KeyFrameGraph ),
-	_currentKeyFrame( nullptr ),
+	//_currentKeyFrame( nullptr ),
 	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph ) ),
 	_depthMap( new DepthMap( ) )
 {
@@ -177,7 +177,7 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 {
 	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
 
-	_currentKeyFrame = set->refFrame();
+	//depthMap()->setCurrentKeyFrame( set->refFrame() );
 
 	// Todo.  If multiple images are available in the set,
 	// use stereo disparity to initialize?
@@ -266,8 +266,9 @@ void SlamSystem::loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad)
 
 	LOG_IF(DEBUG, Conf().print.regularizeStatistics ) << "re-activate frame " << keyframeToLoad->id() << "!";
 
-	_currentKeyFrame = keyFrameGraph()->idToKeyFrame.find(keyframeToLoad->id())->second;
-	currentKeyFrame()->depthHasBeenUpdatedFlag = false;
+	// Not entirely sure why they're doing this lookup...
+	//_currentKeyFrame = keyFrameGraph()->idToKeyFrame.find(keyframeToLoad->id())->second;
+	//currentKeyFrame()->depthHasBeenUpdatedFlag = false;
 }
 
 
@@ -283,7 +284,7 @@ void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCa
 
 	// propagate & make new.
 	depthMap()->createKeyFrame(newKeyframeCandidate);
-	_currentKeyFrame = newKeyframeCandidate;								// Locking
+	//_currentKeyFrame = newKeyframeCandidate;								// Locking
 
 
 
@@ -404,8 +405,8 @@ void SlamSystem::publishKeyframe( const Frame::SharedPtr &frame )
 
 void SlamSystem::publishCurrentKeyframe( )
 {
-	if( _outputWrapper  && _currentKeyFrame ) {
-		_outputWrapper->publishKeyframe( _currentKeyFrame );
+	if( _outputWrapper  && currentKeyFrame() ) {
+		_outputWrapper->publishKeyframe( currentKeyFrame() );
 	} else {
 		LOG(DEBUG) << "No currentKeyframe, unable to publish";
 	}

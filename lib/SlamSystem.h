@@ -105,7 +105,7 @@ public:
 	Sophus::Sim3d getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
-	Frame::SharedPtr &currentKeyFrame() { return _currentKeyFrame; };
+	Frame::SharedPtr &currentKeyFrame() { return depthMap()->currentKeyFrame(); };
 
 	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
 	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
@@ -168,7 +168,7 @@ private:
 	// == Shared "global" data structures ==
 
 	std::shared_ptr<KeyFrameGraph> _keyFrameGraph;	  // has own locks
-	Frame::SharedPtr  _currentKeyFrame;
+	//Frame::SharedPtr  _currentKeyFrame;
 
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;
 

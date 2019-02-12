@@ -99,6 +99,7 @@ public:
 
 	PerformanceData perf() const { return _perf; }
 
+	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
 
 	// pointer to global keyframe graph
 	IndexThreadReduce threadReducer;
@@ -114,8 +115,9 @@ private:
 	Frame::SharedPtr activeKeyFrame;
 	boost::shared_lock<boost::shared_mutex> activeKeyFramelock;
 
-	const float* activeKeyFrameImageData;
+	const float* activeKeyFrameImageData() { return activeKeyFrame->image(0); };
 	bool activeKeyFrameIsReactivated;
+
 
 	Frame::SharedPtr oldest_referenceFrame;
 	Frame::SharedPtr newest_referenceFrame;

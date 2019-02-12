@@ -195,8 +195,8 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
 
 
 	// ===== check epl-grad magnitude ======
-	float gx = activeKeyFrameImageData[idx+1] - activeKeyFrameImageData[idx-1];
-	float gy = activeKeyFrameImageData[idx+Conf().slamImageSize.width] - activeKeyFrameImageData[idx-Conf().slamImageSize.width];
+	float gx = activeKeyFrameImageData()[idx+1] - activeKeyFrameImageData()[idx-1];
+	float gy = activeKeyFrameImageData()[idx+Conf().slamImageSize.width] - activeKeyFrameImageData()[idx-Conf().slamImageSize.width];
 	float eplGradSquared = gx * epx + gy * epy;
 	eplGradSquared = eplGradSquared*eplGradSquared / eplLengthSquared;	// square and norm with epl-length
 
@@ -878,7 +878,7 @@ void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
 {
 	activeKeyFramelock = new_frame->getActiveLock();
 	activeKeyFrame = new_frame;
-	activeKeyFrameImageData = activeKeyFrame->image(0);
+	//activeKeyFrameImageData = activeKeyFrame->image(0);
 	activeKeyFrameIsReactivated = false;
 
 	const float* maxGradients = new_frame->maxGradients();
@@ -926,7 +926,7 @@ void DepthMap::setFromExistingKF( const Frame::SharedPtr &kf)
 	DepthMapPixelHypothesis* pt = currentDepthMap;
 	activeKeyFrame->numMappedOnThis = 0;
 	activeKeyFrame->numFramesTrackedOnThis = 0;
-	activeKeyFrameImageData = activeKeyFrame->image(0);
+	//activeKeyFrameImageData = activeKeyFrame->image(0);
 	activeKeyFrameIsReactivated = true;
 
 	for(int y=0;y<Conf().slamImageSize.height;y++)
@@ -965,7 +965,7 @@ void DepthMap::initializeFromGTDepth( const Frame::SharedPtr &new_frame)
 
 	activeKeyFramelock = new_frame->getActiveLock();
 	activeKeyFrame = new_frame;
-	activeKeyFrameImageData = activeKeyFrame->image(0);
+	//activeKeyFrameImageData = activeKeyFrame->image(0);
 	activeKeyFrameIsReactivated = false;
 
 	const float* idepth = new_frame->idepth();
@@ -1108,7 +1108,7 @@ void DepthMap::updateKeyframe(std::deque< Frame::SharedPtr > referenceFrames)
 
 	if(plotStereoImages)
 	{
-		cv::Mat keyFrameImage(activeKeyFrame->height(), activeKeyFrame->width(), CV_32F, const_cast<float*>(activeKeyFrameImageData));
+		cv::Mat keyFrameImage(activeKeyFrame->height(), activeKeyFrame->width(), CV_32F, const_cast<float*>(activeKeyFrameImageData()));
 		keyFrameImage.convertTo(debugImageHypothesisHandling, CV_8UC1);
 		cv::cvtColor(debugImageHypothesisHandling, debugImageHypothesisHandling, CV_GRAY2RGB);
 
@@ -1239,7 +1239,7 @@ void DepthMap::createKeyFrame( const Frame::SharedPtr &new_keyframe)
 
 	activeKeyFrame = new_keyframe;
 	activeKeyFramelock = activeKeyFrame->getActiveLock();
-	activeKeyFrameImageData = new_keyframe->image(0);
+	//activeKeyFrameImageData = new_keyframe->image(0);
 	activeKeyFrameIsReactivated = false;
 
 
@@ -1355,7 +1355,7 @@ int DepthMap::debugPlotDepthMap()
 {
 	if(activeKeyFrame == 0) return 1;
 
-	cv::Mat keyFrameImage(activeKeyFrame->height(), activeKeyFrame->width(), CV_32F, const_cast<float*>(activeKeyFrameImageData));
+	cv::Mat keyFrameImage(activeKeyFrame->height(), activeKeyFrame->width(), CV_32F, const_cast<float*>(activeKeyFrameImageData()));
 	cv::Mat keyFrameGray( keyFrameImage.size(), CV_8UC1 );
 	keyFrameImage.convertTo(keyFrameGray, CV_8UC1);
 	cv::cvtColor(keyFrameGray, debugImageDepth, CV_GRAY2RGB);
@@ -1431,11 +1431,12 @@ inline float DepthMap::doLineStereo(
 	}
 
 	// calculate values to search for
-	float realVal_p1 = getInterpolatedElement(activeKeyFrameImageData,u + epxn*rescaleFactor, v + epyn*rescaleFactor, width);
-	float realVal_m1 = getInterpolatedElement(activeKeyFrameImageData,u - epxn*rescaleFactor, v - epyn*rescaleFactor, width);
-	float realVal = getInterpolatedElement(activeKeyFrameImageData,u, v, width);
-	float realVal_m2 = getInterpolatedElement(activeKeyFrameImageData,u - 2*epxn*rescaleFactor, v - 2*epyn*rescaleFactor, width);
-	float realVal_p2 = getInterpolatedElement(activeKeyFrameImageData,u + 2*epxn*rescaleFactor, v + 2*epyn*rescaleFactor, width);
+	const float *currentKeyFrameImageData = activeKeyFrameImageData();
+	float realVal_p1 = getInterpolatedElement(currentKeyFrameImageData,u + epxn*rescaleFactor, v + epyn*rescaleFactor, width);
+	float realVal_m1 = getInterpolatedElement(currentKeyFrameImageData,u - epxn*rescaleFactor, v - epyn*rescaleFactor, width);
+	float realVal = getInterpolatedElement(currentKeyFrameImageData,u, v, width);
+	float realVal_m2 = getInterpolatedElement(currentKeyFrameImageData,u - 2*epxn*rescaleFactor, v - 2*epyn*rescaleFactor, width);
+	float realVal_p2 = getInterpolatedElement(currentKeyFrameImageData,u + 2*epxn*rescaleFactor, v + 2*epyn*rescaleFactor, width);
 
 
 
