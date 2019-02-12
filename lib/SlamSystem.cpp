@@ -392,6 +392,7 @@ std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()
 
 void SlamSystem::publishKeyframe( const Frame::SharedPtr &frame )
 {
+	//ROS_WARN("keyframe");
 	if( _outputWrapper ) {
 		_outputWrapper->publishKeyframe( frame );
 	}

@@ -116,6 +116,7 @@ public:
 	const Configuration &conf( void ) const     { return _conf; }
 
 	//=== Debugging output functions =====
+
 	shared_ptr<Output3DWrapper> outputWrapper( void )      { return _outputWrapper; }
 	void set3DOutputWrapper( Output3DWrapper* outputWrapper ) {	_outputWrapper.reset(outputWrapper); }
 	void set3DOutputWrapper( const shared_ptr<Output3DWrapper> &outputWrapper) {	_outputWrapper = outputWrapper; }

@@ -66,15 +66,19 @@ int main( int argc, char** argv )
   conf.slamImage  = args.undistorter->outputImageSize();
   conf.camera     = args.undistorter->getCamera();
 
-  LOG(INFO) << "Slam image: " << conf.slamImage.width << " x " << conf.slamImage.height;
+  int camWidth = conf.slamImage.width;
+  int camHeight = conf.slamImage.height;
+
+  LOG(INFO) << "Slam image: " << camWidth << " x " << camHeight;
 
   CHECK( (conf.camera.fx) > 0 && (conf.camera.fy > 0) ) << "Camera focal length is zero";
 
 	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
-  std::shared_ptr<ROSOutput3DWrapper> outputWrapper( new ROSOutput3DWrapper(args.undistorter->inputImageSize().width, args.undistorter->inputImageSize().height) );
+  std::shared_ptr<ROSOutput3DWrapper> outputWrapper(
+                                  new ROSOutput3DWrapper(camWidth, camHeight) );
 
   LOG(INFO) << "Starting input thread.";
-  InputThread input( system, args.dataSource, args.undistorter );
+  InputThread input( system, outputWrapper, args.dataSource, args.undistorter );
   boost::thread inputThread( boost::ref(input) );
   input.inputReady.wait();
 

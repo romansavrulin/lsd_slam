@@ -21,7 +21,7 @@ namespace lsd_slam {
       cv::namedWindow(OPENCV_WINDOW);
       LOG(INFO) << "InputThread constructor";
     }
-
+  //Add constructor to handle ROS output
   InputThread::InputThread(   std::shared_ptr<lsd_slam::SlamSystem> &sys,
                               std::shared_ptr<lsd_slam::ROSOutput3DWrapper> &owrap,
                               std::shared_ptr<libvideoio::ImageSource> &src,
@@ -32,7 +32,8 @@ namespace lsd_slam {
         output( nullptr ),
         it_(nh_)
       {
-
+        this->outputWrapper = outputWrapper;
+        system->set3DOutputWrapper(outputWrapper);
         cv::namedWindow(OPENCV_WINDOW);
         LOG(INFO) << "InputThread constructor";
       }
@@ -52,11 +53,12 @@ namespace lsd_slam {
         ROS_ERROR("Could not convert from '%s' to 'bgr8'.", msg->encoding.c_str());
       }
     }
-
+    /*
     void InputThread::setIOOutputWrapper( const std::shared_ptr<lsd_slam::OutputIOWrapper> &out )
     {
       output = out;
     }
+    */
 
     void InputThread::operator()() {
       // get HZ
