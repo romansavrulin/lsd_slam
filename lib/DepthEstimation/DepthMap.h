@@ -105,8 +105,9 @@ public:
 
 private:
 
- 	PerformanceData _perf;
+	const ImageSize _imageSize;
 
+ 	PerformanceData _perf;
 
 	// ============= parameter copies for convenience ===========================
 	Frame::SharedPtr activeKeyFrame;
