@@ -30,6 +30,8 @@
 
 #include "DataStructures/Frame.h"
 
+#include "DepthMapDebugImages.h"
+
 
 
 namespace lsd_slam
@@ -73,8 +75,8 @@ public:
 	 */
 	void finalizeKeyFrame();
 
+	void invalidateKeyFrame();
 
-	void invalidate();
 	inline bool isValid() {return (bool)activeKeyFrame;};
 
 	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
@@ -84,15 +86,7 @@ public:
 
 	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
 
-	//== Debugging functions ==
-
-	int debugPlotDepthMap();
-
-	// ONLY for debugging, their memory is managed (created & deleted) by this object.
-	cv::Mat debugImageHypothesisHandling;
-	cv::Mat debugImageHypothesisPropagation;
-	cv::Mat debugImageStereoLines;
-	cv::Mat debugImageDepth;
+	const DepthMapDebugImages &debugImages() const { return _debugImages; }
 
 	struct PerformanceData {
 		PerformanceData( void ) {;}
@@ -103,9 +97,13 @@ public:
 
 	PerformanceData &performanceData() { return _perf; }
 
+	void debugPlotDepthMap( const char *buf1, const char *buf2 );
+
 private:
 
 	const ImageSize _imageSize;
+
+	DepthMapDebugImages _debugImages;
 
  	PerformanceData _perf;
 

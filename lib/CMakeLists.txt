@@ -13,6 +13,7 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMap.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapDebugImages.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapPixelHypothesis.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/Configuration.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/globalFuncs.cpp

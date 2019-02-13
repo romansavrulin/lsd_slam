@@ -336,19 +336,20 @@ void SlamSystem::updateDisplayDepthMap()
 {
 	if( !Conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
 
-	depthMap()->debugPlotDepthMap();
 	double scale = 1;
 
 	if( (bool)currentKeyFrame() ) scale = currentKeyFrame()->getCamToWorld().scale();
 
 	// debug plot depthmap
-	char buf1[200];
-	char buf2[200];
+	char buf1[200] = "";
+	char buf2[200] = "";
 
-	snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d",
-			depthMap()->performanceData().update.ms(), depthMap()->performanceData().update.rate(),
-			trackingThread->perf().track.ms(), trackingThread->perf().track.rate(),
-			currentKeyFrame()->numFramesTrackedOnThis, currentKeyFrame()->numMappedOnThis ); //, (int)unmappedTrackedFrames().size());
+	if( Conf().onSceenInfoDisplay ) {
+		snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d",
+				depthMap()->performanceData().update.ms(), depthMap()->performanceData().update.rate(),
+				trackingThread->perf().track.ms(), trackingThread->perf().track.rate(),
+				currentKeyFrame()->numFramesTrackedOnThis, currentKeyFrame()->numMappedOnThis ); //, (int)unmappedTrackedFrames().size());
+	}
 
 	// snprintf(buf2,200,"dens %2.0f%%; good %2.0f%%; scale %2.2f; res %2.1f/; usg %2.0f%%; Map: %d F, %d KF, %d E, %.1fm Pts",
 	// 		100*currentKeyFrame->numPoints/(float)(Conf().slamImage.area()),
@@ -362,11 +363,10 @@ void SlamSystem::updateDisplayDepthMap()
 	// 		1e-6 * (float)keyFrameGraph()->totalPoints);
 
 
-	if( Conf().onSceenInfoDisplay )
-		printMessageOnCVImage(depthMap()->debugImageDepth, buf1, buf2);
+	depthMap()->debugPlotDepthMap(buf1, buf2);
 
-	CHECK( depthMap()->debugImageDepth.data != NULL );
-	publishDepthImage( depthMap()->debugImageDepth.data );
+	CHECK( depthMap()->debugImages().depthImage().data != NULL );
+	if( _outputWrapper ) _outputWrapper->updateDepthImage( depthMap()->debugImages().depthImage().data );
 }
 
 

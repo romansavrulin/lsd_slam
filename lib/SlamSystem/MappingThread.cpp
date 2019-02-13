@@ -157,7 +157,7 @@ void MappingThread::doBadTrackingIteration( const Frame::SharedPtr &newFrame )
 		else
 			discardCurrentKeyframe();
 
-		_system.depthMap()->invalidate();
+		_system.depthMap()->invalidateKeyFrame();
 	}
 
 	// start relocalizer if it isnt running already
@@ -284,8 +284,7 @@ void MappingThread::discardCurrentKeyframe()
 	}
 
 
-	_system.depthMap()->invalidate();
-
+	_system.depthMap()->invalidateKeyFrame();
 	_system.keyFrameGraph()->dropKeyFrame( _system.currentKeyFrame() );
 
 }

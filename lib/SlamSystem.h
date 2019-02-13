@@ -127,7 +127,6 @@ public:
 	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
 	void publishKeyframe(  const Frame::SharedPtr &frame );
 	void publishCurrentKeyframe();
-	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
 
 	void updateDisplayDepthMap();
 
