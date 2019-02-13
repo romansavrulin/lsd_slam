@@ -317,16 +317,16 @@ void SlamSystem::logPerformanceData()
 	{
 
 		LOGF(DEBUG, "Mapping: %3.1fms (%.1fHz); Track: %3.1fms (%.1fHz); Create: %3.1fms (%.1fHz); FindRef: %3.1fms (%.1fHz); PermaTrk: %3.1fms (%.1fHz); Opt: %3.1fms (%.1fHz); FindConst: %3.1fms (%.1fHz);\n",
-					depthMap()->perf().update.ms(), depthMap()->perf().update.rate(),
+					depthMap()->performanceData().update.ms(), depthMap()->performanceData().update.rate(),
 					trackingThread->perf().track.ms(),  trackingThread->perf().track.rate(),
-					depthMap()->perf().create.ms()+depthMap()->perf().finalize.ms(), depthMap()->perf().create.rate(),
+					depthMap()->performanceData().create.ms()+depthMap()->performanceData().finalize.ms(), depthMap()->performanceData().create.rate(),
 					_perf.findReferences.ms(), _perf.findReferences.rate(),
 					0.0, 0.0,
 					//trackableKeyFrameSearch != 0 ? trackableKeyFrameSearch->trackPermaRef.ms() : 0, trackableKeyFrameSearch != 0 ? trackableKeyFrameSearch->trackPermaRef.rate() : 0,
 					optThread->perf.ms(), optThread->perf.rate(),
 					constraintThread->perf().findConstraint.ms(), constraintThread->perf().findConstraint.rate() );
 
-		depthMap()->logPerformanceData();
+		depthMap()->performanceData().log();
 
 	}
 
@@ -346,7 +346,7 @@ void SlamSystem::updateDisplayDepthMap()
 	char buf2[200];
 
 	snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d",
-			depthMap()->perf().update.ms(), depthMap()->perf().update.rate(),
+			depthMap()->performanceData().update.ms(), depthMap()->performanceData().update.rate(),
 			trackingThread->perf().track.ms(), trackingThread->perf().track.rate(),
 			currentKeyFrame()->numFramesTrackedOnThis, currentKeyFrame()->numMappedOnThis ); //, (int)unmappedTrackedFrames().size());
 

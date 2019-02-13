@@ -57,6 +57,7 @@ public:
 	/** Resets everything. */
 	void reset();
 
+	//== The "public API" functions for Depth Map
 	/**
 	 * does obervation and regularization only.
 	 **/
@@ -72,8 +73,18 @@ public:
 	 */
 	void finalizeKeyFrame();
 
+
 	void invalidate();
 	inline bool isValid() {return (bool)activeKeyFrame;};
+
+	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
+	void initializeRandomly( const std::shared_ptr<Frame> &new_frame);
+
+	void activateExistingKF(const Frame::SharedPtr &kf);
+
+	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
+
+	//== Debugging functions ==
 
 	int debugPlotDepthMap();
 
@@ -83,25 +94,14 @@ public:
 	cv::Mat debugImageStereoLines;
 	cv::Mat debugImageDepth;
 
-	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
-	void initializeRandomly( const std::shared_ptr<Frame> &new_frame);
-
-	void activateExistingKF(const Frame::SharedPtr &kf);
-
-	void logPerformanceData();
-
-
 	struct PerformanceData {
 		PerformanceData( void ) {;}
+		void log();
 
 		MsRateAverage update, create, finalize, observe, regularize, propagate, fillHoles, setDepth;
 	};
 
-	PerformanceData perf() const { return _perf; }
-
-	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
-
-	IndexThreadReduce threadReducer;
+	PerformanceData &performanceData() { return _perf; }
 
 private:
 
@@ -109,8 +109,6 @@ private:
 
 
 	// ============= parameter copies for convenience ===========================
-	// these are just copies of the pointers given to this function, for convenience.
-	// these are NOT managed by this object!
 	Frame::SharedPtr activeKeyFrame;
 	boost::shared_lock<boost::shared_mutex> activeKeyFramelock;
 
@@ -132,39 +130,40 @@ private:
 
 
 	// ============ internal functions ==================================================
-	// does the line-stereo seeking.
-	// takes a lot of parameters, because they all have been pre-computed before.
-	inline float doLineStereo(
-			const float u, const float v, const float epxn, const float epyn,
-			const float min_idepth, const float prior_idepth, float max_idepth,
-			const Frame* const referenceFrame, const float* referenceFrameImage,
-			float &result_idepth, float &result_var, float &result_eplLength,
-			RunningStats* const stats);
 
 	// Reset currentDepthMap by re-projecting is from activeKeyFrame to new_keyframe
 	void propagateDepth( const Frame::SharedPtr &new_keyframe);
 
-
+	// The "do depth update" functions
 	void observeDepth();
 	void observeDepthRow(int yMin, int yMax, RunningStats* stats);
 	bool observeDepthCreate(const int &x, const int &y, const int &idx, RunningStats* const &stats);
 	bool observeDepthUpdate(const int &x, const int &y, const int &idx, const float* keyFrameMaxGradBuf, RunningStats* const &stats);
 	bool makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats);
 
+	// does the line-stereo seeking.
+	// takes a lot of parameters, because they all have been pre-computed before.
+	float doLineStereo(
+			const float u, const float v, const float epxn, const float epyn,
+			const float min_idepth, const float prior_idepth, float max_idepth,
+			const Frame* const referenceFrame, const float* referenceFrameImage,
+			float &result_idepth, float &result_var, float &result_eplLength,
+			RunningStats* const stats);
+
 
 	void regularizeDepthMap(bool removeOcclusion, int validityTH);
 	template<bool removeOcclusions> void regularizeDepthMapRow(int validityTH, int yMin, int yMax, RunningStats* stats);
 
-
 	void buildRegIntegralBuffer();
 	void buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stats);
+
 	void regularizeDepthMapFillHoles();
 	void regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* stats);
 
-
 	void resetCounters();
 
-	//float clocksPropagate, clocksPropagateKF, clocksObserve, msObserve, clocksReg1, clocksReg2, msReg1, msReg2, clocksFinalize;
+	IndexThreadReduce threadReducer;
+
 };
 
 }

@@ -562,17 +562,17 @@ void DepthMap::resetCounters()
 	runningStats.num_observe_blacklisted=0;
 }
 
-void DepthMap::logPerformanceData()
+void DepthMap::PerformanceData::log( void )
 {
 		LOGF_IF(DEBUG, Conf().print.mappingTiming, "Upd %3.1fms (%.1fHz); Create %3.1fms (%.1fHz); Final %3.1fms (%.1fHz) // Obs %3.1fms (%.1fHz); Reg %3.1fms (%.1fHz); Prop %3.1fms (%.1fHz); Fill %3.1fms (%.1fHz); Set %3.1fms (%.1fHz)\n",
-				_perf.update.ms(), _perf.update.rate(),
-				_perf.create.ms(), _perf.create.rate(),
-				_perf.finalize.ms(), _perf.finalize.rate(),
-				_perf.observe.ms(), _perf.observe.rate(),
-				_perf.regularize.ms(), _perf.regularize.rate(),
-				_perf.propagate.ms(), _perf.propagate.rate(),
-				_perf.fillHoles.ms(), _perf.fillHoles.rate(),
-				_perf.setDepth.ms(), _perf.setDepth.rate() );
+								update.ms(), update.rate(),
+								create.ms(), create.rate(),
+								finalize.ms(), finalize.rate(),
+								observe.ms(), observe.rate(),
+								regularize.ms(), regularize.rate(),
+								propagate.ms(), propagate.rate(),
+								fillHoles.ms(), fillHoles.rate(),
+								setDepth.ms(), setDepth.rate() );
 }
 
 
