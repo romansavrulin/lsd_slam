@@ -38,9 +38,7 @@
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
 
-//#include "IOWrapper/ROS/ROSImageStreamThread.h"
 #include "IOWrapper/ROS/ROSOutput3DWrapper.h"
-//#include "IOWrapper/ROS/rosReconfigure.h"
 
 #include "App/App.h"
 #include "App/InputThread.h"
@@ -90,10 +88,6 @@ int main( int argc, char** argv )
   ros::Rate loop_rate(30);
     while(ros::ok()){
       if(input.inputDone.getValue()) break;
-
-    //ROS_INFO("I'm Working!");
-
-    loop_rate.sleep();
   }
 
   LOG(INFO) << "Finalizing system.";

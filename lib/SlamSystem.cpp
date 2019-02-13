@@ -32,24 +32,11 @@
 #include <opencv2/opencv.hpp>
 
 #include "DataStructures/Frame.h"
-// #include "Tracking/SE3Tracker.h"
-// #include "Tracking/Sim3Tracker.h"
-// #include "DepthEstimation/DepthMap.h"
-// #include "Tracking/TrackingReference.h"
 #include "util/globalFuncs.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "GlobalMapping/TrackableKeyFrameSearch.h"
-// #include "GlobalMapping/g2oTypeSim3Sophus.h"
-// #include "IOWrapper/ImageDisplay.h"
-// #include "IOWrapper/Output3DWrapper.h"
-// #include <g2o/core/robust_kernel_impl.h>
 
 #include "DataStructures/FrameMemory.h"
-// #include "deque"
-
-// for mkdir
-// #include <sys/types.h>
-// #include <sys/stat.h>
 
 #include "SlamSystem/MappingThread.h"
 #include "SlamSystem/ConstraintSearchThread.h"
@@ -57,8 +44,6 @@
 #include "SlamSystem/TrackingThread.h"
 
 using namespace lsd_slam;
-
-
 
 SlamSystem::SlamSystem( const Configuration &conf )
 : _conf( conf ),
@@ -84,17 +69,8 @@ SlamSystem::SlamSystem( const Configuration &conf )
 
 SlamSystem::~SlamSystem()
 {
-	// keepRunning = false;
-
 	// make sure no-one is waiting for something.
 	LOG(INFO) << "... waiting for all threads to exit";
-	// newFrameMapped.notify();
-	// unmappedTrackedFrames.notifyAll();
-	// // unmappedTrackedFramesSignal.notify_all();
-	//
-	// newKeyFrames.notifyAll();
-
-	// newConstraintCreatedSignal.notify_all();
 
 	mapThread.reset();
 	constraintThread.reset();
@@ -104,7 +80,6 @@ SlamSystem::~SlamSystem()
 
 	FrameMemory::getInstance().releaseBuffes();
 
-	// Util::closeAllWindows();
 }
 
 SlamSystem *SlamSystem::fullReset( void )
@@ -132,44 +107,10 @@ void SlamSystem::finalize()
 	optThread->finalOptimizationComplete.wait();
 	mapThread->optimizationUpdateMerged.wait();
 
-
-	// doFinalOptimization = true;
-	// newConstraintMutex.lock();
-	// newConstraintAdded = true;
-	// newConstraintCreatedSignal.notify_all();
-	// newConstraintMutex.unlock();
-
-	// while(doFinalOptimization)
-	// {
-	// 	usleep(200000);
-	// }
-
-	//printf("Finalizing Graph... publishing!!\n");
-	//unmappedTrackedFrames.notifyAll();
-	// unmappedTrackedFramesMutex.lock();
-	// unmappedTrackedFramesSignal.notify_one();
-	// unmappedTrackedFramesMutex.unlock();
-
-	// while(doFinalOptimization)
-	// {
-	// 	usleep(200000);
-	// }
-
-	// newFrameMapped.wait();
-	// newFrameMapped.wait();
-
-	// usleep(200000);
 	LOG(INFO) << "Done Finalizing Graph.!!";
 	_finalized.notify();
 
 }
-
-
-// void SlamSystem::requestDepthMapScreenshot(const std::string& filename)
-// {
-// 	depthMapScreenshotFilename = filename;
-// 	depthMapScreenshotFlag = true;
-// }
 
 void SlamSystem::initialize( const Frame::SharedPtr &frame )
 {
@@ -205,8 +146,6 @@ void SlamSystem::initialize( const Frame::SharedPtr &frame )
 void SlamSystem::trackFrame(const Frame::SharedPtr &newFrame ) //, bool blockUntilMapped )
 {
 	if( !initialized() ) initialize( newFrame );
-
-	//LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
 
 	trackingThread->trackFrame( newFrame, !_conf.runRealTime );
 
@@ -278,26 +217,7 @@ void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCa
 	mapThread->map->createKeyFrame(newKeyframeCandidate);
 	_currentKeyFrame = newKeyframeCandidate;								// Locking
 
-
-
-	// if(outputWrapper && printPropagationStatistics)
-	// {
-	//
-	// 	Eigen::Matrix<float, 20, 1> data;
-	// 	data.setZero();
-	// 	data[0] = runningStats.num_prop_attempts / ((float)_conf.slamImage.area());
-	// 	data[1] = (runningStats.num_prop_created + runningStats.num_prop_merged) / (float)runningStats.num_prop_attempts;
-	// 	data[2] = runningStats.num_prop_removed_colorDiff / (float)runningStats.num_prop_attempts;
-	//
-	// 	outputWrapper->publishDebugInfo(data);
-	// }
-
-	// currentKeyFrameMutex.lock();
-	// currentKeyFrameMutex.unlock();
 }
-
-
-
 
 //===== Debugging output functions =====
 
