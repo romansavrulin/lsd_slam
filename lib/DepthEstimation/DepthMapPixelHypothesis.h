@@ -103,4 +103,6 @@ public:
 	cv::Vec3b getVisualizationColor(int lastFrameID) const;
 };
 
+typedef std::vector<DepthMapPixelHypothesis> DepthMapPixelHypothesisVector;
+
 }

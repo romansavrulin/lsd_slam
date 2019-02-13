@@ -20,7 +20,6 @@
 
 #include "DataStructures/Frame.h"
 #include "DataStructures/FrameMemory.h"
-#include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "Tracking/TrackingReference.h"
 
 #include "DataStructures/FramePoseStruct.h"
@@ -171,7 +170,7 @@ bool Frame::isTrackingParent( const SharedPtr &other ) const
 }
 
 
-void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap)
+void Frame::takeReActivationData(const DepthMapPixelHypothesisVector &depthMap)
 {
 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
 
@@ -190,15 +189,19 @@ void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap)
 	float* idv_pt = data.idepthVar_reAct;
 	unsigned char* val_pt = data.validity_reAct;
 
-	for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap)
+	size_t depthMapIdx = 0;
+
+	for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMapIdx)
 	{
-		if(depthMap->isValid)
+		const DepthMapPixelHypothesis &target = depthMap[depthMapIdx];
+
+		if(target.isValid)
 		{
-			*id_pt = depthMap->idepth;
-			*idv_pt = depthMap->idepth_var;
-			*val_pt = depthMap->validity_counter;
+			*id_pt = target.idepth;
+			*idv_pt = target.idepth_var;
+			*val_pt = target.validity_counter;
 		}
-		else if(depthMap->blacklisted < MIN_BLACKLIST)
+		else if(target.blacklisted < MIN_BLACKLIST)
 		{
 			*idv_pt = -2;
 		}
@@ -263,7 +266,7 @@ void Frame::calculateMeanInformation()
 }
 
 
-void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
+void Frame::setDepth(const DepthMapPixelHypothesisVector &newDepth)
 {
 
 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
@@ -281,15 +284,19 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
 	float sumIdepth=0;
 	int numIdepth=0;
 
-	for (; pyrIDepth < pyrIDepthMax; ++ pyrIDepth, ++ pyrIDepthVar, ++ newDepth) //, ++ pyrRefID)
+	size_t newDepthIdx = 0;
+
+	for (; pyrIDepth < pyrIDepthMax; ++ pyrIDepth, ++ pyrIDepthVar, ++ newDepthIdx) //, ++ pyrRefID)
 	{
-		if (newDepth->isValid && newDepth->idepth_smoothed >= -0.05)
+		const DepthMapPixelHypothesis &target = newDepth[newDepthIdx];
+
+		if (target.isValid && target.idepth_smoothed >= -0.05)
 		{
-			*pyrIDepth = newDepth->idepth_smoothed;
-			*pyrIDepthVar = newDepth->idepth_var_smoothed;
+			*pyrIDepth = target.idepth_smoothed;
+			*pyrIDepthVar = target.idepth_var_smoothed;
 
 			numIdepth++;
-			sumIdepth += newDepth->idepth_smoothed;
+			sumIdepth += target.idepth_smoothed;
 		}
 		else
 		{

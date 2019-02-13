@@ -123,16 +123,15 @@ private:
 
 	// ============= internally used buffers for intermediate calculations etc. =============
 	// for internal depth tracking, their memory is managed (created & deleted) by this object.
-	DepthMapPixelHypothesis* otherDepthMap;
-	DepthMapPixelHypothesis* currentDepthMap;
-	int* validityIntegralBuffer;
+	DepthMapPixelHypothesisVector currentDepthMap, scratchDepthMap;
+	std::vector<int> validityIntegralBuffer;
 
 
 
 	// ============ internal functions ==================================================
 
 	// Reset currentDepthMap by re-projecting is from activeKeyFrame to new_keyframe
-	void propagateDepth( const Frame::SharedPtr &new_keyframe);
+	void propagateDepthAndMakeActiveKeyFrame( const Frame::SharedPtr &new_keyframe);
 
 	// The "do depth update" functions
 	void observeDepth();
