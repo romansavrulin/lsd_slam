@@ -78,6 +78,7 @@ public:
 
  virtual void publishPose( const Sophus::Sim3f &pose ) {;}
  virtual void publishKeyframeGraph( const std::shared_ptr<KeyFrameGraph> &graph) {;}
+ virtual void publishPointCloud( const std::shared_ptr<KeyFrameGraph> &graph) {;}
  virtual void publishKeyframe(const Frame::SharedPtr &kf) {;}
  virtual void updateDepthImage(unsigned char * data) {;}
  virtual void publishTrackedFrame(const Frame::SharedPtr &kf) {;}

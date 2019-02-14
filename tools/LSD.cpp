@@ -32,13 +32,9 @@
 
 #include "util/settings.h"
 
-#include "ros/ros.h"
-
 #include "util/globalFuncs.h"
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
-
-#include "IOWrapper/ROS/ROSOutput3DWrapper.h"
 
 #include "App/App.h"
 #include "App/InputThread.h"
@@ -50,9 +46,6 @@ using namespace lsd_slam;
 
 int main( int argc, char** argv )
 {
-  //init ros
-  ros::init(argc, argv, "lsd_ros_node");
-  ros::NodeHandle nh("lsd_slam");
   libg3logger::G3Logger logWorker( argv[0] );
   logWorker.logBanner();
 
@@ -62,19 +55,14 @@ int main( int argc, char** argv )
   Conf().setSlamImageSize( args.undistorter->outputImageSize() );
   Conf().camera     = args.undistorter->getCamera();
 
-  const int camWidth = Conf().slamImageSize.width;
-  const int camHeight = Conf().slamImageSize.height;
-
-  LOG(INFO) << "Slam image: " << camWidth << " x " << camHeight;
+  LOG(INFO) << "Slam image: " << Conf().slamImageSize.width << " x " << Conf().slamImageSize.height;
 
   CHECK( (Conf().camera.fx) > 0 && (Conf().camera.fy > 0) ) << "Camera focal length is zero";
 
 	std::shared_ptr<SlamSystem> system( new SlamSystem() );
-  std::shared_ptr<ROSOutput3DWrapper> outputWrapper(
-                                  new ROSOutput3DWrapper(camWidth, camHeight) );
 
   LOG(INFO) << "Starting input thread.";
-  InputThread input( system, outputWrapper, args.dataSource, args.undistorter );
+  InputThread input( system, args.dataSource, args.undistorter );
   boost::thread inputThread( boost::ref(input) );
   input.inputReady.wait();
 
@@ -82,11 +70,8 @@ int main( int argc, char** argv )
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-  // This is idle while(1) loop
-  ros::Rate loop_rate(30);
-    while(ros::ok()){
-      if(input.inputDone.getValue()) break;
-  }
+  // This is idle loop
+  while( !input.inputDone.getValue() )  { sleep(1); }
 
   LOG(INFO) << "Finalizing system.";
   system->finalize();

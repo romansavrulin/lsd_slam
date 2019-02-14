@@ -61,7 +61,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
 	privateFrameAllocCount++;
 
-	LOG_IF(INFO, _printMemoryDebugInfo )
+	LOG_IF(INFO, Conf().print.memoryDebugInfo )
 						<< "ALLOCATED frame " << id()
 						<< ", now there are " << privateFrameAllocCount;
 }

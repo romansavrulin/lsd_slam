@@ -26,12 +26,11 @@ MappingThread::MappingThread( SlamSystem &system )
 	: unmappedTrackedFrames(),
 		unmappedTrackedFramesMutex(),
 		trackedFramesMapped(),
-		relocalizer( system.conf() ),
-		map( new DepthMap( system.conf() ) ),
+		relocalizer(),
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
-		_newKeyFrame( nullptr ),
-		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::callbackIdle, this ), std::chrono::milliseconds(200)) )
+		_newKeyFramePending( false ),
+		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::doProcessTrackedFrames, this ), std::chrono::milliseconds(200)) )
 {
 	LOG(INFO) << "Started Mapping thread";
 }
@@ -280,7 +279,7 @@ void MappingThread::finishCurrentKeyframe()
 
 void MappingThread::discardCurrentKeyframe()
 {
-	LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
+	LOG_IF(DEBUG, Conf().print.threadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
 
 	if(_system.currentKeyFrame()->idxInKeyframes >= 0)
 	{

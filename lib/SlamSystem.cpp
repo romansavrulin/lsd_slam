@@ -349,3 +349,7 @@ void SlamSystem::publishCurrentKeyframe( )
 		LOG(DEBUG) << "No currentKeyframe, unable to publish";
 	}
 }
+
+void SlamSystem::publishPointCloud( ){
+	if( _outputWrapper ) _outputWrapper->publishPointCloud( keyFrameGraph() );
+}
