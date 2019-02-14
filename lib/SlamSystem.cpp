@@ -34,24 +34,11 @@
 #include <opencv2/opencv.hpp>
 
 #include "DataStructures/Frame.h"
-// #include "Tracking/SE3Tracker.h"
-// #include "Tracking/Sim3Tracker.h"
-// #include "DepthEstimation/DepthMap.h"
-// #include "Tracking/TrackingReference.h"
 #include "util/globalFuncs.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "GlobalMapping/TrackableKeyFrameSearch.h"
-// #include "GlobalMapping/g2oTypeSim3Sophus.h"
-// #include "IOWrapper/ImageDisplay.h"
-// #include "IOWrapper/Output3DWrapper.h"
-// #include <g2o/core/robust_kernel_impl.h>
 
 #include "DataStructures/FrameMemory.h"
-// #include "deque"
-
-// for mkdir
-// #include <sys/types.h>
-// #include <sys/stat.h>
 
 #include "SlamSystem/MappingThread.h"
 #include "SlamSystem/ConstraintSearchThread.h"
@@ -59,8 +46,6 @@
 #include "SlamSystem/TrackingThread.h"
 
 using namespace lsd_slam;
-
-
 
 SlamSystem::SlamSystem( )
 : _perf(),
@@ -86,17 +71,8 @@ SlamSystem::SlamSystem( )
 
 SlamSystem::~SlamSystem()
 {
-	// keepRunning = false;
-
 	// make sure no-one is waiting for something.
 	LOG(INFO) << "... waiting for all threads to exit";
-	// newFrameMapped.notify();
-	// unmappedTrackedFrames.notifyAll();
-	// // unmappedTrackedFramesSignal.notify_all();
-	//
-	// newKeyFrames.notifyAll();
-
-	// newConstraintCreatedSignal.notify_all();
 
 	mapThread.reset();
 	constraintThread.reset();
@@ -106,7 +82,6 @@ SlamSystem::~SlamSystem()
 
 	FrameMemory::getInstance().releaseBuffers();
 
-	// Util::closeAllWindows();
 }
 
 SlamSystem *SlamSystem::fullReset( void )
@@ -134,38 +109,10 @@ void SlamSystem::finalize()
 	optThread->finalOptimizationComplete.wait();
 	mapThread->optimizationUpdateMerged.wait();
 
-
-	// doFinalOptimization = true;
-	// newConstraintMutex.lock();
-	// newConstraintAdded = true;
-	// newConstraintCreatedSignal.notify_all();
-	// newConstraintMutex.unlock();
-
-	// while(doFinalOptimization)
-	// {
-	// 	usleep(200000);
-	// }
-
-	//printf("Finalizing Graph... publishing!!\n");
-	//unmappedTrackedFrames.notifyAll();
-	// unmappedTrackedFramesMutex.lock();
-	// unmappedTrackedFramesSignal.notify_one();
-	// unmappedTrackedFramesMutex.unlock();
-
-	// while(doFinalOptimization)
-	// {
-	// 	usleep(200000);
-	// }
-
-	// newFrameMapped.wait();
-	// newFrameMapped.wait();
-
-	// usleep(200000);
 	LOG(INFO) << "Done Finalizing Graph.!!";
 	_finalized.notify();
 
 }
-
 
 // void SlamSystem::requestDepthMapScreenshot(const std::string& filename)
 // {
@@ -178,7 +125,6 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
 
 	//depthMap()->setCurrentKeyFrame( set->refFrame() );
-
 	// Todo.  If multiple images are available in the set,
 	// use stereo disparity to initialize?
 	if( currentKeyFrame()->hasIDepthBeenSet() ) {
@@ -299,13 +245,7 @@ void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCa
 	//
 	// 	outputWrapper->publishDebugInfo(data);
 	// }
-
-	// currentKeyFrameMutex.lock();
-	// currentKeyFrameMutex.unlock();
 }
-
-
-
 
 //===== Debugging output functions =====
 
@@ -327,7 +267,6 @@ void SlamSystem::logPerformanceData()
 					constraintThread->perf().findConstraint.ms(), constraintThread->perf().findConstraint.rate() );
 
 		depthMap()->performanceData().log();
-
 	}
 
 }
@@ -337,7 +276,6 @@ void SlamSystem::updateDisplayDepthMap()
 	if( !Conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
 
 	double scale = 1;
-
 	if( (bool)currentKeyFrame() ) scale = currentKeyFrame()->getCamToWorld().scale();
 
 	// debug plot depthmap

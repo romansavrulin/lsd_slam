@@ -722,10 +722,10 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 		if(plotStereoImages) _debugImages.setHypothesisHandling(x,y, cv::Vec3b(0,0,255));	// RED FOR OOB
 		return false;
 	}
-
-	// if just not good for stereo (e.g. some inf / nan occured; has inconsistent minimum; ..)
 	else if(error == -2)
 	{
+		// if just not good for stereo (e.g. some inf / nan occured; has inconsistent minimum; ..)
+
 		stats->num_observe_skip_fail++;
 
 		if(plotStereoImages) _debugImages.setHypothesisHandling(x,y, cv::Vec3b(255,0,255));	// PURPLE FOR NON-GOOD
@@ -745,9 +745,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 		}
 		return false;
 	}
-
-	// if not found (error too high)
-	else if(error == -3)
+	else if(error == -3)   	// if not found (error too high)
 	{
 		stats->num_observe_notfound++;
 		if(plotStereoImages) _debugImages.setHypothesisHandling(x,y, cv::Vec3b(0,0,0));	// BLACK FOR big not-found
@@ -755,14 +753,12 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 
 		return false;
 	}
-
 	else if(error == -4)
 	{
 		if(plotStereoImages) _debugImages.setHypothesisHandling(x,y, cv::Vec3b(0,0,0));	// BLACK FOR big arithmetic error
 
 		return false;
 	}
-
 	// if inconsistent
 	else if(DIFF_FAC_OBSERVE*diff*diff > result_var + target.idepth_var_smoothed)
 	{
@@ -774,8 +770,6 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 
 		return false;
 	}
-
-
 	else
 	{
 		// one more successful observation!
@@ -790,6 +784,8 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 		float w = result_var / (result_var + id_var);
 		float new_idepth = (1-w)*result_idepth + w*target.idepth;
 		target.idepth = UNZERO(new_idepth);
+//	activeKeyFrame->setDepth(currentDepthMap);
+//}
 
 		// variance can only decrease from observation; never increase.
 		id_var = id_var * w;
@@ -1198,8 +1194,6 @@ void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stat
 		}
 	}
 }
-
-
 
 
 void DepthMap::regularizeDepthMap(bool removeOcclusions, int validityTH)

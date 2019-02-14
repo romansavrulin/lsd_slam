@@ -46,22 +46,15 @@
 
 #include "Tracking/Relocalizer.h"
 
+#include "ros/ros.h"
+
 namespace lsd_slam
 {
 
-	// class TrackingReference;
 	class KeyFrameGraph;
-	// class SE3Tracker;
-	// class Sim3Tracker;
-	// class DepthMap;
-	// class Frame;
-	// class DataSet;
-	// class LiveSLAMWrapper;
 	class Output3DWrapper;
 	class FramePoseStruct;
 	class TrackableKeyFrameSearch;
-	// struct KFConstraintStruct;
-
 	class TrackingThread;
 	class OptimizationThread;
 	class MappingThread;
@@ -110,10 +103,6 @@ public:
 	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
 	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
 	void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
-
-	// void requestDepthMapScreenshot(const std::string& filename);
-
-	// int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent=true, bool useFABMAP=true, float closeCandidatesTH=1.0);
 
 	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
@@ -172,7 +161,6 @@ private:
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;
 
 	std::unique_ptr<DepthMap> _depthMap;
-
 };
 
 }

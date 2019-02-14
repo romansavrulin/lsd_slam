@@ -80,11 +80,6 @@ TrackingThread::~TrackingThread()
 
 void TrackingThread::trackSet( std::shared_ptr<ImageSet> set )
 {
-	trackFrame( set->refFrame() );
-}
-
-void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
-{
 
 	if(!_trackingIsGood) {
 		// Prod mapping to check the relocalizer
@@ -131,7 +126,6 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	//tracking_lastGoodPerBad = _tracker->lastGoodCount / (_tracker->lastGoodCount + _tracker->lastBadCount);
 	//tracking_lastGoodPerTotal = _tracker->lastGoodCount / (newFrame->width(SE3TRACKING_MIN_LEVEL)*newFrame->height(SE3TRACKING_MIN_LEVEL));
 
-
 	if(_tracker->diverged ||
 		(_system.keyFrameGraph()->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !_tracker->trackingWasGood))
 	{
@@ -164,14 +158,12 @@ void TrackingThread::trackFrame( std::shared_ptr<Frame> newFrame )
 	_system.publishPose(newFrame->getCamToWorld().cast<float>());
 
 	// Keyframe selection
-	// latestTrackedFrame = trackingNewFrame;
 	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
 	LOG_IF( INFO, Conf().print.threadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
 	if(!_system.mapThread->newKeyFramePending() && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
 		// Consider switching to a new keyframe...
-
 		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame()->meanIdepth;
 		float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
 

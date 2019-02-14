@@ -23,7 +23,7 @@ ConstraintSearchThread::ConstraintSearchThread( SlamSystem &system, bool enabled
 		newKFTrackingReference(  new TrackingReference()  ),
 		candidateTrackingReference(  new TrackingReference()  ),
 		_failedToRetrack( 0 ),
-	_thread( enabled ? ActiveIdle::createActiveIdle( std::bind( &ConstraintSearchThread::callbackIdle, this ), std::chrono::milliseconds(500)) : NULL )
+		_thread( enabled ? ActiveIdle::createActiveIdle( std::bind( &ConstraintSearchThread::callbackIdle, this ), std::chrono::milliseconds(500)) : NULL )
 {
 }
 

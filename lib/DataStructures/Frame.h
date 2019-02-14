@@ -312,10 +312,6 @@ private:
 	  * ONLY CALL THIS, if an exclusive lock on activeMutex is owned! */
 	bool minimizeInMemory();
 
-
-	bool _printMemoryDebugInfo, _printFrameBuildDebugInfo;
-
-
 };
 
 

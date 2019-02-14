@@ -26,11 +26,12 @@ MappingThread::MappingThread( SlamSystem &system )
 	: unmappedTrackedFrames(),
 		unmappedTrackedFramesMutex(),
 		trackedFramesMapped(),
-		relocalizer(),
+		relocalizer( system.conf() ),
+		map( new DepthMap( system.conf() ) ),
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
-		_newKeyFramePending( false ),
-		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::doProcessTrackedFrames, this ), std::chrono::milliseconds(200)) )
+		_newKeyFrame( nullptr ),
+		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::callbackIdle, this ), std::chrono::milliseconds(200)) )
 {
 	LOG(INFO) << "Started Mapping thread";
 }
@@ -97,6 +98,7 @@ void MappingThread::doProcessTrackedFrames( void )
 
 void MappingThread::doMergeOptimizationOffset()
 {
+	//TODO... This function is never called. Publishing graph data with keyframes
 	LOG(DEBUG) << "Merging optimization offset";
 
 	// lets us put the publishKeyframeGraph outside the mutex lock
@@ -269,12 +271,16 @@ void MappingThread::finishCurrentKeyframe()
 	}
 
 	LOG(DEBUG) << "Finishing current keyframe, publishing keyframe " << _system.currentKeyFrame()->id();
+
 	_system.publishCurrentKeyframe();
+	//Publish graph and pointcloud at same frequency as Key Frame
+	_system.publishKeyframeGraph();
+	_system.publishPointCloud();
 }
 
 void MappingThread::discardCurrentKeyframe()
 {
-	LOG_IF(DEBUG, Conf().print.threadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
+	LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
 
 	if(_system.currentKeyFrame()->idxInKeyframes >= 0)
 	{
@@ -283,10 +289,8 @@ void MappingThread::discardCurrentKeyframe()
 		return;
 	}
 
-
 	_system.depthMap()->invalidateKeyFrame();
 	_system.keyFrameGraph()->dropKeyFrame( _system.currentKeyFrame() );
-
 }
 
 

@@ -107,6 +107,7 @@ private:
 
  	PerformanceData _perf;
 
+
 	// ============= parameter copies for convenience ===========================
 	Frame::SharedPtr activeKeyFrame;
 	boost::shared_lock<boost::shared_mutex> activeKeyFramelock;
