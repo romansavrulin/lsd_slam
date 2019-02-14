@@ -34,6 +34,17 @@
 #include "geometry_msgs/PoseStamped.h"
 #include "GlobalMapping/g2oTypeSim3Sophus.h"
 
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+
+
+typedef pcl::PointXYZRGB PointT;
+typedef pcl::PointCloud<PointT> PointCloud;
+
+
+
 namespace lsd_slam
 {
 
@@ -58,7 +69,10 @@ ROSOutput3DWrapper::ROSOutput3DWrapper(int width, int height)
 	pose_channel = nh_.resolveName("lsd_slam/pose");
 	pose_publisher = nh_.advertise<geometry_msgs::PoseStamped>(pose_channel,1);
 
+	pointcloud_channel = nh_.resolveName("lsd_slam/pointcloud");
+	pointcloud_publisher = nh_.advertise<PointCloud> (pointcloud_channel, 1);
 
+	//TODO what is this??
 	publishLvl=0;
 }
 
@@ -155,7 +169,7 @@ void ROSOutput3DWrapper::publishTrackedFrame(const Frame::SharedPtr &kf)
 	}
 
 	pMsg.header.stamp = ros::Time(kf->timestamp());
-	pMsg.header.frame_id = "world";
+	pMsg.header.frame_id = "map";
 	pose_publisher.publish(pMsg);
 }
 
@@ -190,6 +204,56 @@ void ROSOutput3DWrapper::publishKeyframeGraph(const std::shared_ptr<KeyFrameGrap
 	graph->keyframesAllMutex.unlock_shared();
 
 	graph_publisher.publish(gMsg);
+}
+
+void ROSOutput3DWrapper::publishPointCloud(const std::shared_ptr<KeyFrameGraph> &graph)
+{
+	//Debating if I want to put this in the constructor or not...
+	PointCloud::Ptr pointcloudMsg(new PointCloud);
+	pointcloudMsg->header.frame_id = "map";
+
+	graph->edgesListsMutex.lock();
+	
+	//Loop through all keyframes
+	for (unsigned int i=0; i<graph->edgesAll.size();i++)
+	{
+
+		Frame::SharedPtr kf = graph->keyframesAll.at(i);
+
+		int w = kf->width(publishLvl);
+		int h = kf->height(publishLvl);
+
+		//get world transformation
+		SE3 camToWorld = se3FromSim3(kf->getCamToWorld());
+		Eigen::Matrix4d G;
+
+		Eigen::Quaterniond q;
+
+	  q.x() = camToWorld.so3().unit_quaternion().x();
+		q.y() = camToWorld.so3().unit_quaternion().y();
+		q.z() = camToWorld.so3().unit_quaternion().z();
+		q.w() = camToWorld.so3().unit_quaternion().w();
+		Eigen::Matrix3d R = q.normalized().toRotationMatrix();
+
+
+
+
+		//pMsg.pose.position.x = camToWorld.translation()[0];
+		//pMsg.pose.position.y = camToWorld.translation()[1];
+		//pMsg.pose.position.z = camToWorld.translation()[2];
+
+
+
+
+		//Increase the pointcloud by the new keyframe size
+		//pointcloudMsg->points.resize(w*h + pointcloudMsg->points.size());
+
+
+	}
+
+
+  graph->edgesListsMutex.unlock();
+
 }
 
 void ROSOutput3DWrapper::publishTrajectory(std::vector<Eigen::Matrix<float, 3, 1>> trajectory, std::string identifier)

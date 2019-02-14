@@ -23,7 +23,6 @@
 #include <ros/ros.h>
 #include "IOWrapper/Output3DWrapper.h"
 
-
 namespace lsd_slam
 {
 
@@ -64,10 +63,13 @@ public:
 
 	virtual void publishPose( const Sophus::Sim3f &pose );
 
-	virtual void publishKeyframeGraph(const std::shared_ptr<KeyFrameGraph> &graph);
-
 	// publishes a keyframe. if that frame already existis, it is overwritten, otherwise it is added.
 	virtual void publishKeyframe(const Frame::SharedPtr &kf);
+
+	virtual void publishKeyframeGraph(const std::shared_ptr<KeyFrameGraph> &graph);
+
+	//Publish pointcloud from graph
+	virtual void publishPointCloud(const std::shared_ptr<KeyFrameGraph> &graph);
 
 	virtual void updateDepthImage(unsigned char * data);
 
@@ -102,6 +104,9 @@ private:
 
 	std::string pose_channel;
 	ros::Publisher pose_publisher;
+
+	std::string pointcloud_channel;
+	ros::Publisher pointcloud_publisher;
 
 	ros::NodeHandle nh_;
 };

@@ -19,7 +19,6 @@
 */
 
 #include "SlamSystem.h"
-#include "ros/ros.h"
 
 #include <boost/thread/shared_lock_guard.hpp>
 
@@ -312,8 +311,21 @@ std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()
 
 void SlamSystem::publishKeyframe( const Frame::SharedPtr &frame )
 {
-	//ROS_WARN("keyframe");
 	if( _outputWrapper ) {
 		_outputWrapper->publishKeyframe( frame );
 	}
+}
+
+void SlamSystem::publishKeyframeGraph( void )
+{
+ if( _outputWrapper ){
+	  _outputWrapper->publishKeyframeGraph( keyFrameGraph() );
+  }
+}
+
+void SlamSystem::publishPointCloud( ){
+	if( _outputWrapper ){
+		 _outputWrapper->publishPointCloud( keyFrameGraph() );
+	 }
+
 }

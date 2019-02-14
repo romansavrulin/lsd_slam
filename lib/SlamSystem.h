@@ -43,6 +43,8 @@
 
 #include "Tracking/Relocalizer.h"
 
+#include "ros/ros.h"
+
 namespace lsd_slam
 {
 
@@ -107,8 +109,9 @@ public:
 
 	void publishPose(const Sophus::Sim3f &pose ) 	                 { if( _outputWrapper ) _outputWrapper->publishPose(pose);}
 	void publishTrackedFrame( const Frame::SharedPtr &frame )      { if( _outputWrapper ) _outputWrapper->publishTrackedFrame( frame ); }
-	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
 	void publishKeyframe(  const Frame::SharedPtr &frame );
+	void publishKeyframeGraph( void );
+	void publishPointCloud();
 	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
 
 	void updateDisplayDepthMap();

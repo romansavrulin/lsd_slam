@@ -101,6 +101,7 @@ void MappingThread::callbackUnmappedTrackedFrames( void )
 
 void MappingThread::callbackMergeOptimizationOffset()
 {
+	//TODO... This function is never called. Publishing graph data with keyframes
 	LOG(DEBUG) << "Merging optimization offset";
 
 	// lets us put the publishKeyframeGraph outside the mutex lock
@@ -344,9 +345,13 @@ bool MappingThread::updateKeyframe()
 
 
 	// Why is this here?
+	// This is where the key frame is typically published... required
 	if( _system.conf().continuousPCOutput && (bool)_system.currentKeyFrame() ) {
 		LOG(DEBUG) << "Map updated, publishing keyframe " << _system.currentKeyFrame()->id();
 		_system.publishKeyframe( _system.currentKeyFrame() );
+		//Publish graph at same frequency as Key Frame
+		_system.publishKeyframeGraph();
+		_system.publishPointCloud();
 	}
 
 	return true;
@@ -382,6 +387,9 @@ void MappingThread::finishCurrentKeyframe()
 
 	LOG(DEBUG) << "Finishing current keyframe, publishing keyframe " << _system.currentKeyFrame()->id();
 	_system.publishKeyframe(_system.currentKeyFrame() );
+	//Publish graph and pointcloud at same frequency as Key Frame
+	_system.publishKeyframeGraph();
+	_system.publishPointCloud();
 }
 
 void MappingThread::discardCurrentKeyframe()
