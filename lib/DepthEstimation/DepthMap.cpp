@@ -933,7 +933,7 @@ void DepthMap::propagateDepthAndMakeActiveKeyFrame( const Frame::SharedPtr &new_
 								&newCam( new_keyframe->camera() );
 
 	// go through all pixels of OLD image, propagating forwards.
-	for(int y=0;y< _imageSize.height ;y++)
+	for(int y=0;y< _imageSize.height ;y++) {
 		for(int x=0;x< _imageSize.width;x++)
 		{
 			DepthMapPixelHypothesis &source = currentDepthMap[ x + y* _imageSize.width ];
@@ -1052,6 +1052,7 @@ void DepthMap::propagateDepthAndMakeActiveKeyFrame( const Frame::SharedPtr &new_
 					  Conf().debugDisplay );
 			}
 		}
+	}
 
 		// swap!
 		std::swap(currentDepthMap, scratchDepthMap);

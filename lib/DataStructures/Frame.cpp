@@ -34,8 +34,8 @@ int privateFrameAllocCount = 0;
 
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const unsigned char* image )
-	: 	pose( new FramePoseStruct(*this) ),
-			data( frameId, timestamp, cam, sz ),
+	: 	data( frameId, timestamp, cam, sz ),
+			pose( new FramePoseStruct(*this) ),
 			_trackingParent( nullptr )
 	{
 	initialize(timestamp);
@@ -68,8 +68,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const float* image )
-	: pose( new FramePoseStruct(*this)),
-		data( frameId, timestamp, cam, sz  ),
+	: data( frameId, timestamp, cam, sz  ),
+		pose( new FramePoseStruct(*this) ),
 		_trackingParent( nullptr )
 {
 	initialize(timestamp);
