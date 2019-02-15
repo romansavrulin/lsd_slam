@@ -50,6 +50,6 @@ fips_begin_module( lsdslam )
     ${OpenCV_LIBS}
     ${CSPARSE_LIBRARY} )
 
-  fips_deps( g3logger active_object ${G2O_LIBRARIES} )
+  fips_deps( g3logger active_object videoio ${G2O_LIBRARIES} )
 
 fips_end_module()
