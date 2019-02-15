@@ -15,19 +15,6 @@ endif()
 
 option(BUILD_GUI "Build Pangolin-based GUI" OFF)
 
-# ## Non-conan / cmake-based build
-# set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
-# set(RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-# set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-#
-# include( ${PROJECT_SOURCE_DIR}/cmake/BuildG3Log.cmake )
-# set( EXTERNAL_PROJECTS g3log )
-#
-# include( ${PROJECT_SOURCE_DIR}/cmake/BuildLibActiveObject.cmake )
-# list( APPEND EXTERNAL_PROJECTS libactive_object )
-
-#option( USE_OPENMP "Enable OpenMP (currently only in local copy of G2O)" OFF )
-
 find_package(Boost COMPONENTS thread filesystem system REQUIRED)
 find_package(Eigen3 REQUIRED)
 
@@ -105,8 +92,16 @@ fips_include_directories( ${LSDSLAM_INCLUDE_DIRS} )
 
 fips_add_subdirectory( lib/ )
 
+## Provide option to not build tools, default to yes unless FIP_IMPORT
+option( LSDSLAM_BUILD_TOOLS ON )
 if( NOT FIPS_IMPORT )
+  set( LSDSLAM_BUILD_TOOLS OFF )
+endif()
+if( LSDSLAM_BUILD_TOOLS )
   fips_add_subdirectory( tools/ )
+endif()
+
+if( NOT FIPS_IMPORT )
 
   if( FIPS_UNITTESTS )
     ## Build a local copy of gtest (as per the GTest FAQ)
