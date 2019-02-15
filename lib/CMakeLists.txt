@@ -34,7 +34,6 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/MappingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/TrackingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/ConstraintSearchThread.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/ParseArgs.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp
   ${GUI_SRCS}
 )
