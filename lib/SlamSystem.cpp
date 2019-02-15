@@ -125,14 +125,19 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
 
 	//depthMap()->setCurrentKeyFrame( set->refFrame() );
+
 	// Todo.  If multiple images are available in the set,
 	// use stereo disparity to initialize?
-	if( currentKeyFrame()->hasIDepthBeenSet() ) {
-		LOG(INFO) << "Using initial Depth estimate in first frame.";
-		depthMap()->initializeFromGTDepth( currentKeyFrame() );
+
+	std::shared_ptr<Frame> refFrame( set->refFrame() );
+
+	CHECK( (bool)refFrame ) << "Expected keyframe to be set, but it wasn't";
+	if( refFrame->hasIDepthBeenSet() ) {
+	 	LOG(INFO) << "Using initial Depth estimate in first frame.";
+	 	depthMap()->initializeFromGTDepth( refFrame );
 	} else {
 		LOG(INFO) << "Doing Random initialization!";
-		depthMap()->initializeRandomly( currentKeyFrame() );
+		depthMap()->initializeRandomly( refFrame );
 	}
 	updateDisplayDepthMap();
 
