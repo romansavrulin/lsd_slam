@@ -118,6 +118,7 @@ void MappingThread::doMergeOptimizationOffset()
 
 	if ( didUpdate ) {
 		_system.publishKeyframeGraph();
+		
 	}
 
 	optimizationUpdateMerged.notify();
@@ -237,6 +238,8 @@ bool MappingThread::updateKeyframe()
 	}
 
 	_system.publishCurrentKeyframe();
+	//TODO when should we update the pointcloud?
+	_system.publishPointCloud();
 
 	return true;
 }

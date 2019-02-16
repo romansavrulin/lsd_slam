@@ -142,13 +142,20 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 	updateDisplayDepthMap();
 
 	keyFrameGraph()->addFrame( currentKeyFrame() );
+	/*
+	if( Conf().SLAMEnabled)
+	{
+		boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->idToKeyFrameMutex );
+		keyFrameGraph()->idToKeyFrame.insert(std::make_pair( currentKeyFrame()->id(), currentKeyFrame()));
+	}
+	*/
 
 	if( Conf().continuousPCOutput) {
 		LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
 		publishCurrentKeyframe();
 	}
-	//TODO raises sigint? 
-	//_initialized = true;
+	//TODO raises sigint?
+	_initialized = true;
 }
 
 
