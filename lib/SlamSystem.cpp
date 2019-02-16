@@ -147,8 +147,8 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 		LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
 		publishCurrentKeyframe();
 	}
-
-	_initialized = true;
+	//TODO raises sigint? 
+	//_initialized = true;
 }
 
 
@@ -356,5 +356,5 @@ void SlamSystem::publishCurrentKeyframe( )
 }
 
 void SlamSystem::publishPointCloud( ){
-	if( _outputWrapper ) _outputWrapper->publishPointCloud( keyFrameGraph() );
+	if( _outputWrapper ) _outputWrapper->publishPointCloud( currentKeyFrame() );
 }
