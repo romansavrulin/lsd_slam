@@ -36,20 +36,51 @@
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
 
+#include "CLI11.hpp"
+
 #include "App/App.h"
 #include "App/InputThread.h"
-#include "ParseArgs.h"
-
 
 using namespace lsd_slam;
 
 
 int main( int argc, char** argv )
 {
+  // Initialize the logging system
   libg3logger::G3Logger logWorker( argv[0] );
   logWorker.logBanner();
 
-  ParseArgs args( argc, argv );
+  CLI::App app;
+
+  // Add new options/flags here
+  std::string calibFile;
+  app.add_option("-c,--calib", calibFile, "Calibration file" )->required()->check(CLI::ExistingFile);
+
+  bool verbose;
+  app.add_flag("-v,--verbose", verbose, "Print DEBUG output to console");
+
+  std::vector<std::string> inFiles;
+  app.add_option("--input,input", inFiles, "Input files or directories");
+
+  // Defines the configuration file;  see
+  //    https://cliutils.gitlab.io/CLI11Tutorial/chapters/config.html
+  app.set_config("--config");
+
+  CLI11_PARSE(app, argc, argv);
+
+  std::shared_ptr<ImageSource> dataSource( Input::makeInput( inFiles ));
+  CHECK((bool)dataSource) << "Data source shouldn't be null";
+
+  dataSource->setFPS( 30 ); //fpsArg.getValue() );
+  dataSource->setOutputType( CV_8UC1 );
+
+  std::shared_ptr<Undistorter> undistorter(libvideoio::UndistorterFactory::getUndistorterFromFile( calibFile ));
+  if(!(bool)undistorter) {
+    LOG(WARNING) << "Undistorter shouldn't be NULL";
+    return -1;
+  }
+
+  logWorker.verbose( verbose );
 
   // Load the configuration object
   Conf().setSlamImageSize( args.undistorter->outputImageSize() );
