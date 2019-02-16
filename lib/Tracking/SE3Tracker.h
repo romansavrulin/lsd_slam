@@ -55,7 +55,6 @@ public:
 	SE3Tracker& operator=(const SE3Tracker&) = delete;
 	~SE3Tracker();
 
-
 	// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	SE3 trackFrame(
 			const std::shared_ptr<TrackingReference> &reference,
@@ -165,6 +164,8 @@ private:
 
 	float affineEstimation_a_lastIt;
 	float affineEstimation_b_lastIt;
+
 };
+
 
 }

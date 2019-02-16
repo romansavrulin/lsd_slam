@@ -62,9 +62,11 @@ public:
 	float idepth_var_smoothed;
 
 
-	inline DepthMapPixelHypothesis() : isValid(false), blacklisted(0) {};
+	DepthMapPixelHypothesis()
+		: isValid(false), blacklisted(0)
+	{;}
 
-	inline DepthMapPixelHypothesis(
+	DepthMapPixelHypothesis(
 			const float &my_idepth,
 			const float &my_idepth_smoothed,
 			const float &my_idepth_var,
@@ -79,9 +81,10 @@ public:
 			idepth(my_idepth),
 			idepth_var(my_idepth_var),
 			idepth_smoothed(my_idepth_smoothed),
-			idepth_var_smoothed(my_idepth_var_smoothed) {};
+			idepth_var_smoothed(my_idepth_var_smoothed)
+		{;}
 
-	inline DepthMapPixelHypothesis(
+	DepthMapPixelHypothesis(
 			const float &my_idepth,
 			const float &my_idepth_var,
 			const int &my_validity_counter,
@@ -94,9 +97,12 @@ public:
 			idepth(my_idepth),
 			idepth_var(my_idepth_var),
 			idepth_smoothed(-1),
-			idepth_var_smoothed(-1) {};
+			idepth_var_smoothed(-1)
+		{;}
 
 	cv::Vec3b getVisualizationColor(int lastFrameID) const;
 };
+
+typedef std::vector<DepthMapPixelHypothesis> DepthMapPixelHypothesisVector;
 
 }

@@ -49,7 +49,7 @@ struct RelocalizerResult {
 class Relocalizer
 {
 public:
-	Relocalizer( const Configuration &conf );
+	Relocalizer();
 	~Relocalizer();
 
 	void updateCurrentFrame(std::shared_ptr<Frame> currentFrame);
@@ -61,8 +61,6 @@ public:
 
 	bool isRunning;
 private:
-	const Configuration &_conf;
-
 	// int w, h;
 	// Eigen::Matrix3f K;
 	boost::thread relocThreads[RELOCALIZE_THREADS];
@@ -89,6 +87,8 @@ private:
 
 
 	void threadLoop(int idx);
+
+	bool _printRelocalizationInfo;
 };
 
 }

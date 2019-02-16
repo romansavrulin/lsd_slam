@@ -25,6 +25,7 @@
 #include <boost/thread/shared_mutex.hpp>
 #include "DataStructures/FramePoseStruct.h"
 #include "DataStructures/FrameMemory.h"
+#include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "unordered_set"
 #include "util/settings.h"
 #include "util/Configuration.h"
@@ -32,8 +33,11 @@
 namespace lsd_slam
 {
 
+using libvideoio::Camera;
+using libvideoio::ImageSize;
 
-class DepthMapPixelHypothesis;
+//class DepthMap;
+//class DepthMap::DepthMapPixelHypothesisVector;
 class TrackingReference;
 /**
  */
@@ -49,7 +53,7 @@ private:
 		Data() = delete;
 		Data( const Data & ) = delete;
 
-		Data( int id, double timestamp, const Camera &camera, const SlamImageSize &slamImageSize );
+		Data( int id, double timestamp, const Camera &camera, const ImageSize &slamImageSize );
 
 		int id;
 
@@ -62,7 +66,6 @@ private:
 		// float fxInv[PYRAMID_LEVELS], fyInv[PYRAMID_LEVELS], cxInv[PYRAMID_LEVELS], cyInv[PYRAMID_LEVELS];
 
 		double timestamp;
-
 
 		float* image[PYRAMID_LEVELS];
 		bool imageValid[PYRAMID_LEVELS];
@@ -111,14 +114,13 @@ public:
 	Frame() = delete;
 	Frame( const Frame & ) = delete;
 
-	Frame(int id, const Configuration &conf, double timestamp, const unsigned char* image );
-	Frame(int id, const Configuration &conf, double timestamp, const float* image );
+	Frame(int id, const Camera &cam, const ImageSize &sz, double timestamp, const unsigned char* image );
+	Frame(int id, const Camera &cam, const ImageSize &sz, double timestamp, const float* image );
 
 	~Frame();
 
-
 	/** Sets or updates idepth and idepthVar on level zero. Invalidates higher levels. */
-	void setDepth(const DepthMapPixelHypothesis* newDepth);
+	void setDepth(const DepthMapPixelHypothesisVector &newDepth);
 
 	/** Calculates mean information for statistical purposes. */
 	void calculateMeanInformation();
@@ -126,8 +128,9 @@ public:
 	/** Sets ground truth depth (real, not inverse!) from a float array on level zero. Invalidates higher levels. */
 	void setDepthFromGroundTruth(const float* depth, float cov_scale = 1.0f);
 
-	/** Prepares this frame for stereo comparisons with the other frame (computes some intermediate values that will be needed) */
-	void prepareForStereoWith(Frame* other, Sim3 thisToOther, const Eigen::Matrix3f& K, const int level);
+	/** Prepares this frame for stereo comparisons with the other frame
+	//(computes some intermediate values that will be needed) */
+	void prepareForStereoWith( const Frame::SharedPtr &other, Sim3 thisToOther, const int level);
 
 
 
@@ -147,6 +150,8 @@ public:
 	DATA_LEVEL_READER( int, width )
 	DATA_LEVEL_READER( int, height )
 	DATA_LEVEL_READER( const Camera &, camera )
+
+	inline int area( int level = 0 ) { return width(level) * height(level); }
 
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, K )
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, Kinv )
@@ -194,9 +199,8 @@ public:
   // For SLAM-like features, KeyFrames can own their own TrackingReference
 	// this is copied into the keyframe when the keyframe is finalized
 	// This used for loop closure and re-localization
-	void setPermaRef(TrackingReference* reference);
-	void takeReActivationData(DepthMapPixelHypothesis* depthMap);
-
+	void setPermaRef( const std::unique_ptr<TrackingReference> &reference);
+	void takeReActivationData(const DepthMapPixelHypothesisVector &depthMap);
 
 	// shared_lock this as long as any minimizable arrays are being used.
 	// the minimizer will only minimize frames after getting
@@ -245,7 +249,7 @@ public:
 
 
 
-	// Temporary values
+	// A bunch of state which is created by prepareForStereoWith()
 	int referenceID;
 	int referenceLevel;
 	float distSquared;
@@ -276,7 +280,6 @@ public:
 private:
 
 	SharedPtr _trackingParent;
-	const Configuration &_conf;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
@@ -297,7 +300,6 @@ private:
 	void releaseIDepth(int level);
 	void releaseIDepthVar(int level);
 
-
 	// used internally. locked while something is being built, such that no
 	// two threads build anything simultaneously. not locked on require() if nothing is changed.
 	boost::mutex buildMutex;
@@ -309,8 +311,6 @@ private:
 	  * representation in memory. Use release(Frame::ALL, false) to store on disk instead.
 	  * ONLY CALL THIS, if an exclusive lock on activeMutex is owned! */
 	bool minimizeInMemory();
-
-
 
 };
 

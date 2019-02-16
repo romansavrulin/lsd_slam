@@ -117,7 +117,6 @@ public:
 	Sim3Tracker& operator=(const Sim3Tracker&) = delete;
 	~Sim3Tracker();
 
-
 	Sim3 trackFrameSim3(
 			const std::shared_ptr<TrackingReference> &reference,
 			const std::shared_ptr<Frame> &frame,

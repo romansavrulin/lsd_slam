@@ -18,17 +18,20 @@ namespace lsd_slam {
 
   using libvideoio::Camera;
   using libvideoio::ImageSize;
-  using libvideoio::SlamImageSize;
+
+  class Configuration;
+
+  Configuration &Conf();
 
 // Slow migration from the global settings.[h,cpp] model to a Configuration
 // object.
 class Configuration {
 public:
+  friend Configuration &Conf();
 
-  Configuration();
-
-  ImageSize inputImage;
-  SlamImageSize slamImage;
+  // Does additional validation on sz
+  const ImageSize &setSlamImageSize( const ImageSize &sz );
+  ImageSize slamImageSize;
   Camera camera;
 
   enum { NO_STEREO = 0, STEREO_ZED } doDepth;
@@ -51,8 +54,34 @@ public:
  bool dumpMap;
  bool doFullReConstraintTrack;
 
+ struct {
+   bool propagationStatistics;
+   bool fillHolesStatistics;
+   bool observeStatistics;
+   bool observePurgeStatistics;
+   bool regularizeStatistics;
+   bool lineStereoStatistics;
+   bool lineStereoFails;
 
-protected:
+   bool trackingIterationInfo;
+   bool threadingInfo;
+   //
+   bool keyframeSelectionInfo;
+   bool constraintSearchInfo;
+   bool optimizationInfo;
+   bool relocalizationInfo;
+   //
+   bool frameBuildDebugInfo;
+   bool memoryDebugInfo;
+   //
+   bool mappingTiming;
+   bool overallTiming;
+ } print;
+
+
+private:
+  Configuration();
+
 
 };
 

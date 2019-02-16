@@ -97,54 +97,8 @@ bool saveLoopClosureImages =  false;
 bool saveAllTrackingStages = false;
 bool saveAllTrackingStagesInternal = false;
 
-
 bool fullResetRequested = false;
-bool manualTrackingLossIndicated = false;
-
 
 std::string packagePath = "";
-
-
-void handleKey(char k)
-{
-	char kkk = k;
-	switch(kkk)
-	{
-// 	case 'a': case 'A':
-// //		autoRun = !autoRun;		// disabled... only use for debugging & if you really, really know what you are doing
-// 		break;
-// 	case 's': case 'S':
-// //		autoRunWithinFrame = !autoRunWithinFrame; 	// disabled... only use for debugging & if you really, really know what you are doing
-// 		break;
-// 	case 'd': case 'D':
-// 		debugDisplay = (debugDisplay+1)%6;
-// 		printf("debugDisplay is now: %d\n", debugDisplay);
-// 		break;
-// 	case 'e': case 'E':
-// 		debugDisplay = (debugDisplay-1+6)%6;
-// 		printf("debugDisplay is now: %d\n", debugDisplay);
-// 		break;
-// 	case 'o': case 'O':
-// 		onSceenInfoDisplay = !onSceenInfoDisplay;
-// 		break;
-// 	case 'r': case 'R':
-// 		printf("requested full reset!\n");
-// 		fullResetRequested = true;
-// 		break;
-// 	case 'm': case 'M':
-// 		printf("Dumping Map!\n");
-// 		dumpMap = true;
-// 		break;
-// 	case 'p': case 'P':
-// 		printf("Tracking all Map-Frames again!\n");
-// 		doFullReConstraintTrack = true;
-// 		break;
-// 	case 'l': case 'L':
-// 		printf("Manual Tracking Loss Indicated!\n");
-// 		manualTrackingLossIndicated = true;
-// 		break;
-	}
-
-}
 
 }

@@ -8,11 +8,13 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/App/App.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/App/InputThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/Frame.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/ImageSet.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMap.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapDebugImages.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapPixelHypothesis.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/util/Configuration.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/Configuration.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/globalFuncs.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/util/SophusUtil.cpp
@@ -32,6 +34,7 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/MappingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/TrackingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/ConstraintSearchThread.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp
   ${GUI_SRCS}
 )
 
@@ -46,6 +49,6 @@ fips_begin_module( lsdslam )
     ${OpenCV_LIBS}
     ${CSPARSE_LIBRARY} )
 
-  fips_deps( g3logger active_object ${G2O_LIBRARIES} )
+  fips_deps( g3logger active_object videoio ${G2O_LIBRARIES} )
 
 fips_end_module()

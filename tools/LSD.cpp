@@ -36,32 +36,61 @@
 #include "util/ThreadMutexObject.h"
 #include "util/Configuration.h"
 
+#include "CLI11.hpp"
+
 #include "App/App.h"
 #include "App/InputThread.h"
-#include "ParseArgs.h"
-
 
 using namespace lsd_slam;
 
 
 int main( int argc, char** argv )
 {
+  // Initialize the logging system
   libg3logger::G3Logger logWorker( argv[0] );
   logWorker.logBanner();
 
-  Configuration conf;
-  ParseArgs args( argc, argv );
+  CLI::App app;
+
+  // Add new options/flags here
+  std::string calibFile;
+  app.add_option("-c,--calib", calibFile, "Calibration file" )->required()->check(CLI::ExistingFile);
+
+  bool verbose;
+  app.add_flag("-v,--verbose", verbose, "Print DEBUG output to console");
+
+  std::vector<std::string> inFiles;
+  app.add_option("--input,input", inFiles, "Input files or directories");
+
+  // Defines the configuration file;  see
+  //    https://cliutils.gitlab.io/CLI11Tutorial/chapters/config.html
+  app.set_config("--config");
+
+  CLI11_PARSE(app, argc, argv);
+
+  std::shared_ptr<ImageSource> dataSource( Input::makeInput( inFiles ));
+  CHECK((bool)dataSource) << "Data source shouldn't be null";
+
+  dataSource->setFPS( 30 ); //fpsArg.getValue() );
+  dataSource->setOutputType( CV_8UC1 );
+
+  std::shared_ptr<Undistorter> undistorter(libvideoio::UndistorterFactory::getUndistorterFromFile( calibFile ));
+  if(!(bool)undistorter) {
+    LOG(WARNING) << "Undistorter shouldn't be NULL";
+    return -1;
+  }
+
+  logWorker.verbose( verbose );
 
   // Load the configuration object
-  conf.inputImage = args.undistorter->inputImageSize();
-  conf.slamImage  = args.undistorter->outputImageSize();
-  conf.camera     = args.undistorter->getCamera();
+  Conf().setSlamImageSize( args.undistorter->outputImageSize() );
+  Conf().camera     = args.undistorter->getCamera();
 
-  LOG(INFO) << "Slam image: " << conf.slamImage.width << " x " << conf.slamImage.height;
+  LOG(INFO) << "Slam image: " << Conf().slamImageSize.width << " x " << Conf().slamImageSize.height;
 
-  CHECK( (conf.camera.fx) > 0 && (conf.camera.fy > 0) ) << "Camera focal length is zero";
+  CHECK( (Conf().camera.fx) > 0 && (Conf().camera.fy > 0) ) << "Camera focal length is zero";
 
-	std::shared_ptr<SlamSystem> system( new SlamSystem(conf) );
+	std::shared_ptr<SlamSystem> system( new SlamSystem() );
 
   LOG(INFO) << "Starting input thread.";
   InputThread input( system, args.dataSource, args.undistorter );
@@ -72,9 +101,8 @@ int main( int argc, char** argv )
   LOG(INFO) << "Starting all threads.";
   startAll.notify();
 
-  // This is idle while(1) loop
-  while( !input.inputDone.getValue() )
-  { sleep(1); }
+  // This is idle loop
+  while( !input.inputDone.getValue() )  { sleep(1); }
 
   LOG(INFO) << "Finalizing system.";
   system->finalize();

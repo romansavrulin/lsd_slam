@@ -24,8 +24,6 @@
 namespace lsd_slam
 {
 
-
-
 FrameMemory::FrameMemory()
 {
 }
@@ -36,7 +34,7 @@ FrameMemory& FrameMemory::getInstance()
 	return theOneAndOnly;
 }
 
-void FrameMemory::releaseBuffes()
+void FrameMemory::releaseBuffers()
 {
 	boost::unique_lock<boost::mutex> lock(accessMutex);
 	int total = 0;
@@ -44,8 +42,7 @@ void FrameMemory::releaseBuffes()
 
 	for(auto p : availableBuffers)
 	{
-		if(printMemoryDebugInfo)
-			printf("deleting %d buffers of size %d!\n", (int)p.second.size(), (int)p.first);
+		LOGF_IF(DEBUG, Conf().print.memoryDebugInfo, "deleting %d buffers of size %d!", (int)p.second.size(), (int)p.first);
 
 		total += p.second.size() * p.first;
 
@@ -59,8 +56,7 @@ void FrameMemory::releaseBuffes()
 	}
 	availableBuffers.clear();
 
-	if(printMemoryDebugInfo)
-		printf("released %.1f MB!\n", total / (1000000.0f));
+	LOGF_IF(DEBUG, Conf().print.memoryDebugInfo, "released %.1f MB!", total / (1000000.0f));
 }
 
 

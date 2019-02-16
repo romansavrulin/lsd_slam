@@ -119,7 +119,7 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange)
 	_system.keyFrameGraph()->keyframesAllMutex.unlock_shared();
 	_system.poseConsistencyMutex.unlock_shared();
 
-	LOGF_IF(DEBUG, enablePrintDebugInfo && printOptimizationInfo,
+	LOGF_IF(DEBUG, Conf().print.optimizationInfo,
 					"did %d optimization iterations. Max Pose Parameter Change: %f; avgChange: %f. %s\n",
 					its, maxChange, sumChange / sum,
 					maxChange > minChange && its == itsPerTry ? "continue optimizing":"Waiting for addition to graph.");

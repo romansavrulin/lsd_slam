@@ -7,6 +7,8 @@ over the last year (clearly).   One thing I've discovered is I'm not a huge
 fan of Conan.   I ended up making a lot of infrastructure to get what I
 wanted out of it --- which was the ability to define dependencies and
 have them all built locally.
+=======
+See my [Development Blog](http://staff.washington.edu/amarburg/site/) for current status.
 
 > So if you've got here, I've thrown out Conan and moved to
 [fips](http://floooh.github.io/fips/index.html).   fips ain't perfect, but it
@@ -79,7 +81,23 @@ any dataset from [here](http://vision.in.tum.de/lsdslam), and run:
 I've started to document my performance testing in [doc/Performance.md](doc/Performance.md)
 
 # Related Papers
+=======
+# Docker
 
+For repeatability, builds can occur inside a Docker container.   To do this,
+first run `rake docker:image` which is create a local copy of the development Docker image called
+`lsdslam-build:local`.   This is a minor iteration on the published `amarburg/lsdslam-dev-host`
+image.
+
+Then `rake docker:debug:build` or `rake docker:release:build` which will build the
+release in a Docker container up through testing.
+
+This build process will mount and build the current source tree in its own `build_docker-*` tree,
+which is not ephemeral.
+
+For now the Docker process is focused on building and testing, not actually running in the Docker image.  Soon enough...
+
+# 5. Related Papers
 * **LSD-SLAM: Large-Scale Direct Monocular SLAM**, *J. Engel, T. Schöps, D. Cremers*, ECCV '14
 
 * **Semi-Dense Visual Odometry for a Monocular Camera**, *J. Engel, J. Sturm, D. Cremers*, ICCV '13

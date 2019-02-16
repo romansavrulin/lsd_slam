@@ -18,12 +18,12 @@ namespace lsd_slam {
 ConstraintSearchThread::ConstraintSearchThread( SlamSystem &system, bool enabled )
 	: _system( system ),
 		_perf(),
-		constraintTracker( new Sim3Tracker( system.conf().slamImage ) ),
-		constraintSE3Tracker(  new SE3Tracker( system.conf().slamImage )  ),
+		constraintTracker( new Sim3Tracker( Conf().slamImageSize ) ),
+		constraintSE3Tracker(  new SE3Tracker( Conf().slamImageSize )  ),
 		newKFTrackingReference(  new TrackingReference()  ),
 		candidateTrackingReference(  new TrackingReference()  ),
 		_failedToRetrack( 0 ),
-	_thread( enabled ? ActiveIdle::createActiveIdle( std::bind( &ConstraintSearchThread::callbackIdle, this ), std::chrono::milliseconds(500)) : NULL )
+		_thread( enabled ? ActiveIdle::createActiveIdle( std::bind( &ConstraintSearchThread::callbackIdle, this ), std::chrono::milliseconds(500)) : NULL )
 {
 }
 
@@ -241,7 +241,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 	{
 		if(newKeyFrame->neighbors.find(*c) != newKeyFrame->neighbors.end())
 		{
-			LOGF_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo,"SKIPPING %d on %d cause it already exists as constraint.\n", (*c)->id(), newKeyFrame->id());
+			LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,"SKIPPING %d on %d cause it already exists as constraint.\n", (*c)->id(), newKeyFrame->id());
 			c = candidates.erase(c);
 		}
 		else
@@ -361,7 +361,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 
 		if(skip)
 		{
-			LOGF_IF(DEBUG, printConstraintSearchInfo,
+			LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,
 						"SKIPPING %d on %d (NEAR), cause we already have tried it.\n", (*c)->id(), newKeyFrame->id());
 			c = closeCandidates.erase(c);
 		}
@@ -389,7 +389,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 
 		if(skip)
 		{
-			LOGF_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo,
+			LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,
 						"SKIPPING %d on %d (FAR), cause we already have tried it.\n", farCandidates[i]->id(), newKeyFrame->id());
 			farCandidates[i] = farCandidates.back();
 			farCandidates.pop_back();
@@ -399,7 +399,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 
 
 
-	LOGF_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo,
+	LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,
 				"Final Loop-Closure Candidates: %d / %d close (%d failed, %d inconsistent) + %d / %d far (%d failed, %d inconsistent) = %d\n",
 				(int)closeCandidates.size(),closeAll, closeFailed, closeInconsistent,
 				(int)farCandidates.size(), farAll, farFailed, farInconsistent,
@@ -463,7 +463,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 				candidateToFrame_initialEstimateMap[candidate],
 				loopclosureStrictness);
 
-		LOG_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo) << " CLOSE (" << distancesToNewKeyFrame.at(candidate) << ")";
+		LOG_IF(DEBUG, Conf().print.constraintSearchInfo) << " CLOSE (" << distancesToNewKeyFrame.at(candidate) << ")";
 
 		if(e1 != 0)
 		{
@@ -475,7 +475,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 			{
 				if(farCandidates[k] == candidate)
 				{
-					LOGF_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo,
+					LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,
 						" DELETED %d from far, as close was successful!\n", candidate->id());
 
 					farCandidates[k] = farCandidates.back();
@@ -496,7 +496,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 				Sim3(),
 				loopclosureStrictness);
 
-		LOG_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo) << " FAR (" << distancesToNewKeyFrame.at(candidate) << ")";
+		LOG_IF(DEBUG, Conf().print.constraintSearchInfo) << " FAR (" << distancesToNewKeyFrame.at(candidate) << ")";
 
 		if(e1 != 0)
 		{
@@ -515,7 +515,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const Frame::SharedPt
 				parent, e1, e2,
 				candidateToFrame_initialEstimateMap[parent],
 				100);
-		LOG_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo) << " PARENT (0)";
+		LOG_IF(DEBUG, Conf().print.constraintSearchInfo) << " PARENT (0)";
 
 		if(e1 != 0)
 		{
@@ -680,8 +680,8 @@ void ConstraintSearchThread::testConstraint(
 
 	if(err_level3 > 3000*strictness)
 	{
-		if(enablePrintDebugInfo && printConstraintSearchInfo)
-			printf("FAILE %d -> %d (lvl %d): errs (%.1f / - / -).",
+		LOGF_IF(DEBUG,Conf().print.constraintSearchInfo,
+				"FAILED %d -> %d (lvl %d): errs (%.1f / - / -).",
 				newKFTrackingReference->frameID, candidateTrackingReference->frameID,
 				3,
 				sqrtf(err_level3));
@@ -700,8 +700,8 @@ void ConstraintSearchThread::testConstraint(
 
 	if(err_level2 > 4000*strictness)
 	{
-		if(enablePrintDebugInfo && printConstraintSearchInfo)
-			printf("FAILE %d -> %d (lvl %d): errs (%.1f / %.1f / -).",
+		LOGF_IF(DEBUG,Conf().print.constraintSearchInfo,
+			"FAILED %d -> %d (lvl %d): errs (%.1f / %.1f / -).",
 				newKFTrackingReference->frameID, candidateTrackingReference->frameID,
 				2,
 				sqrtf(err_level3), sqrtf(err_level2));
@@ -723,8 +723,8 @@ void ConstraintSearchThread::testConstraint(
 
 	if(err_level1 > 6000*strictness)
 	{
-		if(enablePrintDebugInfo && printConstraintSearchInfo)
-			printf("FAILED %d -> %d (lvl %d): errs (%.1f / %.1f / %.1f).",
+		LOGF_IF(DEBUG,Conf().print.constraintSearchInfo,
+				"FAILED %d -> %d (lvl %d): errs (%.1f / %.1f / %.1f).",
 					newKFTrackingReference->frameID, candidateTrackingReference->frameID,
 					1,
 					sqrtf(err_level3), sqrtf(err_level2), sqrtf(err_level1));
@@ -737,8 +737,8 @@ void ConstraintSearchThread::testConstraint(
 	}
 
 
-	if(enablePrintDebugInfo && printConstraintSearchInfo)
-		printf("ADDED %d -> %d: errs (%.1f / %.1f / %.1f).",
+	LOGF_IF(DEBUG,Conf().print.constraintSearchInfo,
+			"ADDED %d -> %d: errs (%.1f / %.1f / %.1f).",
 			newKFTrackingReference->frameID, candidateTrackingReference->frameID,
 			sqrtf(err_level3), sqrtf(err_level2), sqrtf(err_level1));
 

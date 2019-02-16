@@ -8,6 +8,9 @@ imports:
     g2o-fips:
         git: https://github.com/amarburg/g2o.git
         branch: fips
+    CLI11-fips:
+        git: https://github.com/apl-ocean-engineering/CLI11-fips.git
+        cond: "LSDSLAM_BUILD_TOOLS"
 
 exports:
    header-dirs:

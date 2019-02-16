@@ -30,7 +30,8 @@ int FramePoseStruct::cacheValidCounter = 0;
 int privateFramePoseStructAllocCount = 0;
 
 FramePoseStruct::FramePoseStruct( Frame &f )
-	:frame( f )
+	:frame( f ),
+	graphVertex( nullptr )
 {
 	cacheValidFor = -1;
 	isOptimized = false;
@@ -39,16 +40,14 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	hasUnmergedPose = false;
 	isInGraph = false;
 
-	this->graphVertex = nullptr;
-
 	privateFramePoseStructAllocCount++;
-	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 FramePoseStruct::~FramePoseStruct()
 {
 	privateFramePoseStructAllocCount--;
-	LOG_IF(INFO, enablePrintDebugInfo && printMemoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 void FramePoseStruct::setPoseGraphOptResult(Sim3 camToWorld)
@@ -93,7 +92,8 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 			cacheValidFor = cacheValidCounter;
 			return camToWorld = frame.trackingParent()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 	} else {
-		return camToWorld = Sim3();}
+		return camToWorld = Sim3();
+	}
 }
 
 }
