@@ -94,7 +94,11 @@ void TrackingThread::trackFrame( const std::shared_ptr<Frame> &newFrame )
 	}
 
 	// Are the following two calls atomic enough or should I lock before the next two lines?
-	Frame::SharedPtr keyframe( _system.currentKeyFrame() );
+	Frame::SharedPtr keyframe;
+	{
+		std::lock_guard<std::mutex> guard( _system.currentKeyFrame()->frameMutex );
+		keyframe = _system.currentKeyFrame();
+	}
 
 	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag ) {
 		LOG(DEBUG) << "Importing new tracking reference from frame " << keyframe->id();

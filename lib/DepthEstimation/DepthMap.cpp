@@ -213,6 +213,7 @@ void DepthMap::createKeyFrame( const Frame::SharedPtr &new_keyframe)
 
 	//boost::shared_lock<boost::shared_mutex> lock = activeKeyFrame->getActiveLock();
 	boost::shared_lock<boost::shared_mutex> lock2 = new_keyframe->getActiveLock();
+	std::lock_guard<std::mutex> lock( new_keyframe->frameMutex);
 
 	Timer timeAll;
 

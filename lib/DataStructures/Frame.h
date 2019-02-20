@@ -19,6 +19,9 @@
 */
 
 #pragma once
+
+#include <mutex>
+
 #include "util/SophusUtil.h"
 #include "util/settings.h"
 #include <boost/thread/recursive_mutex.hpp>
@@ -209,6 +212,9 @@ public:
 	{
 		return FrameMemory::getInstance().activateFrame(this);
 	}
+
+	// Big global lock on Frame.  Don't like it.
+	std::mutex frameMutex;
 
 
 	/*
