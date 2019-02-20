@@ -1178,7 +1178,7 @@ void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stat
 	// ============ build integral buffers
 	//int* validityIntegralBufferPT = validityIntegralBuffer+yMin*_imageSize.width;
 	size_t validityIntegralIdx = yMin*_imageSize.width;
-	for(int y=yMin;y<yMax;y++)
+	for(int y=yMin; y<yMax; y++)
 	{
 		int validityIntegralBufferSUM = 0;
 
@@ -1190,8 +1190,6 @@ void DepthMap::buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stat
 				validityIntegralBufferSUM += ptSrc.validity_counter;
 
 			validityIntegralBuffer[validityIntegralIdx] = validityIntegralBufferSUM;
-
-			validityIntegralIdx++;
 		}
 	}
 }

@@ -55,7 +55,7 @@ void MappingThread::doProcessTrackedFrames( void )
 			nMapped = unmappedTrackedFrames.back()->trackingParent()->numMappedOnThisTotal < 10;
 	}
 
-	LOG(INFO) << "In callback with " << sz << " tracked frames ready to map";
+	LOG(DEBUG) << "In callback with " << sz << " tracked frames ready to map";
 
 	if(sz < 50 ||
 	  (sz < 100 && nMapped) ) {
@@ -65,7 +65,7 @@ void MappingThread::doProcessTrackedFrames( void )
 
 			// If there's no keyframe, then give up
 			if( !(bool)_system.currentKeyFrame() ) {
-				LOG(INFO) << "Nothing to map: no keyframe";
+				LOG(DEBUG) << "Nothing to map: no keyframe";
 				break;
 			}
 
@@ -92,7 +92,7 @@ void MappingThread::doProcessTrackedFrames( void )
 		//}
 	}
 
-	LOG(INFO) << "Done mapping.";
+	LOG(DEBUG) << "Done mapping.";
 }
 
 void MappingThread::doMergeOptimizationOffset()
@@ -118,7 +118,7 @@ void MappingThread::doMergeOptimizationOffset()
 
 	if ( didUpdate ) {
 		_system.publishKeyframeGraph();
-		
+
 	}
 
 	optimizationUpdateMerged.notify();
