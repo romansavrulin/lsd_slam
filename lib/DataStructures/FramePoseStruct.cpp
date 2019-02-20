@@ -30,8 +30,7 @@ int FramePoseStruct::cacheValidCounter = 0;
 int privateFramePoseStructAllocCount = 0;
 
 FramePoseStruct::FramePoseStruct( Frame &f )
-	:frame( f ),
-	graphVertex( nullptr )
+	:frame( f )
 {
 	cacheValidFor = -1;
 	isOptimized = false;
@@ -39,6 +38,8 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	isRegisteredToGraph = false;
 	hasUnmergedPose = false;
 	isInGraph = false;
+
+	this->graphVertex = nullptr;
 
 	privateFramePoseStructAllocCount++;
 	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
