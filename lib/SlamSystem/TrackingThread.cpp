@@ -137,13 +137,6 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
                 // Prod mapping to check the relocalizer
                 _system.mapThread->relocalizer.updateCurrentFrame(newFrame);
                 _system.mapThread->pushDoIteration();
-
-//		unmappedTrackedFrames.notifyAll();
-
-                // {
-                // 	std::lock_guard< std::mutex > lock( unmappedTrackedFramesMutex );
-                // 	unmappedTrackedFramesSignal.notify_one();
-                // }
                 return;
         }
 
@@ -163,7 +156,6 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 
         // DO TRACKING & Show tracking result.
         LOG_IF(DEBUG, Conf().print.threadingInfo) << "TRACKING frame " << newFrame->id() << " onto ref. " << _trackingReference->frameID;
-
 
         SE3 frameToReference_initialEstimate;
         {
@@ -185,9 +177,6 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 
         tracking_lastResidual = _tracker->lastResidual;
         tracking_lastUsage = _tracker->pointUsage;
-        //tracking_lastGoodPerBad = _tracker->lastGoodCount / (_tracker->lastGoodCount + _tracker->lastBadCount);
-        //tracking_lastGoodPerTotal = _tracker->lastGoodCount / (newFrame->width(SE3TRACKING_MIN_LEVEL)*newFrame->height(SE3TRACKING_MIN_LEVEL));
-
 
         if(manualTrackingLossIndicated || _tracker->diverged ||
                 (_system.keyFrameGraph()->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !_tracker->trackingWasGood))
@@ -200,52 +189,18 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
                                 _tracker->diverged ? "DIVERGED" : "NOT DIVERGED");
 
                 _trackingReference->invalidate();
-
                 setTrackingIsBad();
-                //nextRelocIdx = -1;  // What does this do?
-
-                // Kick over the mapping thread
                 _system.mapThread->pushDoIteration();
-                // unmappedTrackedFrames.notifyAll();
-
-                // unmappedTrackedFramesMutex.lock();
-                // unmappedTrackedFramesSignal.notify_one();
-                // unmappedTrackedFramesMutex.unlock();
-
                 manualTrackingLossIndicated = false;
                 return;
         }
-
-
-
-        // if(plotTracking)
-        // {
-        // 	Eigen::Matrix<float, 20, 1> data;
-        // 	data.setZero();
-        // 	data[0] = _tracker->lastResidual;
-        //
-        // 	data[3] = _tracker->lastGoodCount / (tracker->lastGoodCount + _tracker->lastBadCount);
-        // 	data[4] = 4*tracker->lastGoodCount / (float)_conf.slamImage.area();
-        // 	data[5] = _tracker->pointUsage;
-        //
-        // 	data[6] = _tracker->affineEstimation_a;
-        // 	data[7] = _tracker->affineEstimation_b;
-        // 	outputWrapper->publishDebugInfo(data);
-        // }
-
         _system.keyFrameGraph()->addFrame(newFrame);
-
-
-        //Sim3 lastTrackedCamToWorld = mostCurrentTrackedFrame->getCamToWorld();
-//  mostCurrentTrackedFrame->TrackingParent->getCamToWorld() * sim3FromSE3(mostCurrentTrackedFrame->thisToParent_SE3TrackingResult, 1.0);
 
         LOG_IF( DEBUG,  Conf().print.threadingInfo ) << "Publishing tracked frame";
         _system.publishTrackedFrame(newFrame);
         _system.publishPose(newFrame->getCamToWorld().cast<float>());
 
         // Keyframe selection
-        // latestTrackedFrame = trackingNewFrame;
-        //if (!my_createNewKeyframe && _map.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
         LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
         LOG_IF( INFO, Conf().print.threadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
@@ -262,7 +217,6 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
                 {
                         LOG(INFO) << "Telling mapping thread to make " << newFrame->id() << " the new keyframe.";
                         _system.mapThread->createNewKeyFrame( newFrame );
-                        // createNewKeyFrame = true;
 
                         LOGF_IF( INFO, Conf().print.keyframeSelectionInfo,
                                                         "SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
@@ -277,10 +231,6 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 
         LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Push unmapped tracked frame.";
         _system.mapThread->pushUnmappedTrackedFrame( newFrame );
-
-        // unmappedTrackedFrames.notifyAll();
-                // unmappedTrackedFramesSignal.notify_one();
-        // }
 
         // If blocking is requested...
         if( !Conf().runRealTime && trackingIsGood() ){
