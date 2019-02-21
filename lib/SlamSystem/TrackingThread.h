@@ -51,7 +51,8 @@ public:
 	// returns camToWord transformation of the tracked frame.
 	// frameID needs to be monotonically increasing.
 	void trackFrame(const std::shared_ptr<Frame> &newFrame );
-	void trackSet(const std::shared_ptr<ImageSet> &set );
+        //void trackSet(const std::shared_ptr<ImageSet> &set );
+        void trackSet( const std::shared_ptr<ImageSet> &set );
 	//void trackFrame(uchar* image, unsigned int frameID, bool blockUntilMapped, double timestamp );
 
 
