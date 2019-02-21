@@ -435,8 +435,10 @@ bool MappingThread::updateKeyframe()
 
 bool MappingThread::updateImageSet()
 {
-        std::shared_ptr<ImageSet> reference = nullptr;
-        std::deque< std::shared_ptr<ImageSet> > references;
+
+        //TODO Not sure what to do here... should the image set be fed into depth map?
+        std::shared_ptr<Frame> reference = nullptr;
+        std::deque< std::shared_ptr<Frame> > references;
 
         unmappedTrackedFramesMutex.lock();
 
@@ -451,7 +453,7 @@ bool MappingThread::updateImageSet()
                                                 } else {
                                                         LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id() << " which doesn't have a tracking parent";
                                                 }
-                unmappedTrackedFrames.front()->clear_refPixelWasGood();
+                unmappedTrackedSets.front()->refFrame()->clear_refPixelWasGood();
                 unmappedTrackedFrames.pop_front();
         }
 
@@ -459,7 +461,7 @@ bool MappingThread::updateImageSet()
         if(unmappedTrackedFrames.size() > 0) {
                 // Copies all but only pops one?
                  for(unsigned int i=0;i<unmappedTrackedFrames.size(); i++)
-                        references.push_back(unmappedTrackedSets[i]);
+                        references.push_back(unmappedTrackedSets[i]->refFrame());
                 //unmappedTrackedFrames().swap( references );
 
                 std::shared_ptr<Frame> popped = unmappedTrackedFrames.front();
@@ -471,7 +473,7 @@ bool MappingThread::updateImageSet()
 
 
                 //TODO add this in
-                //_system.depthMap()->updateKeyframe(references);
+                _system.depthMap()->updateKeyframe(references);
 
                 popped->clear_refPixelWasGood();
                 references.clear();

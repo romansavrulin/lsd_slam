@@ -130,6 +130,7 @@ private:
 	// == Local functions ==
 
 	bool updateKeyframe();
+        //TODO not sure what to do with this function
         bool updateImageSet();
 
 	void addTimingSamples();

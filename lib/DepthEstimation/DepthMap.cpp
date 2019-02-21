@@ -198,6 +198,8 @@ void DepthMap::updateKeyframe(std::deque< Frame::SharedPtr > referenceFrames)
 
 }
 
+
+
 void DepthMap::invalidate()
 {
 	if(activeKeyFrame==0) return;
