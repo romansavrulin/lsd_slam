@@ -29,10 +29,7 @@
 #include "util/Timer.h"
 
 #include "DataStructures/Frame.h"
-
 #include "DepthMapDebugImages.h"
-
-
 
 namespace lsd_slam
 {
@@ -59,7 +56,6 @@ public:
 	/** Resets everything. */
 	void reset();
 
-	//== The "public API" functions for Depth Map
 	/**
 	 * does obervation and regularization only.
 	 **/
@@ -75,40 +71,47 @@ public:
 	 */
 	void finalizeKeyFrame();
 
-	void invalidateKeyFrame();
-
+	void invalidate();
 	inline bool isValid() {return (bool)activeKeyFrame;};
+
+	//int debugPlotDepthMap();
+	void debugPlotDepthMap( const char *buf1, const char *buf2 );
+	const DepthMapDebugImages &debugImages() const { return _debugImages; }
+
+	// ONLY for debugging, their memory is managed (created & deleted) by this object.
+	// cv::Mat debugImageHypothesisHandling;
+	// cv::Mat debugImageHypothesisPropagation;
+	// cv::Mat debugImageStereoLines;
+	// cv::Mat debugImageDepth;
 
 	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
 	void initializeRandomly( const std::shared_ptr<Frame> &new_frame);
 
 	void activateExistingKF(const Frame::SharedPtr &kf);
 
-	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
+	void logPerformanceData();
 
-	const DepthMapDebugImages &debugImages() const { return _debugImages; }
 
 	struct PerformanceData {
 		PerformanceData( void ) {;}
-		void log();
 
 		MsRateAverage update, create, finalize, observe, regularize, propagate, fillHoles, setDepth;
 	};
 
-	PerformanceData &performanceData() { return _perf; }
+	PerformanceData perf() const { return _perf; }
 
-	void debugPlotDepthMap( const char *buf1, const char *buf2 );
+	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
+
+	IndexThreadReduce threadReducer;
 
 private:
 
-	const ImageSize _imageSize;
-
+ 	PerformanceData _perf;
 	DepthMapDebugImages _debugImages;
 
- 	PerformanceData _perf;
-
-
 	// ============= parameter copies for convenience ===========================
+	// these are just copies of the pointers given to this function, for convenience.
+	// these are NOT managed by this object!
 	Frame::SharedPtr activeKeyFrame;
 	boost::shared_lock<boost::shared_mutex> activeKeyFramelock;
 
@@ -123,46 +126,46 @@ private:
 
 	// ============= internally used buffers for intermediate calculations etc. =============
 	// for internal depth tracking, their memory is managed (created & deleted) by this object.
-	DepthMapPixelHypothesisVector currentDepthMap, scratchDepthMap;
-	std::vector<int> validityIntegralBuffer;
+	DepthMapPixelHypothesis* otherDepthMap;
+	DepthMapPixelHypothesis* currentDepthMap;
+	int* validityIntegralBuffer;
 
 
 
 	// ============ internal functions ==================================================
-
-	// Reset currentDepthMap by re-projecting is from activeKeyFrame to new_keyframe
-	void propagateDepthAndMakeActiveKeyFrame( const Frame::SharedPtr &new_keyframe);
-
-	// The "do depth update" functions
-	void observeDepth();
-	void observeDepthRow(int yMin, int yMax, RunningStats* stats);
-	bool observeDepthCreate(const int &x, const int &y, const int &idx, RunningStats* const &stats);
-	bool observeDepthUpdate(const int &x, const int &y, const int &idx, const float* keyFrameMaxGradBuf, RunningStats* const &stats);
-	bool makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats);
-
 	// does the line-stereo seeking.
 	// takes a lot of parameters, because they all have been pre-computed before.
-	float doLineStereo(
+	inline float doLineStereo(
 			const float u, const float v, const float epxn, const float epyn,
 			const float min_idepth, const float prior_idepth, float max_idepth,
 			const Frame* const referenceFrame, const float* referenceFrameImage,
 			float &result_idepth, float &result_var, float &result_eplLength,
 			RunningStats* const stats);
 
+	// Reset currentDepthMap by re-projecting is from activeKeyFrame to new_keyframe
+	void propagateDepth( const Frame::SharedPtr &new_keyframe);
+
+
+	void observeDepth();
+	void observeDepthRow(int yMin, int yMax, RunningStats* stats);
+	bool observeDepthCreate(const int &x, const int &y, const int &idx, RunningStats* const &stats);
+	bool observeDepthUpdate(const int &x, const int &y, const int &idx, const float* keyFrameMaxGradBuf, RunningStats* const &stats);
+	bool makeAndCheckEPL(const int x, const int y, const Frame* const ref, float* pepx, float* pepy, RunningStats* const stats);
+
 
 	void regularizeDepthMap(bool removeOcclusion, int validityTH);
 	template<bool removeOcclusions> void regularizeDepthMapRow(int validityTH, int yMin, int yMax, RunningStats* stats);
 
+
 	void buildRegIntegralBuffer();
 	void buildRegIntegralBufferRow1(int yMin, int yMax, RunningStats* stats);
-
 	void regularizeDepthMapFillHoles();
 	void regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* stats);
 
+
 	void resetCounters();
 
-	IndexThreadReduce threadReducer;
-
+	//float clocksPropagate, clocksPropagateKF, clocksObserve, msObserve, clocksReg1, clocksReg2, msReg1, msReg2, clocksFinalize;
 };
 
 }

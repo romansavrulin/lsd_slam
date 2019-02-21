@@ -19,16 +19,13 @@
 */
 
 #pragma once
-
 #include <mutex>
-
 #include "util/SophusUtil.h"
 #include "util/settings.h"
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include "DataStructures/FramePoseStruct.h"
 #include "DataStructures/FrameMemory.h"
-#include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "unordered_set"
 #include "util/settings.h"
 #include "util/Configuration.h"
@@ -39,8 +36,7 @@ namespace lsd_slam
 using libvideoio::Camera;
 using libvideoio::ImageSize;
 
-//class DepthMap;
-//class DepthMap::DepthMapPixelHypothesisVector;
+class DepthMapPixelHypothesis;
 class TrackingReference;
 /**
  */
@@ -123,7 +119,7 @@ public:
 	~Frame();
 
 	/** Sets or updates idepth and idepthVar on level zero. Invalidates higher levels. */
-	void setDepth(const DepthMapPixelHypothesisVector &newDepth);
+	void setDepth(const DepthMapPixelHypothesis* newDepth);
 
 	/** Calculates mean information for statistical purposes. */
 	void calculateMeanInformation();
@@ -203,7 +199,8 @@ public:
 	// this is copied into the keyframe when the keyframe is finalized
 	// This used for loop closure and re-localization
 	void setPermaRef( const std::unique_ptr<TrackingReference> &reference);
-	void takeReActivationData(const DepthMapPixelHypothesisVector &depthMap);
+	void takeReActivationData(DepthMapPixelHypothesis* depthMap);
+
 
 	// shared_lock this as long as any minimizable arrays are being used.
 	// the minimizer will only minimize frames after getting
@@ -213,7 +210,6 @@ public:
 		return FrameMemory::getInstance().activateFrame(this);
 	}
 
-	// Big global lock on Frame.  Don't like it.
 	std::mutex frameMutex;
 
 

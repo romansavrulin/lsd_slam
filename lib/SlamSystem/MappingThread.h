@@ -48,7 +48,7 @@ public:
 	void mergeOptimizationUpdate( void )
 	{
 		optimizationUpdateMerged.reset();
-		if( _thread ) _thread->send( std::bind( &MappingThread::doMergeOptimizationOffset, this ));
+		if( _thread ) _thread->send( std::bind( &MappingThread::callbackMergeOptimizationOffset, this ));
 	}
 
 	void createNewKeyFrame( const Frame::SharedPtr &frame )
@@ -94,7 +94,9 @@ private:
 
 	bool doMappingIteration();
 
-	void doMergeOptimizationOffset();
+	void callbackMergeOptimizationOffset();
+
+	// == Local functions ==
 
 	bool updateKeyframe();
 

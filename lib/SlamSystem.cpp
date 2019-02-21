@@ -37,7 +37,6 @@
 #include "util/globalFuncs.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "GlobalMapping/TrackableKeyFrameSearch.h"
-
 #include "DataStructures/FrameMemory.h"
 
 #include "SlamSystem/MappingThread.h"
@@ -46,6 +45,8 @@
 #include "SlamSystem/TrackingThread.h"
 
 using namespace lsd_slam;
+
+
 
 SlamSystem::SlamSystem( )
 : _perf(),
@@ -71,6 +72,8 @@ SlamSystem::SlamSystem( )
 
 SlamSystem::~SlamSystem()
 {
+	// keepRunning = false;
+
 	// make sure no-one is waiting for something.
 	LOG(INFO) << "... waiting for all threads to exit";
 
@@ -82,6 +85,7 @@ SlamSystem::~SlamSystem()
 
 	FrameMemory::getInstance().releaseBuffers();
 
+	// Util::closeAllWindows();
 }
 
 SlamSystem *SlamSystem::fullReset( void )
@@ -114,12 +118,6 @@ void SlamSystem::finalize()
 
 }
 
-// void SlamSystem::requestDepthMapScreenshot(const std::string& filename)
-// {
-// 	depthMapScreenshotFilename = filename;
-// 	depthMapScreenshotFlag = true;
-// }
-
 void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 {
 	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
@@ -128,33 +126,22 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 
 	// Todo.  If multiple images are available in the set,
 	// use stereo disparity to initialize?
-
-	std::shared_ptr<Frame> refFrame( set->refFrame() );
-
-	CHECK( (bool)refFrame ) << "Expected keyframe to be set, but it wasn't";
-	if( refFrame->hasIDepthBeenSet() ) {
-	 	LOG(INFO) << "Using initial Depth estimate in first frame.";
-	 	depthMap()->initializeFromGTDepth( refFrame );
+	if( set->refFrame()->hasIDepthBeenSet() ) {
+		LOG(INFO) << "Using initial Depth estimate in first frame.";
+		depthMap()->initializeFromGTDepth( set->refFrame() );
 	} else {
 		LOG(INFO) << "Doing Random initialization!";
-		depthMap()->initializeRandomly( refFrame );
+		depthMap()->initializeRandomly( set->refFrame() );
 	}
 	updateDisplayDepthMap();
 
 	keyFrameGraph()->addFrame( currentKeyFrame() );
-	/*
-	if( Conf().SLAMEnabled)
-	{
-		boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->idToKeyFrameMutex );
-		keyFrameGraph()->idToKeyFrame.insert(std::make_pair( currentKeyFrame()->id(), currentKeyFrame()));
-	}
-	*/
 
 	if( Conf().continuousPCOutput) {
 		LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
 		publishCurrentKeyframe();
 	}
-	//TODO raises sigint?
+
 	_initialized = true;
 }
 
@@ -244,20 +231,10 @@ void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCa
 	depthMap()->createKeyFrame(newKeyframeCandidate);
 	//_currentKeyFrame = newKeyframeCandidate;								// Locking
 
-
-
-	// if(outputWrapper && printPropagationStatistics)
-	// {
-	//
-	// 	Eigen::Matrix<float, 20, 1> data;
-	// 	data.setZero();
-	// 	data[0] = runningStats.num_prop_attempts / ((float)_Conf().slamImage.area());
-	// 	data[1] = (runningStats.num_prop_created + runningStats.num_prop_merged) / (float)runningStats.num_prop_attempts;
-	// 	data[2] = runningStats.num_prop_removed_colorDiff / (float)runningStats.num_prop_attempts;
-	//
-	// 	outputWrapper->publishDebugInfo(data);
-	// }
 }
+
+
+
 
 //===== Debugging output functions =====
 
@@ -269,16 +246,17 @@ void SlamSystem::logPerformanceData()
 	{
 
 		LOGF(DEBUG, "Mapping: %3.1fms (%.1fHz); Track: %3.1fms (%.1fHz); Create: %3.1fms (%.1fHz); FindRef: %3.1fms (%.1fHz); PermaTrk: %3.1fms (%.1fHz); Opt: %3.1fms (%.1fHz); FindConst: %3.1fms (%.1fHz);\n",
-					depthMap()->performanceData().update.ms(), depthMap()->performanceData().update.rate(),
+					depthMap()->perf().update.ms(), depthMap()->perf().update.rate(),
 					trackingThread->perf().track.ms(),  trackingThread->perf().track.rate(),
-					depthMap()->performanceData().create.ms()+depthMap()->performanceData().finalize.ms(), depthMap()->performanceData().create.rate(),
+					depthMap()->perf().create.ms()+depthMap()->perf().finalize.ms(), depthMap()->perf().create.rate(),
 					_perf.findReferences.ms(), _perf.findReferences.rate(),
 					0.0, 0.0,
 					//trackableKeyFrameSearch != 0 ? trackableKeyFrameSearch->trackPermaRef.ms() : 0, trackableKeyFrameSearch != 0 ? trackableKeyFrameSearch->trackPermaRef.rate() : 0,
 					optThread->perf.ms(), optThread->perf.rate(),
 					constraintThread->perf().findConstraint.ms(), constraintThread->perf().findConstraint.rate() );
 
-		depthMap()->performanceData().log();
+		depthMap()->logPerformanceData();
+
 	}
 
 }
@@ -286,20 +264,19 @@ void SlamSystem::logPerformanceData()
 void SlamSystem::updateDisplayDepthMap()
 {
 	if( !Conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
-
 	double scale = 1;
+
 	if( (bool)currentKeyFrame() ) scale = currentKeyFrame()->getCamToWorld().scale();
 
 	// debug plot depthmap
 	char buf1[200] = "";
 	char buf2[200] = "";
 
-	if( Conf().onSceenInfoDisplay ) {
+	if( Conf().onSceenInfoDisplay ){
 		snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d / %d",
-				depthMap()->performanceData().update.ms(), depthMap()->performanceData().update.rate(),
+				depthMap()->perf().update.ms(), depthMap()->perf().update.rate(),
 				trackingThread->perf().track.ms(), trackingThread->perf().track.rate(),
 				currentKeyFrame()->numFramesTrackedOnThis, currentKeyFrame()->numMappedOnThis ); //, (int)unmappedTrackedFrames().size());
-	}
 
 	// snprintf(buf2,200,"dens %2.0f%%; good %2.0f%%; scale %2.2f; res %2.1f/; usg %2.0f%%; Map: %d F, %d KF, %d E, %.1fm Pts",
 	// 		100*currentKeyFrame->numPoints/(float)(Conf().slamImage.area()),
@@ -312,11 +289,15 @@ void SlamSystem::updateDisplayDepthMap()
 	// 		(int)keyFrameGraph()->edgesAll.size(),
 	// 		1e-6 * (float)keyFrameGraph()->totalPoints);
 
+	}
 
-	depthMap()->debugPlotDepthMap(buf1, buf2);
+	// 	printMessageOnCVImage(depthMap()->debugImageDepth, buf1, buf2);
+
+	depthMap()->debugPlotDepthMap( buf1, buf2 );
+
 
 	CHECK( depthMap()->debugImages().depthImage().data != NULL );
-	if( _outputWrapper ) _outputWrapper->updateDepthImage( depthMap()->debugImages().depthImage().data );
+	publishDepthImage( depthMap()->debugImages().depthImage().data );
 }
 
 

@@ -20,6 +20,7 @@
 
 #include "DataStructures/Frame.h"
 #include "DataStructures/FrameMemory.h"
+#include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "Tracking/TrackingReference.h"
 
 #include "DataStructures/FramePoseStruct.h"
@@ -37,7 +38,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 	: 	data( frameId, timestamp, cam, sz ),
 			pose( new FramePoseStruct(*this) ),
 			_trackingParent( nullptr )
-	{
+{
 	initialize(timestamp);
 
 	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
@@ -68,8 +69,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const float* image )
-	: data( frameId, timestamp, cam, sz  ),
-		pose( new FramePoseStruct(*this) ),
+	:   data( frameId, timestamp, cam, sz ),
+			pose( new FramePoseStruct(*this)),
 		_trackingParent( nullptr )
 {
 	initialize(timestamp);
@@ -130,7 +131,7 @@ void Frame::initialize(double timestamp)
 Frame::~Frame()
 {
 
-	LOGF_IF(INFO, Conf().print.frameBuildDebugInfo, "DELETING frame %d", this->id());
+	LOGF_IF(INFO, Conf().print.frameBuildDebugInfo,"DELETING frame %d", this->id());
 
 	FrameMemory::getInstance().deactivateFrame(this);
 
@@ -168,7 +169,7 @@ bool Frame::isTrackingParent( const SharedPtr &other ) const
 }
 
 
-void Frame::takeReActivationData(const DepthMapPixelHypothesisVector &depthMap)
+void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap)
 {
 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
 
@@ -187,19 +188,15 @@ void Frame::takeReActivationData(const DepthMapPixelHypothesisVector &depthMap)
 	float* idv_pt = data.idepthVar_reAct;
 	unsigned char* val_pt = data.validity_reAct;
 
-	size_t depthMapIdx = 0;
-
-	for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMapIdx)
+	for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap)
 	{
-		const DepthMapPixelHypothesis &target = depthMap[depthMapIdx];
-
-		if(target.isValid)
+		if(depthMap->isValid)
 		{
-			*id_pt = target.idepth;
-			*idv_pt = target.idepth_var;
-			*val_pt = target.validity_counter;
+			*id_pt = depthMap->idepth;
+			*idv_pt = depthMap->idepth_var;
+			*val_pt = depthMap->validity_counter;
 		}
-		else if(target.blacklisted < MIN_BLACKLIST)
+		else if(depthMap->blacklisted < MIN_BLACKLIST)
 		{
 			*idv_pt = -2;
 		}
@@ -264,7 +261,7 @@ void Frame::calculateMeanInformation()
 }
 
 
-void Frame::setDepth(const DepthMapPixelHypothesisVector &newDepth)
+void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
 {
 
 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
@@ -282,19 +279,15 @@ void Frame::setDepth(const DepthMapPixelHypothesisVector &newDepth)
 	float sumIdepth=0;
 	int numIdepth=0;
 
-	size_t newDepthIdx = 0;
-
-	for (; pyrIDepth < pyrIDepthMax; ++ pyrIDepth, ++ pyrIDepthVar, ++ newDepthIdx) //, ++ pyrRefID)
+	for (; pyrIDepth < pyrIDepthMax; ++ pyrIDepth, ++ pyrIDepthVar, ++ newDepth) //, ++ pyrRefID)
 	{
-		const DepthMapPixelHypothesis &target = newDepth[newDepthIdx];
-
-		if (target.isValid && target.idepth_smoothed >= -0.05)
+		if (newDepth->isValid && newDepth->idepth_smoothed >= -0.05)
 		{
-			*pyrIDepth = target.idepth_smoothed;
-			*pyrIDepthVar = target.idepth_var_smoothed;
+			*pyrIDepth = newDepth->idepth_smoothed;
+			*pyrIDepthVar = newDepth->idepth_var_smoothed;
 
 			numIdepth++;
-			sumIdepth += target.idepth_smoothed;
+			sumIdepth += newDepth->idepth_smoothed;
 		}
 		else
 		{
@@ -488,7 +481,7 @@ void Frame::buildImage(int level)
 	int height = data.height[level - 1];
 	const float* source = data.image[level - 1];
 
-	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo, "CREATE Image lvl %d for frame %d,  %f x %f", level, id(), width/2.0, height/2.0);
+	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE Image lvl %d for frame %d,  %f x %f", level, id(), width/2.0, height/2.0);
 
 	if (data.image[level] == 0)
 		data.image[level] = FrameMemory::getInstance().getFloatBuffer(data.width[level] * data.height[level]);
@@ -636,7 +629,7 @@ void Frame::buildGradients(int level)
 	if(data.gradientsValid[level])
 		return;
 
-	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo, "CREATE Gradients lvl %d for frame %d", level, id());
+	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE Gradients lvl %d for frame %d", level, id());
 
 	int width = data.width[level];
 	int height = data.height[level];
@@ -681,7 +674,7 @@ void Frame::buildMaxGradients(int level)
 
 	if(data.maxGradientsValid[level]) return;
 
-	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo, "CREATE AbsGrad lvl %d for frame %d", level, id());
+	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE AbsGrad lvl %d for frame %d", level, id());
 
 	int width = data.width[level];
 	int height = data.height[level];
@@ -777,7 +770,7 @@ void Frame::buildIDepthAndIDepthVar(int level)
 	if(data.idepthValid[level] && data.idepthVarValid[level])
 		return;
 
-	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo, "CREATE IDepth lvl %d for frame %d", level, id());
+	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE IDepth lvl %d for frame %d", level, id());
 
 	int width = data.width[level];
 	int height = data.height[level];

@@ -62,6 +62,43 @@ namespace lsd_slam {
       cv::line(_debugImageStereoLines,a,b,color,1,8,0);
     }
 
+
+    // TODO.  Should expire this version
+    int DepthMapDebugImages::debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame,  DepthMapPixelHypothesis *currentDepthMap, int refID, const char *buf1, const char *buf2 )
+    {
+    	if(activeKeyFrame == 0) return 1;
+
+    	cv::Mat keyFrameImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(activeKeyFrame->image(0)));
+    	cv::Mat keyFrameGray( keyFrameImage.size(), CV_8UC1 );
+    	keyFrameImage.convertTo(keyFrameGray, CV_8UC1);
+    	cv::cvtColor(keyFrameGray, _debugImageDepth, CV_GRAY2RGB);
+
+    	// debug plot & publish sparse version?
+
+      // TODO.  Fix this ...
+    	//int refID = referenceFrameByID_offset;
+
+
+    	for(int y=0;y<(_imageSize.height);y++)
+    		for(int x=0;x<(_imageSize.width);x++)
+    		{
+    			int idx = x + y*_imageSize.width;
+
+    			if(currentDepthMap[idx].blacklisted < MIN_BLACKLIST && Conf().debugDisplay == 2)
+    				_debugImageDepth.at<cv::Vec3b>(y,x) = cv::Vec3b(0,0,255);
+
+    			if(!currentDepthMap[idx].isValid) continue;
+
+    			cv::Vec3b color = currentDepthMap[idx].getVisualizationColor(refID);
+    			_debugImageDepth.at<cv::Vec3b>(y,x) = color;
+    		}
+
+        printMessageOnCVImage(_debugImageDepth, buf1, buf2);
+
+    	return 1;
+    }
+
+
     int DepthMapDebugImages::debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame, const DepthMapPixelHypothesisVector &currentDepthMap, int refID, const char *buf1, const char *buf2 )
     {
     	if(activeKeyFrame == 0) return 1;

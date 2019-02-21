@@ -17,8 +17,7 @@
 
 namespace lsd_slam {
 
-	using active_object::Active;
-	//using active_object::ActiveIdle;
+using active_object::Active;
 
 // static const bool depthMapScreenshotFlag = true;
 
@@ -57,7 +56,7 @@ void MappingThread::callbackUnmappedTrackedFrames( void )
 			nMapped = unmappedTrackedFrames.back()->trackingParent()->numMappedOnThisTotal < 10;
 	}
 
-	LOG(DEBUG) << "In callback with " << sz << " tracked frames ready to map";
+	LOG(INFO) << "In unmapped tracked frames callback with " << sz << " frames";
 
 	if(sz < 50 ||
 	  (sz < 100 && nMapped) ) {
@@ -75,12 +74,11 @@ void MappingThread::callbackUnmappedTrackedFrames( void )
 		//}
 	}
 
-	LOG(DEBUG) << "Done mapping.";
+	LOG(INFO) << "Done mapping.";
 }
 
-void MappingThread::doMergeOptimizationOffset()
+void MappingThread::callbackMergeOptimizationOffset()
 {
-	//TODO... This function is never called. Publishing graph data with keyframes
 	LOG(DEBUG) << "Merging optimization offset";
 
 	// lets us put the publishKeyframeGraph outside the mutex lock
@@ -101,7 +99,6 @@ void MappingThread::doMergeOptimizationOffset()
 
 	if ( didUpdate ) {
 		_system.publishKeyframeGraph();
-
 	}
 
 	optimizationUpdateMerged.notify();
@@ -195,7 +192,7 @@ bool MappingThread::doMappingIteration()
 			else
 				discardCurrentKeyframe();
 
-			_system.depthMap()->invalidateKeyFrame();
+			_system.depthMap()->invalidate();
 		}
 
 		// start relocalizer if it isnt running already
@@ -311,7 +308,6 @@ void MappingThread::finishCurrentKeyframe()
 	}
 
 	LOG(DEBUG) << "Finishing current keyframe, publishing keyframe " << _system.currentKeyFrame()->id();
-
 	_system.publishCurrentKeyframe();
 	//Publish graph and pointcloud at same frequency as Key Frame
 	_system.publishKeyframeGraph();
@@ -329,8 +325,11 @@ void MappingThread::discardCurrentKeyframe()
 		return;
 	}
 
-	_system.depthMap()->invalidateKeyFrame();
+
+	_system.depthMap()->invalidate();
+
 	_system.keyFrameGraph()->dropKeyFrame( _system.currentKeyFrame() );
+
 }
 
 

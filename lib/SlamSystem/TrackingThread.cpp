@@ -143,11 +143,9 @@ void TrackingThread::trackFrame( const std::shared_ptr<Frame> &newFrame )
 	}
 
 	// Are the following two calls atomic enough or should I lock before the next two lines?
-	Frame::SharedPtr keyframe;
-	{
-		std::lock_guard<std::mutex> guard( _system.currentKeyFrame()->frameMutex );
-		keyframe = _system.currentKeyFrame();
-	}
+	_system.currentKeyFrame()->frameMutex.lock();
+	Frame::SharedPtr keyframe( _system.currentKeyFrame() );
+	_system.currentKeyFrame()->frameMutex.unlock();
 
 	if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag ) {
 		LOG(DEBUG) << "Importing new tracking reference from frame " << keyframe->id();
@@ -241,12 +239,13 @@ void TrackingThread::trackFrame( const std::shared_ptr<Frame> &newFrame )
 	_system.publishPose(newFrame->getCamToWorld().cast<float>());
 
 	// Keyframe selection
+	// latestTrackedFrame = trackingNewFrame;
+	//if (!my_createNewKeyframe && _map.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
 	LOG_IF( INFO, Conf().print.threadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
 
 	if(!_system.mapThread->newKeyFramePending() && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
 	{
-		// Consider switching to a new keyframe...
 		Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _system.currentKeyFrame()->meanIdepth;
 		float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
 
