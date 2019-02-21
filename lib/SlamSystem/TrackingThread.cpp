@@ -217,7 +217,8 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
                 if (lastTrackingClosenessScore > minVal)
                 {
                         LOG(INFO) << "Telling mapping thread to make " << set->refFrame()->id() << " the new keyframe.";
-                        _system.mapThread->createNewKeyFrame( set->refFrame() );
+                        //_system.mapThread->createNewKeyFrame( set->refFrame() );
+                        _system.mapThread->createNewImageSet( set );
 
                         LOGF_IF( INFO, Conf().print.keyframeSelectionInfo,
                                                         "SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",set->refFrame()->id(),set->refFrame()->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));

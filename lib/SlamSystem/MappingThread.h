@@ -45,6 +45,18 @@ public:
 		if( _thread ) _thread->send( std::bind( &MappingThread::callbackUnmappedTrackedFrames, this ));
 	}
 
+        void pushUnmappedTrackedSet (const ImageSet::SharedPtr &set)
+        {
+            {
+                //TODO use the unmappedTrackedFramesMutex or create a new one for the set?
+                std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
+                unmappedTrackedSets.push_back( set );
+            }
+
+            if( _thread ) _thread->send( std::bind( &MappingThread::callbackUnmappedTrackedSet, this ));
+
+        }
+
 	void mergeOptimizationUpdate( void )
 	{
 		optimizationUpdateMerged.reset();
@@ -84,6 +96,8 @@ public:
 	// std::mutex currentKeyFrameMutex;
 
 	std::deque< Frame::SharedPtr > unmappedTrackedFrames;
+        std::deque< ImageSet::SharedPtr > unmappedTrackedSets;
+
 	std::mutex unmappedTrackedFramesMutex;
 	ThreadSynchronizer trackedFramesMapped;
 
@@ -98,22 +112,25 @@ private:
 
 	SlamSystem &_system;
 
-        MutexObject <ImageSet::SharedPtr> _newImageSet;
+        MutexObject< ImageSet::SharedPtr > _newImageSet;
 	MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
 	void callbackUnmappedTrackedFrames( void );
+        void callbackUnmappedTrackedSet ( void );
 	//void callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame );
 
 	// == Local functions ==
 
 	bool doMappingIteration();
+        bool doMappingIterationSet();
 
 	void callbackMergeOptimizationOffset();
 
 	// == Local functions ==
 
 	bool updateKeyframe();
+        bool updateImageSet();
 
 	void addTimingSamples();
 
