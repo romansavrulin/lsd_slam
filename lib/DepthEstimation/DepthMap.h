@@ -29,6 +29,7 @@
 #include "util/Timer.h"
 
 #include "DataStructures/Frame.h"
+#include "DataStructures/ImageSet.h"
 #include "DepthMapDebugImages.h"
 
 namespace lsd_slam
@@ -85,6 +86,7 @@ public:
 	// cv::Mat debugImageDepth;
 
 	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
+        void initializefromStereo( const std::shared_ptr<ImageSet> &set);
 	void initializeRandomly( const std::shared_ptr<Frame> &new_frame);
 
 	void activateExistingKF(const Frame::SharedPtr &kf);

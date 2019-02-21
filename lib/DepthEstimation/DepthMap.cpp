@@ -327,43 +327,6 @@ void DepthMap::finalizeKeyFrame()
 	_perf.finalize.update( timeAll );
 }
 
-void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
-{
-	activeKeyFramelock = new_frame->getActiveLock();
-	activeKeyFrame = new_frame;
-	//activeKeyFrameImageData = activeKeyFrame->image(0);
-	activeKeyFrameIsReactivated = false;
-
-	const float* maxGradients = new_frame->maxGradients();
-
-	for(int y=1; y<(Conf().slamImageSize.height-1); y++)
-	{
-		for(int x=1; x<(Conf().slamImageSize.width-1); x++)
-		{
-			int idx = x+y*Conf().slamImageSize.width;
-			if(maxGradients[idx] > MIN_ABS_GRAD_CREATE)
-			{
-				float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
-				currentDepthMap[idx] = DepthMapPixelHypothesis(
-						idepth,
-						idepth,
-						VAR_RANDOM_INIT_INITIAL,
-						VAR_RANDOM_INIT_INITIAL,
-						20,
-					  Conf().debugDisplay );
-			}
-			else
-			{
-				currentDepthMap[idx].isValid = false;
-				currentDepthMap[idx].blacklisted = 0;
-			}
-		}
-	}
-
-	activeKeyFrame->setDepth(currentDepthMap);
-}
-
-
 
 void DepthMap::activateExistingKF( const Frame::SharedPtr &kf)
 {
@@ -409,6 +372,49 @@ void DepthMap::activateExistingKF( const Frame::SharedPtr &kf)
 	}
 
 	regularizeDepthMap(false, VAL_SUM_MIN_FOR_KEEP);
+}
+
+void DepthMap::initializefromStereo( const std::shared_ptr<ImageSet> &set)
+{
+    //TODO Initalzie from stereo images
+
+    initializeRandomly(set->refFrame());
+}
+
+void DepthMap::initializeRandomly( const Frame::SharedPtr &new_frame)
+{
+        activeKeyFramelock = new_frame->getActiveLock();
+        activeKeyFrame = new_frame;
+        //activeKeyFrameImageData = activeKeyFrame->image(0);
+        activeKeyFrameIsReactivated = false;
+
+        const float* maxGradients = new_frame->maxGradients();
+
+        for(int y=1; y<(Conf().slamImageSize.height-1); y++)
+        {
+                for(int x=1; x<(Conf().slamImageSize.width-1); x++)
+                {
+                        int idx = x+y*Conf().slamImageSize.width;
+                        if(maxGradients[idx] > MIN_ABS_GRAD_CREATE)
+                        {
+                                float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
+                                currentDepthMap[idx] = DepthMapPixelHypothesis(
+                                                idepth,
+                                                idepth,
+                                                VAR_RANDOM_INIT_INITIAL,
+                                                VAR_RANDOM_INIT_INITIAL,
+                                                20,
+                                          Conf().debugDisplay );
+                        }
+                        else
+                        {
+                                currentDepthMap[idx].isValid = false;
+                                currentDepthMap[idx].blacklisted = 0;
+                        }
+                }
+        }
+
+        activeKeyFrame->setDepth(currentDepthMap);
 }
 
 

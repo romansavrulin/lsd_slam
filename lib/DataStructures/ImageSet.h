@@ -49,8 +49,9 @@ namespace lsd_slam
     Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
 
     void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam );
-    void setReferenceFrame(const unsigned int &frameNum);
-    unsigned int getFrameId();
+    Sophus::Sim3 getRefTransformation() {return _frames[_refFrame]->getCamToWorld();}
+    void setReferenceFrame(const unsigned int &frameNum){_refFrame = frameNum;}
+    unsigned int getImgeSetId() {return _frameId;}
 
   private:
 

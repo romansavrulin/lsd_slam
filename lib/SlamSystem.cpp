@@ -130,8 +130,9 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 		LOG(INFO) << "Using initial Depth estimate in first frame.";
 		depthMap()->initializeFromGTDepth( set->refFrame() );
 	} else {
-		LOG(INFO) << "Doing Random initialization!";
-		depthMap()->initializeRandomly( set->refFrame() );
+                LOG(INFO) << "Doing Stereo initialization!";
+                //depthMap()->initializeRandomly( set->refFrame() );
+                depthMap()->initializefromStereo(set);
 	}
 	updateDisplayDepthMap();
 

@@ -97,7 +97,7 @@ public:
 	Sophus::Sim3d getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
-	Frame::SharedPtr &currentKeyFrame() { return depthMap()->currentKeyFrame(); };
+        Frame::SharedPtr &currentKeyFrame() { return depthMap()->currentKeyFrame(); }
 
 	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
 	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );

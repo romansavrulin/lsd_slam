@@ -22,15 +22,5 @@ namespace lsd_slam {
     _frames.push_back(std::make_shared<Frame>(_frameId, cam, img.size(), 0.0, img.data));
   }
 
-  void ImageSet::setReferenceFrame(const unsigned int &frameNum)
-  {
-    _refFrame = frameNum;
-  }
-
-  unsigned int ImageSet::getFrameId()
-  {
-      return _frameId;
-  }
-
 
 }

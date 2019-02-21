@@ -168,8 +168,8 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 
         LOG(DEBUG) << "Start tracking...";
         SE3 newRefToFrame_poseUpdate = _tracker->trackFrame( _trackingReference,
-                                                                                                                                                                                                                newFrame,
-                                                                                                                                                                                                                frameToReference_initialEstimate);
+                                                            newFrame,
+                                                            frameToReference_initialEstimate);
 
         LOG(DEBUG) << "Done tracking, took " << timer.stop() * 1000 << " ms";
         _perf.track.update( timer );
@@ -198,7 +198,7 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 
         LOG_IF( DEBUG,  Conf().print.threadingInfo ) << "Publishing tracked frame";
         _system.publishTrackedFrame(newFrame);
-        _system.publishPose(newFrame->getCamToWorld().cast<float>());
+        _system.publishPose(set->getRefTransformation().cast<float>());
 
         // Keyframe selection
         LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
