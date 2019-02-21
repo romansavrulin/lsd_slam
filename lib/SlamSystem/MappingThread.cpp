@@ -15,6 +15,8 @@
 #include "SlamSystem.h"
 #include "util/settings.h"
 
+#include "ros/ros.h"
+
 namespace lsd_slam {
 
 using active_object::Active;
@@ -30,6 +32,7 @@ MappingThread::MappingThread( SlamSystem &system )
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
 		_newKeyFrame( nullptr ),
+                _newImageSet( nullptr ),
 		_thread( Active::createActive() )
 {
 	LOG(INFO) << "Started Mapping thread";
@@ -118,6 +121,7 @@ void MappingThread::callbackMergeOptimizationOffset()
 
 bool MappingThread::doMappingIteration()
 {
+
 	// If there's no keyframe, then give up
 	if( !(bool)_system.currentKeyFrame() ) {
 		LOG(INFO) << "Nothing to map: no keyframe";
@@ -147,7 +151,7 @@ bool MappingThread::doMappingIteration()
 	// 	dumpMap = false;
 	// }
 
-		bool didSomething = true;
+        bool didSomething = true;
 
 	// set mappingFrame
 	if( _system.trackingThread->trackingIsGood() )
@@ -180,6 +184,8 @@ bool MappingThread::doMappingIteration()
 
 		LOG(DEBUG) << "Tracking is good, updating key frame, " << (didSomething ? "DID" : "DIDN'T") << " do something";
 	}
+
+        //TODO have not seen this entered before?
 	else
 	{
 		LOG(INFO) << "Tracking is bad";
@@ -274,7 +280,7 @@ bool MappingThread::updateKeyframe()
 
 	_system.publishCurrentKeyframe();
 	//TODO when should we update the pointcloud?
-	_system.publishPointCloud();
+        //_system.publishPointCloud();
 
 	return true;
 }
@@ -309,9 +315,8 @@ void MappingThread::finishCurrentKeyframe()
 
 	LOG(DEBUG) << "Finishing current keyframe, publishing keyframe " << _system.currentKeyFrame()->id();
 	_system.publishCurrentKeyframe();
-	//Publish graph and pointcloud at same frequency as Key Frame
 	_system.publishKeyframeGraph();
-	_system.publishPointCloud();
+        //_system.publishPointCloud();
 }
 
 void MappingThread::discardCurrentKeyframe()

@@ -38,6 +38,7 @@
 // #include <g2o/core/robust_kernel_impl.h>
 // #include "DataStructures/FrameMemory.h"
 // #include "deque
+#include "ros/ros.h"
 
 #include "SlamSystem/MappingThread.h"
 
@@ -131,11 +132,11 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 {
 
-        const std::shared_ptr<Frame> newFrame = set->refFrame();
+        //const std::shared_ptr<Frame> newFrame = set->refFrame();
 
         if(!_trackingIsGood) {
                 // Prod mapping to check the relocalizer
-                _system.mapThread->relocalizer.updateCurrentFrame(newFrame);
+                _system.mapThread->relocalizer.updateCurrentFrame(set->refFrame());
                 _system.mapThread->pushDoIteration();
                 return;
         }
@@ -155,7 +156,7 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
         FramePoseStruct &trackingReferencePose( *_trackingReference->keyframe->pose);
 
         // DO TRACKING & Show tracking result.
-        LOG_IF(DEBUG, Conf().print.threadingInfo) << "TRACKING frame " << newFrame->id() << " onto ref. " << _trackingReference->frameID;
+        LOG_IF(DEBUG, Conf().print.threadingInfo) << "TRACKING frame " << set->refFrame()->id() << " onto ref. " << _trackingReference->frameID;
 
         SE3 frameToReference_initialEstimate;
         {
@@ -168,7 +169,7 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 
         LOG(DEBUG) << "Start tracking...";
         SE3 newRefToFrame_poseUpdate = _tracker->trackFrame( _trackingReference,
-                                                            newFrame,
+                                                            set->refFrame(),
                                                             frameToReference_initialEstimate);
 
         LOG(DEBUG) << "Done tracking, took " << timer.stop() * 1000 << " ms";
@@ -182,7 +183,7 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
                 (_system.keyFrameGraph()->keyframesAll.size() > INITIALIZATION_PHASE_COUNT && !_tracker->trackingWasGood))
         {
                 LOGF(WARNING, "TRACKING LOST for frame %d (%1.2f%% good Points, which is %1.2f%% of available points; %s tracking; tracker has %s)!\n",
-                                newFrame->id(),
+                                set->refFrame()->id(),
                                 100*_tracker->_pctGoodPerTotal,
                                 100*_tracker->_pctGoodPerGoodBad,
                                 _tracker->trackingWasGood ? "GOOD" : "BAD",
@@ -194,15 +195,15 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
                 manualTrackingLossIndicated = false;
                 return;
         }
-        _system.keyFrameGraph()->addFrame(newFrame);
+        _system.keyFrameGraph()->addFrame(set->refFrame());
 
         LOG_IF( DEBUG,  Conf().print.threadingInfo ) << "Publishing tracked frame";
-        _system.publishTrackedFrame(newFrame);
+        _system.publishTrackedFrame(set->refFrame());
         _system.publishPose(set->getRefTransformation().cast<float>());
 
         // Keyframe selection
-        LOG(INFO) << "While tracking " << newFrame->id() << " the keyframe is " << _system.currentKeyFrame()->id();
-        LOG_IF( INFO, Conf().print.threadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << newFrame->id() << " as new keyframe.";
+        LOG(INFO) << "While tracking " << set->refFrame()->id() << " the keyframe is " << _system.currentKeyFrame()->id();
+        LOG_IF( INFO, Conf().print.threadingInfo ) << _system.currentKeyFrame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _system.currentKeyFrame()->id() << ", considering " << set->refFrame()->id() << " as new keyframe.";
 
         if(!_system.mapThread->newKeyFramePending() && _system.currentKeyFrame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
         {
@@ -215,22 +216,22 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 
                 if (lastTrackingClosenessScore > minVal)
                 {
-                        LOG(INFO) << "Telling mapping thread to make " << newFrame->id() << " the new keyframe.";
-                        _system.mapThread->createNewKeyFrame( newFrame );
+                        LOG(INFO) << "Telling mapping thread to make " << set->refFrame()->id() << " the new keyframe.";
+                        _system.mapThread->createNewKeyFrame( set->refFrame() );
 
                         LOGF_IF( INFO, Conf().print.keyframeSelectionInfo,
-                                                        "SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
+                                                        "SELECT KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",set->refFrame()->id(),set->refFrame()->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
                 }
                 else
                 {
                         LOGF_IF( INFO, Conf().print.keyframeSelectionInfo,
-                                                        "SKIPPD KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",newFrame->id(),newFrame->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
+                                                        "SKIPPD KEYFRAME %d on %d! dist %.3f + usage %.3f = %.3f > 1\n",set->refFrame()->id(),set->refFrame()->trackingParent()->id(), dist.dot(dist), _tracker->pointUsage, _system.trackableKeyFrameSearch()->getRefFrameScore(dist.dot(dist), _tracker->pointUsage));
 
                 }
         }
 
         LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Push unmapped tracked frame.";
-        _system.mapThread->pushUnmappedTrackedFrame( newFrame );
+        _system.mapThread->pushUnmappedTrackedFrame( set->refFrame() );
 
         // If blocking is requested...
         if( !Conf().runRealTime && trackingIsGood() ){
@@ -410,9 +411,12 @@ void TrackingThread::trackFrame( const std::shared_ptr<Frame> &newFrame )
 
 // n.b. this function will be called from the mapping thread.  Ensure
 // locking is in place.
+
+//TODO I don't think this is ever entered?
+//If it is, need to add pushUnmappedTrackedSet
 void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 {
-
+        ROS_WARN("HERE");
 	// Frame* keyframe;
 	// int succFrameID;
 	// SE3 succFrameToKF_init;

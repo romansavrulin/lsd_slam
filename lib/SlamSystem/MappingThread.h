@@ -53,8 +53,12 @@ public:
 
 	void createNewKeyFrame( const Frame::SharedPtr &frame )
 	{
-		if( newKeyFramePending() ) LOG(WARNING) << "Asked to make " << frame->id() << " a keyframe when " << _newKeyFrame()->id() << " is already pending";
-		_newKeyFrame = frame;
+                if( newKeyFramePending() )
+                {
+
+                    LOG(WARNING) << "Asked to make " << frame->id() << " a keyframe when " << _newKeyFrame()->id() << " is already pending";
+                }
+                _newKeyFrame = frame;
 	}
 
 	bool newKeyFramePending( void )
@@ -62,9 +66,19 @@ public:
 			return (bool)(_newKeyFrame.get());
 	}
 
-	void gtDepthInit( const Frame::SharedPtr &frame );
-	void randomInit( const Frame::SharedPtr &frame );
+        void createNewImageSet( const ImageSet::SharedPtr &set )
+        {
+                if( newImageSetPending() )
+                {
+                    LOG(WARNING) << "Asked to make " << set->id() << " a keyframe when " << _newImageSet()->id() << " is already pending";
+                }
+                _newImageSet = set;
+        }
 
+        bool newImageSetPending( void )
+        {
+                        return (bool)(_newImageSet.get());
+        }
 
 	// SET & READ EVERYWHERE
 	// std::mutex currentKeyFrameMutex;
@@ -84,6 +98,7 @@ private:
 
 	SlamSystem &_system;
 
+        MutexObject <ImageSet::SharedPtr> _newImageSet;
 	MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
