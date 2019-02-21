@@ -30,24 +30,19 @@ public:
 	~MappingThread();
 
 	//=== Callbacks into the thread ===
-	// void pushGoodTrackingIteration()
-	// {
-	// 	if( _thread ) _thread->send( std::bind( &MappingThread::doGoodTrackingIteration, this ));
-	// }
-
-	void pushBadTrackingIteration( Frame::SharedPtr frame )
+	void pushDoIteration()
 	{
-		if( _thread ) _thread->send( std::bind( &MappingThread::doBadTrackingIteration, this, frame ));
+		if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
 	}
 
-	void pushTrackedFrameToMapping( const Frame::SharedPtr &frame )
+	void pushUnmappedTrackedFrame( const Frame::SharedPtr &frame )
 	{
 		{
 			std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
 			unmappedTrackedFrames.push_back( frame );
 		}
 
-		//if( _thread ) _thread->send( std::bind( &MappingThread::doTrackedFrameToMap, this ));
+		if( _thread ) _thread->send( std::bind( &MappingThread::callbackUnmappedTrackedFrames, this ));
 	}
 
 	void mergeOptimizationUpdate( void )
@@ -56,16 +51,15 @@ public:
 		if( _thread ) _thread->send( std::bind( &MappingThread::doMergeOptimizationOffset, this ));
 	}
 
-	void pushNewKeyFrame( const Frame::SharedPtr frame )
+	void createNewKeyFrame( const Frame::SharedPtr &frame )
 	{
-		if( newKeyFramePending() ) LOG(WARNING) << "Asked to make " << frame->id() << " a keyframe when a frame is already pending";
-		_newKeyFramePending = true;
-		if( _thread ) _thread->send( std::bind( &MappingThread::doNewKeyFrame, this, frame ));
+		if( newKeyFramePending() ) LOG(WARNING) << "Asked to make " << frame->id() << " a keyframe when " << _newKeyFrame()->id() << " is already pending";
+		_newKeyFrame = frame;
 	}
 
 	bool newKeyFramePending( void )
 	{
-			return _newKeyFramePending;
+			return (bool)(_newKeyFrame.get());
 	}
 
 	void gtDepthInit( const Frame::SharedPtr &frame );
@@ -90,16 +84,18 @@ private:
 
 	SlamSystem &_system;
 
-	bool _newKeyFramePending;
+	MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
-	void doProcessTrackedFrames( void );
-	void doBadTrackingIteration( const Frame::SharedPtr &frame );
-	void doNewKeyFrame( const Frame::SharedPtr &frame );
-	void doMergeOptimizationOffset();
+	void callbackUnmappedTrackedFrames( void );
+	//void callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame );
 
 	// == Local functions ==
-	
+
+	bool doMappingIteration();
+
+	void doMergeOptimizationOffset();
+
 	bool updateKeyframe();
 
 	void addTimingSamples();
@@ -115,7 +111,7 @@ private:
 	// //int nextRelocIdx;
 	// std::shared_ptr<Frame> latestFrameTriedForReloc;
 
-	std::unique_ptr<active_object::ActiveIdle> _thread;
+	std::unique_ptr<active_object::Active> _thread;
 
 };
 

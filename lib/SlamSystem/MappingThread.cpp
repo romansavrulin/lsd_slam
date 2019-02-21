@@ -17,7 +17,8 @@
 
 namespace lsd_slam {
 
-using active_object::ActiveIdle;
+	using active_object::Active;
+	//using active_object::ActiveIdle;
 
 // static const bool depthMapScreenshotFlag = true;
 
@@ -29,8 +30,8 @@ MappingThread::MappingThread( SlamSystem &system )
 		relocalizer(),
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
-		_newKeyFramePending( false ),
-		_thread( ActiveIdle::createActiveIdle( std::bind( &MappingThread::doProcessTrackedFrames, this ), std::chrono::milliseconds(200)) )
+		_newKeyFrame( nullptr ),
+		_thread( Active::createActive() )
 {
 	LOG(INFO) << "Started Mapping thread";
 }
@@ -43,7 +44,8 @@ MappingThread::~MappingThread()
 
 //==== Callbacks ======
 
-void MappingThread::doProcessTrackedFrames( void )
+
+void MappingThread::callbackUnmappedTrackedFrames( void )
 {
 	bool nMapped = false;
 	size_t sz = 0;
@@ -60,26 +62,7 @@ void MappingThread::doProcessTrackedFrames( void )
 	if(sz < 50 ||
 	  (sz < 100 && nMapped) ) {
 
-		bool didSomething = true;
-		while( didSomething ) {
-
-			// If there's no keyframe, then give up
-			if( !(bool)_system.currentKeyFrame() ) {
-				LOG(DEBUG) << "Nothing to map: no keyframe";
-				break;
-			}
-
-			if( !_system.trackingThread->trackingIsGood() ) {
-				LOG(DEBUG) << "Supposed to do good tracking iteration .. but tracking has become bad in the meantime";
-			}
-
-			// Process all of unmappedTrackedFrames
-			didSomething = updateKeyframe();
-
-			_system.updateDisplayDepthMap();
-
-			LOG(DEBUG) << "Tracking is good, updating key frame, " << (didSomething ? "DID" : "DIDN'T") << " do something";
-		}
+		while( doMappingIteration() ) { ; }
 
 		// TODO:  Was originally in the while() loop above.  However, there are
 		// circumstances (if there's one untracked thread in the queue referenced
@@ -124,67 +107,122 @@ void MappingThread::doMergeOptimizationOffset()
 	optimizationUpdateMerged.notify();
 }
 
+// void MappingThread::callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame )
+// {
+// 	LOG(INFO) << "Set " << frame->id() << " as new key frame";
+// 	finishCurrentKeyframe();
+// 	_system.changeKeyframe(frame, false, true, 1.0f);
+//
+// 	_system.updateDisplayDepthMap();
+// }
 
 //==== Actual meat ====
 
-void MappingThread::doNewKeyFrame( const Frame::SharedPtr &newFrame )
-{
-	LOG(INFO) << "Set " << newFrame->id() << " as new key frame";
-	finishCurrentKeyframe();
-	_system.changeKeyframe(newFrame, false, true, 1.0f);
 
-	_newKeyFramePending = false;
-}
-
-void MappingThread::doBadTrackingIteration( const Frame::SharedPtr &newFrame )
+bool MappingThread::doMappingIteration()
 {
 	// If there's no keyframe, then give up
 	if( !(bool)_system.currentKeyFrame() ) {
 		LOG(INFO) << "Nothing to map: no keyframe";
-		return;
+		return false;
 	}
 
-	if( _system.trackingThread->trackingIsGood() ) {
-		LOG(DEBUG) << "Tracking became good while waiting for callback, dropping doBadTracking request";
-		return;
-	}
+		// TODO:  Don't know what circumstances cause this to happens
+	// if(!doMapping && currentKeyFrame()->idxInKeyframes < 0)
+	// {
+	// 	if(currentKeyFrame()->numMappedOnThisTotal >= MIN_NUM_MAPPED)
+	// 		finishCurrentKeyframe();
+	// 	else
+	// 		discardCurrentKeyframe();
+	//
+	// 	map->invalidate();
+	// 	LOGF(INFO, "Finished KF %d as Mapping got disabled!\n",currentKeyFrame()->id());
+	//
+	// 	changeKeyframe(true, true, 1.0f);
+	// }
 
-	relocalizer.updateCurrentFrame(newFrame);
+	//callbackMergeOptimizationOffset();
+	//addTimingSamples();
 
-	// invalidate map if it was valid.
-	if(_system.depthMap()->isValid())
+	// if(dumpMap)
+	// {
+	// 	keyFrameGraph()->dumpMap(packagePath+"/save");
+	// 	dumpMap = false;
+	// }
+
+		bool didSomething = true;
+
+	// set mappingFrame
+	if( _system.trackingThread->trackingIsGood() )
 	{
-		if( _system.currentKeyFrame()->numMappedOnThisTotal >= MIN_NUM_MAPPED)
+		// TODO:  Don't know under what circumstances doMapping = false
+		// if(!doMapping)
+		// {
+		// 	//printf("tryToChange refframe, lastScore %f!\n", lastTrackingClosenessScore);
+		// 	if(_system.trackingThread->lastTrackingClosenessScore > 1)
+		// 		changeKeyframe(true, false, _system.trackingThread->lastTrackingClosenessScore * 0.75);
+		//
+		// 	if (displayDepthMap || depthMapScreenshotFlag)
+		// 		debugDisplayDepthMap();
+		//
+		// 	return false;
+		// }
+
+		std::shared_ptr< Frame > frame( _newKeyFrame.const_ref() );
+		if( frame ) {
+			LOG(INFO) << "Set " << frame->id() << " as new key frame";
 			finishCurrentKeyframe();
-		else
-			discardCurrentKeyframe();
+			_system.changeKeyframe(frame, false, true, 1.0f);
 
-		_system.depthMap()->invalidateKeyFrame();
+			_newKeyFrame().reset();
+		} else {
+			 didSomething = updateKeyframe();
+		}
+
+		_system.updateDisplayDepthMap();
+
+		LOG(DEBUG) << "Tracking is good, updating key frame, " << (didSomething ? "DID" : "DIDN'T") << " do something";
+	}
+	else
+	{
+		LOG(INFO) << "Tracking is bad";
+
+		// invalidate map if it was valid.
+		if(_system.depthMap()->isValid())
+		{
+			if( _system.currentKeyFrame()->numMappedOnThisTotal >= MIN_NUM_MAPPED)
+				finishCurrentKeyframe();
+			else
+				discardCurrentKeyframe();
+
+			_system.depthMap()->invalidateKeyFrame();
+		}
+
+		// start relocalizer if it isnt running already
+		if(!relocalizer.isRunning)
+			relocalizer.start(_system.keyFrameGraph()->keyframesAll);
+
+		// did we find a frame to relocalize with?
+		if(relocalizer.waitResult(50)) {
+
+						// Frame* keyframe;
+						// int succFrameID;
+						// SE3 succFrameToKF_init;
+						// std::shared_ptr<Frame> succFrame;
+						//
+						// relocalizer.stop();
+						// relocalizer.getResult(keyframe, succFrame, succFrameID, succFrameToKF_init);
+
+			relocalizer.stop();
+			RelocalizerResult result( relocalizer.getResult() );
+
+			_system.loadNewCurrentKeyframe(result.keyframe);
+
+			_system.trackingThread->takeRelocalizeResult( result );
+		}
 	}
 
-	// start relocalizer if it isnt running already
-	if(!relocalizer.isRunning)
-		relocalizer.start(_system.keyFrameGraph()->keyframesAll);
-
-	// did we find a frame to relocalize with?
-	if(relocalizer.waitResult(50)) {
-
-					// Frame* keyframe;
-					// int succFrameID;
-					// SE3 succFrameToKF_init;
-					// std::shared_ptr<Frame> succFrame;
-					//
-					// relocalizer.stop();
-					// relocalizer.getResult(keyframe, succFrame, succFrameID, succFrameToKF_init);
-
-		relocalizer.stop();
-		RelocalizerResult result( relocalizer.getResult() );
-
-		_system.loadNewCurrentKeyframe(result.keyframe);
-
-		// Is this the only way to get tracking working again?
-		_system.trackingThread->takeRelocalizeResult( result );
-	}
+	return didSomething;
 }
 
 
