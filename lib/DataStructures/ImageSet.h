@@ -48,10 +48,14 @@ namespace lsd_slam
 
     Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
 
+    void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam );
+    void setReferenceFrame(const unsigned int &frameNum);
+    unsigned int getFrameId();
+
   private:
 
     unsigned int _refFrame;
-
+    unsigned int _frameId;
     std::vector<Frame::SharedPtr> _frames;
     std::vector<Sophus::SE3d> _se3FromFirst;
 
