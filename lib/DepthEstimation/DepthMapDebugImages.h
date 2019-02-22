@@ -35,7 +35,8 @@ public:
 
   void addStereoLine( const cv::Point &a, const cv::Point &b, const cv::Scalar &color );
 
-
+  // TODO.  Should expire the first version.
+  int debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame, DepthMapPixelHypothesis *currentDepthMap, int refID, const char *buf1, const char *buf2 );
   int debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame, const DepthMapPixelHypothesisVector &currentDepthMap, int refID, const char *buf1, const char *buf2 );
 
 

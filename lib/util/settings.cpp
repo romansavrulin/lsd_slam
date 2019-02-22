@@ -97,7 +97,10 @@ bool saveLoopClosureImages =  false;
 bool saveAllTrackingStages = false;
 bool saveAllTrackingStagesInternal = false;
 
+
 bool fullResetRequested = false;
+bool manualTrackingLossIndicated = false;
+
 
 std::string packagePath = "";
 

@@ -45,8 +45,6 @@
 #include "util/ThreadMutexObject.h"
 
 #include "Tracking/Relocalizer.h"
-//
-// #include "ros/ros.h"
 
 namespace lsd_slam
 {
@@ -55,6 +53,7 @@ namespace lsd_slam
 	class Output3DWrapper;
 	class FramePoseStruct;
 	class TrackableKeyFrameSearch;
+
 	class TrackingThread;
 	class OptimizationThread;
 	class MappingThread;
@@ -98,16 +97,21 @@ public:
 	Sophus::Sim3d getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
-	Frame::SharedPtr &currentKeyFrame() { return depthMap()->currentKeyFrame(); };
+        Frame::SharedPtr &currentKeyFrame() { return depthMap()->currentKeyFrame(); }
 
 	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
 	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
 	void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
 
+	// void requestDepthMapScreenshot(const std::string& filename);
+
+	// int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent=true, bool useFABMAP=true, float closeCandidatesTH=1.0);
+
 	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
 	//=== Debugging output functions =====
-	const shared_ptr<Output3DWrapper> &outputWrapper( void ) 					         { return _outputWrapper; }
+	const shared_ptr<Output3DWrapper> &outputWrapper( void )       { return _outputWrapper; }
+	void set3DOutputWrapper( Output3DWrapper* outputWrapper )      {	_outputWrapper.reset(outputWrapper); }
 	void set3DOutputWrapper( const shared_ptr<Output3DWrapper> &outputWrapper) {	_outputWrapper = outputWrapper; }
 
 	void publishPose(const Sophus::Sim3f &pose ) 	                 { if( _outputWrapper ) _outputWrapper->publishPose(pose);}
@@ -115,10 +119,8 @@ public:
 	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
 	void publishKeyframe(  const Frame::SharedPtr &frame );
 	void publishCurrentKeyframe();
-
 	void publishPointCloud();
 	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
-
 
 	void updateDisplayDepthMap();
 
@@ -164,6 +166,7 @@ private:
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;
 
 	std::unique_ptr<DepthMap> _depthMap;
+
 };
 
 }

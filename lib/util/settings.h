@@ -251,6 +251,7 @@ extern bool saveAllTrackingStagesInternal;
 extern std::string packagePath;
 
 extern bool fullResetRequested;
+extern bool manualTrackingLossIndicated;
 class RunningStats
 {
 public:
