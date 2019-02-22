@@ -64,6 +64,7 @@ public:
 	//void changeKeyframe(std::shared_ptr<Frame> candidate, bool noCreate, bool force, float maxScore);
 
 	void takeRelocalizeResult( const RelocalizerResult &result );
+        void takeRelocalizeResult( const RelocalizerResult &result, const ImageSet::SharedPtr &set );
 
  	float lastTrackingClosenessScore;
 

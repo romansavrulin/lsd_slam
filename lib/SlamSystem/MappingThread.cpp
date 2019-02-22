@@ -45,7 +45,7 @@ MappingThread::~MappingThread()
 
 //==== Callbacks ======
 
-
+/* REDUNDANT
 void MappingThread::callbackUnmappedTrackedFrames( void )
 {
 	bool nMapped = false;
@@ -80,7 +80,7 @@ void MappingThread::callbackUnmappedTrackedFrames( void )
 
 	LOG(INFO) << "Done mapping.";
 }
-
+*/
 void MappingThread::callbackUnmappedTrackedSet( void )
 {
         bool nMapped = false;
@@ -154,7 +154,7 @@ void MappingThread::callbackMergeOptimizationOffset()
 
 //==== Actual meat ====
 
-
+/* REDUNDANT
 bool MappingThread::doMappingIteration()
 {
 
@@ -263,6 +263,7 @@ bool MappingThread::doMappingIteration()
 
 	return didSomething;
 }
+*/
 
 bool MappingThread::doMappingIterationSet()
 {
@@ -322,7 +323,7 @@ bool MappingThread::doMappingIterationSet()
 
                         _newImageSet().reset();
                 } else {
-                         didSomething = updateImageSet(); ////
+                         didSomething = updateImageSet();
                 }
 
                 _system.updateDisplayDepthMap();
@@ -366,8 +367,8 @@ bool MappingThread::doMappingIterationSet()
                         RelocalizerResult result( relocalizer.getResult() );
 
                         _system.loadNewCurrentKeyframe(result.keyframe);
-                        //TODO assuming we do step in here, need to update this function...
-                        _system.trackingThread->takeRelocalizeResult( result );
+
+                        _system.trackingThread->takeRelocalizeResult( result, _newImageSet.const_ref() );
                 }
         }
 
@@ -377,7 +378,7 @@ bool MappingThread::doMappingIterationSet()
 
 
 
-
+/* REDUNDANT
 bool MappingThread::updateKeyframe()
 {
 	std::shared_ptr<Frame> reference = nullptr;
@@ -431,11 +432,16 @@ bool MappingThread::updateKeyframe()
 
 	return true;
 }
+*/
 
 bool MappingThread::updateImageSet()
 {
 
-        //TODO Not sure what to do here... should the image set be fed into depth map?
+        //TODO this function deals with ImageSets, but the vector 'refrences
+        // is still of type Frame. Depth map needs to be configured to take a
+        //vector of ImageSets instead of Frames.
+
+        //TODO Feed in ImageSets as apposed to Frames
         std::shared_ptr<Frame> reference = nullptr;
         std::deque< std::shared_ptr<Frame> > references;
 
@@ -471,7 +477,7 @@ bool MappingThread::updateImageSet()
                         "MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame()->id());
 
 
-                //TODO add this in
+
                 _system.depthMap()->updateKeyframe(references);
 
                 popped->clear_refPixelWasGood();

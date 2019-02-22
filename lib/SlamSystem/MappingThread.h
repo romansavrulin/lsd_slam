@@ -32,9 +32,10 @@ public:
 	//=== Callbacks into the thread ===
 	void pushDoIteration()
 	{
-		if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
+                //if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
+                if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIterationSet, this ));
 	}
-
+        /* REDUNDANT
 	void pushUnmappedTrackedFrame( const Frame::SharedPtr &frame )
 	{
 		{
@@ -44,13 +45,11 @@ public:
 
 		if( _thread ) _thread->send( std::bind( &MappingThread::callbackUnmappedTrackedFrames, this ));
 	}
+        */
 
         void pushUnmappedTrackedSet (const ImageSet::SharedPtr &set)
         {
-            //pushUnmappedTrackedFrame(set -> refFrame());
-
             {
-                //TODO use the unmappedTrackedFramesMutex or create a new one for the set?
                 std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
                 unmappedTrackedSets.push_back( set );
             }
@@ -66,6 +65,7 @@ public:
 		if( _thread ) _thread->send( std::bind( &MappingThread::callbackMergeOptimizationOffset, this ));
 	}
 
+        /* REDUNDANT
 	void createNewKeyFrame( const Frame::SharedPtr &frame )
 	{
                 if( newKeyFramePending() )
@@ -80,11 +80,10 @@ public:
 	{
 			return (bool)(_newKeyFrame.get());
 	}
+        */
 
         void createNewImageSet( const ImageSet::SharedPtr &set )
         {
-            //createNewKeyFrame(set->refFrame());
-
                 if( newImageSetPending() )
                 {
                     LOG(WARNING) << "Asked to make " << set->id() << " a keyframe when " << _newImageSet()->id() << " is already pending";
@@ -122,21 +121,20 @@ private:
 	MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
-	void callbackUnmappedTrackedFrames( void );
+        //REDUNDANT void callbackUnmappedTrackedFrames( void );
         void callbackUnmappedTrackedSet ( void );
 	//void callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame );
 
 	// == Local functions ==
 
-	bool doMappingIteration();
+        //REDUNDANT bool doMappingIteration();
         bool doMappingIterationSet();
 
 	void callbackMergeOptimizationOffset();
 
 	// == Local functions ==
 
-	bool updateKeyframe();
-        //TODO not sure what to do with this function
+        //REDUNDANT bool updateKeyframe();
         bool updateImageSet();
 
 	void addTimingSamples();
