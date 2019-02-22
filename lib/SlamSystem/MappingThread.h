@@ -47,6 +47,8 @@ public:
 
         void pushUnmappedTrackedSet (const ImageSet::SharedPtr &set)
         {
+            //pushUnmappedTrackedFrame(set -> refFrame());
+
             {
                 //TODO use the unmappedTrackedFramesMutex or create a new one for the set?
                 std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
@@ -54,6 +56,7 @@ public:
             }
 
             if( _thread ) _thread->send( std::bind( &MappingThread::callbackUnmappedTrackedSet, this ));
+
 
         }
 
@@ -80,11 +83,14 @@ public:
 
         void createNewImageSet( const ImageSet::SharedPtr &set )
         {
+            //createNewKeyFrame(set->refFrame());
+
                 if( newImageSetPending() )
                 {
                     LOG(WARNING) << "Asked to make " << set->id() << " a keyframe when " << _newImageSet()->id() << " is already pending";
                 }
                 _newImageSet = set;
+
         }
 
         bool newImageSetPending( void )

@@ -38,7 +38,6 @@
 // #include <g2o/core/robust_kernel_impl.h>
 // #include "DataStructures/FrameMemory.h"
 // #include "deque
-#include "ros/ros.h"
 
 #include "SlamSystem/MappingThread.h"
 
@@ -132,8 +131,6 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 {
 
-        //const std::shared_ptr<Frame> newFrame = set->refFrame();
-
         if(!_trackingIsGood) {
                 // Prod mapping to check the relocalizer
                 _system.mapThread->relocalizer.updateCurrentFrame(set->refFrame());
@@ -217,6 +214,8 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
                 if (lastTrackingClosenessScore > minVal)
                 {
                         LOG(INFO) << "Telling mapping thread to make " << set->refFrame()->id() << " the new keyframe.";
+
+                        //CREATE THE NEW FRAME/SET
                         //_system.mapThread->createNewKeyFrame( set->refFrame() );
                         _system.mapThread->createNewImageSet( set );
 
@@ -232,11 +231,14 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
         }
 
         LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Push unmapped tracked frame.";
-        _system.mapThread->pushUnmappedTrackedFrame( set->refFrame() );
+
+        //ADD UNTRACKED FRAME/SET
+        //_system.mapThread->pushUnmappedTrackedFrame( set->refFrame() );
+        _system.mapThread->pushUnmappedTrackedSet( set );
 
         // If blocking is requested...
         if( !Conf().runRealTime && trackingIsGood() ){
-                while( _system.mapThread->unmappedTrackedFrames.size() > 0 ) {
+                while( _system.mapThread->unmappedTrackedSets.size() > 0 ) {
                         _system.mapThread->trackedFramesMapped.wait( );
                 }
         }
@@ -244,6 +246,7 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
         LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Exiting trackFrame";
 
 }
+
 
 void TrackingThread::trackFrame( const std::shared_ptr<Frame> &newFrame )
 {
@@ -417,7 +420,6 @@ void TrackingThread::trackFrame( const std::shared_ptr<Frame> &newFrame )
 //If it is, need to add pushUnmappedTrackedSet
 void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 {
-        ROS_WARN("HERE");
 	// Frame* keyframe;
 	// int succFrameID;
 	// SE3 succFrameToKF_init;

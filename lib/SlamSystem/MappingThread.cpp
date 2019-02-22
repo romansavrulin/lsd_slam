@@ -15,7 +15,6 @@
 #include "SlamSystem.h"
 #include "util/settings.h"
 
-#include "ros/ros.h"
 
 namespace lsd_slam {
 
@@ -317,7 +316,7 @@ bool MappingThread::doMappingIterationSet()
 
                 std::shared_ptr< ImageSet > set( _newImageSet.const_ref() );
                 if( set ) {
-                        LOG(INFO) << "Set " << set->refFrame()->id() << " as new key frame";
+                        LOG(INFO) << "Set " << set->id() << " as new key frame";
                         finishCurrentKeyframe();
                         _system.changeKeyframe(set->refFrame(), false, true, 1.0f);
 
@@ -451,21 +450,21 @@ bool MappingThread::updateImageSet()
                                                                         << " its has tracking parent " << unmappedTrackedSets.front()->refFrame()->trackingParent()->id()
                                                                                 << " current keyframe is " << _system.currentKeyFrame()->id();
                                                 } else {
-                                                        LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id() << " which doesn't have a tracking parent";
+                                                        LOG(INFO) << "Dropping frame " << unmappedTrackedSets.front()->id() << " which doesn't have a tracking parent";
                                                 }
                 unmappedTrackedSets.front()->refFrame()->clear_refPixelWasGood();
-                unmappedTrackedFrames.pop_front();
+                unmappedTrackedSets.pop_front();
         }
 
         // clone list
-        if(unmappedTrackedFrames.size() > 0) {
+        if(unmappedTrackedSets.size() > 0) {
                 // Copies all but only pops one?
-                 for(unsigned int i=0;i<unmappedTrackedFrames.size(); i++)
+                 for(unsigned int i=0;i<unmappedTrackedSets.size(); i++)
                         references.push_back(unmappedTrackedSets[i]->refFrame());
                 //unmappedTrackedFrames().swap( references );
 
-                std::shared_ptr<Frame> popped = unmappedTrackedFrames.front();
-                unmappedTrackedFrames.pop_front();
+                std::shared_ptr<Frame> popped = unmappedTrackedSets.front()->refFrame();
+                unmappedTrackedSets.pop_front();
                 unmappedTrackedFramesMutex.unlock();
 
                 LOGF_IF( INFO, Conf().print.threadingInfo,
