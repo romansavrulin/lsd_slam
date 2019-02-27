@@ -35,7 +35,9 @@ public:
 
   void addStereoLine( const cv::Point &a, const cv::Point &b, const cv::Scalar &color );
 
-  // TODO.  Should expire the first version.
+  // TODO.  First version is a short-term reversion to using DepthMapPixelHypothesis *
+  // should purge DepthMapPixelHypothesis * from code base, then remove this
+  // version of the function...
   int debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame, DepthMapPixelHypothesis *currentDepthMap, int refID, const char *buf1, const char *buf2 );
   int debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame, const DepthMapPixelHypothesisVector &currentDepthMap, int refID, const char *buf1, const char *buf2 );
 
