@@ -23,15 +23,7 @@
 
 #include <libvideoio/Camera.h>
 #include "DataStructures/Frame.h"
-
-// #include "util/SophusUtil.h"
-// #include "util/settings.h"
-// #include <boost/thread/recursive_mutex.hpp>
-// #include <boost/thread/shared_mutex.hpp>
-// #include "DataStructures/FramePoseStruct.h"
-// #include "unordered_set"
-// #include "util/settings.h"
-// #include "util/Configuration.h"
+#include "util/SophusUtil.h"
 
 namespace lsd_slam
 {
@@ -49,7 +41,7 @@ namespace lsd_slam
     Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
 
     void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam );
-    Sophus::Sim3 getRefTransformation() {return _frames[_refFrame]->getCamToWorld();}
+    Sim3 getRefTransformation() {return _frames[_refFrame]->getCamToWorld();}
     void setReferenceFrame(const unsigned int &frameNum){_refFrame = frameNum;}
     unsigned int id() {return _frameId;}
 
