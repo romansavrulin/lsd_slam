@@ -54,7 +54,6 @@ SlamSystem::SlamSystem( )
 	_finalized(),
 	_initialized( false ),
 	_keyFrameGraph( new KeyFrameGraph ),
-	//_currentKeyFrame( nullptr ),
 	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph ) ),
 	_depthMap( new DepthMap( ) )
 {
@@ -72,8 +71,6 @@ SlamSystem::SlamSystem( )
 
 SlamSystem::~SlamSystem()
 {
-	// keepRunning = false;
-
 	// make sure no-one is waiting for something.
 	LOG(INFO) << "... waiting for all threads to exit";
 
@@ -84,8 +81,6 @@ SlamSystem::~SlamSystem()
 	LOG(INFO) << "DONE waiting for all threads to exit";
 
 	FrameMemory::getInstance().releaseBuffers();
-
-	// Util::closeAllWindows();
 }
 
 SlamSystem *SlamSystem::fullReset( void )
@@ -130,9 +125,9 @@ void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
 		LOG(INFO) << "Using initial Depth estimate in first frame.";
 		depthMap()->initializeFromGTDepth( set->refFrame() );
 	} else {
-                LOG(INFO) << "Doing Stereo initialization!";
-                //depthMap()->initializeRandomly( set->refFrame() );
-                depthMap()->initializefromStereo(set);
+		LOG(INFO) << "Doing Stereo initialization!";
+		//depthMap()->initializeRandomly( set->refFrame() );
+		depthMap()->initializefromStereo(set);
 	}
 	updateDisplayDepthMap();
 
@@ -204,10 +199,6 @@ void SlamSystem::changeKeyframe( const Frame::SharedPtr &candidate, bool noCreat
 
 void SlamSystem::loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad)
 {
-	//std::lock_guard< std::mutex > lock( currentKeyFrame.mutex() );
-
-	// LOG_IF(DEBUG, enablePrintDebugInfo && printThreadingInfo ) << "RE-ACTIVATE KF " << keyframeToLoad->id();
-
 	depthMap()->activateExistingKF(keyframeToLoad);
 
 	LOG_IF(DEBUG, Conf().print.regularizeStatistics ) << "re-activate frame " << keyframeToLoad->id() << "!";
@@ -230,8 +221,6 @@ void SlamSystem::createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCa
 
 	// propagate & make new.
 	depthMap()->createKeyFrame(newKeyframeCandidate);
-	//_currentKeyFrame = newKeyframeCandidate;								// Locking
-
 }
 
 
@@ -292,10 +281,7 @@ void SlamSystem::updateDisplayDepthMap()
 
 	}
 
-	// 	printMessageOnCVImage(depthMap()->debugImageDepth, buf1, buf2);
-
 	depthMap()->debugPlotDepthMap( buf1, buf2 );
-
 
 	CHECK( depthMap()->debugImages().depthImage().data != NULL );
 	publishDepthImage( depthMap()->debugImages().depthImage().data );
@@ -325,7 +311,6 @@ std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()
 {
 	return keyFrameGraph()->allFramePoses;
 }
-
 
 
 //=== 3DOutputWrapper functions ==
