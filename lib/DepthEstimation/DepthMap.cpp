@@ -814,10 +814,10 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
 {
 	int idx = x+y*Conf().slamImageSize.width;
 
-	float fx = Conf().camera.fx,
-				fy = Conf().camera.fy,
-				cx = Conf().camera.cx,
-				cy = Conf().camera.cy;
+	const float fx = ref->fx(),
+				fy = ref->fy(),
+				cx = ref->cx(),
+				cy = ref->cy();
 
 	// ======= make epl ========
 	// calculate the plane spanned by the two camera centers and the point (x,y,1)
@@ -908,14 +908,14 @@ void DepthMap::propagateDepth( const Frame::SharedPtr &new_keyframe)
 	const float* newKFImageData = new_keyframe->image(0);
 
 
-	float fx = Conf().camera.fx,
-				fy = Conf().camera.fy,
-				cx = Conf().camera.cx,
-				cy = Conf().camera.cy,
-				fxi = Conf().camera.fxi,
-				fyi = Conf().camera.fyi,
-				cxi = Conf().camera.cxi,
-				cyi = Conf().camera.cyi;
+	const float fx = new_keyframe->fx(),
+				fy = new_keyframe->fy(),
+				cx = new_keyframe->cx(),
+				cy = new_keyframe->cy(),
+				fxi = new_keyframe->fxi(),
+				fyi = new_keyframe->fyi(),
+				cxi = new_keyframe->cxi(),
+				cyi = new_keyframe->cyi();
 
 	// go through all pixels of OLD image, propagating forwards.
 	for(int y=0;y< Conf().slamImageSize.height ;y++)
@@ -1358,7 +1358,10 @@ inline float DepthMap::doLineStereo(
 	int width = Conf().slamImageSize.width, height = Conf().slamImageSize.height;
 
 	// calculate epipolar line start and end point in old image
-	Eigen::Vector3f KinvP = Eigen::Vector3f(Conf().camera.fxi*u+Conf().camera.cxi,Conf().camera.fyi*v+Conf().camera.cyi,1.0f);
+	// TODO:  Converted from Conf().camrea to referenceFrame.  Not actually sure
+	// that's the correct frame's K to be using (in the case where K isn't constant)
+	Eigen::Vector3f KinvP = Eigen::Vector3f(referenceFrame->fxi()*u+referenceFrame->cxi(),
+																					referenceFrame->fyi()*v+referenceFrame->cyi(),1.0f);
 	Eigen::Vector3f pInf = referenceFrame->K_otherToThis_R * KinvP;
 	Eigen::Vector3f pReal = pInf / prior_idepth + referenceFrame->K_otherToThis_t;
 
@@ -1776,10 +1779,10 @@ inline float DepthMap::doLineStereo(
 	// * KinvP = Kinv * (x,y,1); where x,y are pixel coordinates of point we search for, in the KF.
 	// * best_match_x = x-coordinate of found correspondence in the reference frame.
 
-	float fxi = Conf().camera.fxi,
-				fyi = Conf().camera.fyi,
-				cxi = Conf().camera.cxi,
-				cyi = Conf().camera.cyi;
+	const float fxi = referenceFrame->fxi(),
+				fyi = referenceFrame->fyi(),
+				cxi = referenceFrame->cxi(),
+				cyi = referenceFrame->cyi();
 
 	float idnew_best_match;	// depth in the new image
 	float alpha; // d(idnew_best_match) / d(disparity in pixel) == conputed inverse depth derived by the pixel-disparity.

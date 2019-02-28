@@ -69,7 +69,7 @@ int main( int argc, char** argv )
 
   // Load the configuration object
   Conf().setSlamImageSize( args.undistorter->outputImageSize() );
-  Conf().camera     = args.undistorter->getCamera();
+  // Conf().camera     = args.undistorter->getCamera();
 
   LOG(INFO) << "Slam image: " << Conf().slamImageSize.width << " x " << Conf().slamImageSize.height;
 

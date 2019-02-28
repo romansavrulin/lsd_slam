@@ -68,7 +68,7 @@ namespace lsd_slam {
 //            Frame::SharedPtr f = std::make_shared<Frame>( runningIdx, system->conf(), fakeTimeStamp, imageUndist.data );
 
             // This will block if system->conf().runRealTime is false
-            system->nextImage( runningIdx, imageUndist, Conf().camera );
+            system->nextImage( runningIdx, imageUndist, undistorter->getCamera() );
 
             runningIdx++;
             fakeTimeStamp += (fps > 0) ? (1.0/fps) : 0.03;

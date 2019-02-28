@@ -95,7 +95,7 @@ private:
 	std::shared_ptr<KeyFrameGraph> graph;
 	std::unique_ptr<SE3Tracker> tracker;
 
-	float fowX, fowY;
+	//float fowX, fowY;
 
 };
 

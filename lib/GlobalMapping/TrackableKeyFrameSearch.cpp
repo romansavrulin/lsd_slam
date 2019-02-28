@@ -33,11 +33,7 @@ TrackableKeyFrameSearch::TrackableKeyFrameSearch( const std::shared_ptr<KeyFrame
 : graph(graph),
 	tracker( new SE3Tracker( Conf().slamImageSize ) )
 {
-	fowX = 2 * atanf(float(Conf().slamImageSize.width) * Conf().camera.fxi / 2.0f );
-	fowY = 2 * atanf(float(Conf().slamImageSize.height) * Conf().camera.fyi / 2.0f );
 
-	LOGF_IF(INFO, Conf().print.relocalizationInfo,
-					"Relocalization Values: fowX %f, fowY %f\n", fowX, fowY);
 }
 
 TrackableKeyFrameSearch::~TrackableKeyFrameSearch()
@@ -50,6 +46,12 @@ TrackableKeyFrameSearch::~TrackableKeyFrameSearch()
 
 std::vector<TrackableKFStruct> TrackableKeyFrameSearch::findEuclideanOverlapFrames(const Frame::SharedPtr &frame, float distanceTH, float angleTH, bool checkBothScales)
 {
+	float fowX = 2 * atanf(float(Conf().slamImageSize.width) * frame->fxi() / 2.0f );
+	float fowY = 2 * atanf(float(Conf().slamImageSize.height) * frame->fyi() / 2.0f );
+
+	LOGF_IF(INFO, Conf().print.relocalizationInfo,
+					"Relocalization Values: fowX %f, fowY %f\n", fowX, fowY);
+
 	// basically the maximal angle-difference in viewing direction is angleTH*(average FoV).
 	// e.g. if the FoV is 130°, then it is angleTH*130°.
 	float cosAngleTH = cosf(angleTH*0.5f*(fowX + fowY));

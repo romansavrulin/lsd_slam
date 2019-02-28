@@ -32,7 +32,7 @@ public:
   // Does additional validation on sz
   const ImageSize &setSlamImageSize( const ImageSize &sz );
   ImageSize slamImageSize;
-  Camera camera;
+//  Camera camera;
 
   enum { NO_STEREO = 0, STEREO_ZED } doDepth;
 
