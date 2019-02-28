@@ -1,7 +1,7 @@
 
 
 #include "App/InputThread.h"
-#include "App.h"
+#include "util/globalFuncs.h"
 
 namespace lsd_slam {
 
