@@ -26,6 +26,7 @@
 namespace lsd_slam
 {
 
+ThreadSynchronizer startAll;
 
 SE3 SE3CV2Sophus(const cv::Mat &R, const cv::Mat &t)
 {

@@ -20,9 +20,11 @@
 
 #pragma once
 #include <opencv2/core/core.hpp>
+
 #include "util/settings.h"
 #include "util/SophusUtil.h"
 
+#include "ThreadMutexObject.h"
 
 
 namespace lsd_slam
@@ -32,6 +34,8 @@ template< typename T >
 class NotifyBuffer;
 
 class Frame;
+
+extern ThreadSynchronizer startAll;
 
 typedef Eigen::Matrix<float, 7, 7> Matrix7x7;
 
