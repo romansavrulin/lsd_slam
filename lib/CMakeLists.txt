@@ -5,7 +5,6 @@ set(GUI_SRCS
 
 # Set source files
 set(lsdslam_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/App/App.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/App/InputThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/Frame.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/ImageSet.cpp
