@@ -541,12 +541,9 @@ void MappingThread::discardCurrentKeyframe()
 		finishCurrentKeyframe();
 		return;
 	}
-
-
-	_system.depthMap()->invalidate();
-
 	_system.keyFrameGraph()->dropKeyFrame( _system.currentKeyFrame() );
 
+	_system.depthMap()->invalidate();
 }
 
 
