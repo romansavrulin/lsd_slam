@@ -15,7 +15,7 @@ namespace lsd_slam {
 	using active_object::ActiveIdle;
 
 
-ConstraintSearchThread::ConstraintSearchThread( SlamSystem &system, bool enabled )
+ConstraintSearchThread::ConstraintSearchThread( SlamSystem &system, bool threaded )
 	: _system( system ),
 		_perf(),
 		constraintTracker( new Sim3Tracker( Conf().slamImageSize ) ),
@@ -23,7 +23,7 @@ ConstraintSearchThread::ConstraintSearchThread( SlamSystem &system, bool enabled
 		newKFTrackingReference(  new TrackingReference()  ),
 		candidateTrackingReference(  new TrackingReference()  ),
 		_failedToRetrack( 0 ),
-		_thread( enabled ? ActiveIdle::createActiveIdle( std::bind( &ConstraintSearchThread::callbackIdle, this ), std::chrono::milliseconds(500)) : NULL )
+		_thread( threaded ? ActiveIdle::createActiveIdle( std::bind( &ConstraintSearchThread::callbackIdle, this ), std::chrono::milliseconds(500)) : NULL )
 {
 }
 

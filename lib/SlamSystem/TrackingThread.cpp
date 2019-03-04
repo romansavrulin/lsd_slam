@@ -55,14 +55,15 @@
 
 using namespace lsd_slam;
 
+using active_object::Active;
 
-
-TrackingThread::TrackingThread( SlamSystem &system )
+TrackingThread::TrackingThread( SlamSystem &system, bool threaded )
 : _system( system ),
 	_perf(),
 	_tracker( new SE3Tracker( Conf().slamImageSize ) ),
 	_trackingReference( new TrackingReference() ),
-	_trackingIsGood( true )
+	_trackingIsGood( true ),
+	_thread( threaded ? Active::createActive() : NULL )
 {
 
 
@@ -128,7 +129,7 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
 */
 
 
-void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
+void TrackingThread::doTrackSet( const std::shared_ptr<ImageSet> &set )
 {
 
         if(!_trackingIsGood) {
@@ -237,11 +238,11 @@ void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
         _system.mapThread->pushUnmappedTrackedSet( set );
 
         // If blocking is requested...
-        if( !Conf().runRealTime && trackingIsGood() ){
-                while( _system.mapThread->unmappedTrackedSets.size() > 0 ) {
-                        _system.mapThread->trackedFramesMapped.wait( );
-                }
-        }
+        // if( !Conf().runRealTime && trackingIsGood() ){
+        //         while( _system.mapThread->unmappedTrackedSets.size() > 0 ) {
+        //                 _system.mapThread->trackedFramesMapped.wait( );
+        //         }
+        // }
 
         LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Exiting trackFrame";
 
