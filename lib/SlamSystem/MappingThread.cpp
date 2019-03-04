@@ -23,7 +23,7 @@ using active_object::Active;
 // static const bool depthMapScreenshotFlag = true;
 
 
-MappingThread::MappingThread( SlamSystem &system )
+MappingThread::MappingThread( SlamSystem &system, bool threaded )
 	: unmappedTrackedFrames(),
 		unmappedTrackedFramesMutex(),
 		trackedFramesMapped(),
@@ -31,8 +31,8 @@ MappingThread::MappingThread( SlamSystem &system )
 		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
 		_newKeyFrame( nullptr ),
-                _newImageSet( nullptr ),
-		_thread( Active::createActive() )
+    _newImageSet( nullptr ),
+		_thread( threaded ? Active::createActive() : NULL )
 {
 	LOG(INFO) << "Started Mapping thread";
 }

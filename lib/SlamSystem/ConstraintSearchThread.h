@@ -19,7 +19,7 @@ namespace lsd_slam {
 
 class ConstraintSearchThread {
 public:
-	ConstraintSearchThread( SlamSystem &system, bool enabled );
+	ConstraintSearchThread( SlamSystem &system, bool threaded );
 	~ConstraintSearchThread();
 
 	void doFullReConstraintTrack( void )
