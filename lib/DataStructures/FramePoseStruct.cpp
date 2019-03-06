@@ -21,6 +21,7 @@
 
 #include <DataStructures/FramePoseStruct.h>
 #include "DataStructures/Frame.h"
+#include "DataStructures/KeyFrame.h"
 
 namespace lsd_slam
 {
@@ -39,7 +40,7 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	isRegisteredToGraph = false;
 	hasUnmergedPose = false;
 	isInGraph = false;
-	
+
 	privateFramePoseStructAllocCount++;
 	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
@@ -90,7 +91,7 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 	if( frame.hasTrackingParent() ) {
 			// abs. pose is computed from the parent's abs. pose, and cached.
 			cacheValidFor = cacheValidCounter;
-			return camToWorld = frame.trackingParent()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
+			return camToWorld = frame.trackingParent()->frame()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 	} else {
 		return camToWorld = Sim3();
 	}

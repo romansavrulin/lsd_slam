@@ -20,10 +20,13 @@
 
 #include "DataStructures/Frame.h"
 #include "DataStructures/FrameMemory.h"
+#include "DataStructures/KeyFrame.h"
+
 #include "DepthEstimation/DepthMapPixelHypothesis.h"
 #include "Tracking/TrackingReference.h"
 
 #include "DataStructures/FramePoseStruct.h"
+#include "DepthEstimation/DepthMap.h"
 
 #include <g3log/g3log.hpp>
 
@@ -101,7 +104,7 @@ void Frame::initialize(double timestamp)
 	// data.cxInv[0] = data.KInv[0](0,2);
 	// data.cyInv[0] = data.KInv[0](1,2);
 
-	depthHasBeenUpdatedFlag = false;
+//	depthHasBeenUpdatedFlag = false;
 
 	referenceID = -1;
 	referenceLevel = -1;
@@ -109,9 +112,9 @@ void Frame::initialize(double timestamp)
 	numMappablePixels = -1;
 
 
-	permaRefNumPts = 0;
-	permaRef_colorAndVarData = 0;
-	permaRef_posData = 0;
+	// permaRefNumPts = 0;
+	// permaRef_colorAndVarData = 0;
+	// permaRef_posData = 0;
 
 	meanIdepth = 1;
 	numPoints = 0;
@@ -153,90 +156,92 @@ Frame::~Frame()
 	FrameMemory::getInstance().returnBuffer(data.idepth_reAct);
 	FrameMemory::getInstance().returnBuffer(data.idepthVar_reAct);
 
-	if(permaRef_colorAndVarData != 0)
-		delete permaRef_colorAndVarData;
-	if(permaRef_posData != 0)
-		delete permaRef_posData;
+	// if(permaRef_colorAndVarData != 0)
+	// 	delete permaRef_colorAndVarData;
+	// if(permaRef_posData != 0)
+	// 	delete permaRef_posData;
 
 	privateFrameAllocCount--;
 	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo, "DELETED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
 }
 
-bool Frame::isTrackingParent( const SharedPtr &other ) const
-{
-	//LOG(INFO) << "Comparing my id " << id() << " to " << other->id();
-	return hasTrackingParent() && ( other->id() == trackingParent()->id() );
-}
+bool Frame::isTrackingParent( const std::shared_ptr<Frame> &other ) const
+{ return isTrackingParent( other->id() ); }
+
+bool Frame::isTrackingParent( const std::shared_ptr<KeyFrame> &other ) const
+{ return isTrackingParent( other->id() ); }
+
+bool Frame::isTrackingParent( int id ) const
+{ return hasTrackingParent() && ( id == trackingParent()->id() ); }
+
+// void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap)
+// {
+// 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
+//
+// 	if(data.validity_reAct == 0)
+// 		data.validity_reAct = (unsigned char*) FrameMemory::getInstance().getBuffer(data.width[0]*data.height[0]);
+//
+// 	if(data.idepth_reAct == 0)
+// 		data.idepth_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
+//
+// 	if(data.idepthVar_reAct == 0)
+// 		data.idepthVar_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
+//
+//
+// 	float* id_pt = data.idepth_reAct;
+// 	float* id_pt_max = data.idepth_reAct + (data.width[0]*data.height[0]);
+// 	float* idv_pt = data.idepthVar_reAct;
+// 	unsigned char* val_pt = data.validity_reAct;
+//
+// 	for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap)
+// 	{
+// 		if(depthMap->isValid)
+// 		{
+// 			*id_pt = depthMap->idepth;
+// 			*idv_pt = depthMap->idepth_var;
+// 			*val_pt = depthMap->validity_counter;
+// 		}
+// 		else if(depthMap->blacklisted < MIN_BLACKLIST)
+// 		{
+// 			*idv_pt = -2;
+// 		}
+// 		else
+// 		{
+// 			*idv_pt = -1;
+// 		}
+// 	}
+//
+// 	data.reActivationDataValid = true;
+// }
 
 
-void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap)
-{
-	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
 
-	if(data.validity_reAct == 0)
-		data.validity_reAct = (unsigned char*) FrameMemory::getInstance().getBuffer(data.width[0]*data.height[0]);
-
-	if(data.idepth_reAct == 0)
-		data.idepth_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
-
-	if(data.idepthVar_reAct == 0)
-		data.idepthVar_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
-
-
-	float* id_pt = data.idepth_reAct;
-	float* id_pt_max = data.idepth_reAct + (data.width[0]*data.height[0]);
-	float* idv_pt = data.idepthVar_reAct;
-	unsigned char* val_pt = data.validity_reAct;
-
-	for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap)
-	{
-		if(depthMap->isValid)
-		{
-			*id_pt = depthMap->idepth;
-			*idv_pt = depthMap->idepth_var;
-			*val_pt = depthMap->validity_counter;
-		}
-		else if(depthMap->blacklisted < MIN_BLACKLIST)
-		{
-			*idv_pt = -2;
-		}
-		else
-		{
-			*idv_pt = -1;
-		}
-	}
-
-	data.reActivationDataValid = true;
-}
-
-
-
-void Frame::setPermaRef( const std::unique_ptr<TrackingReference> &reference)
-{
-	assert(reference->frameID == id());
-	reference->makePointCloud(QUICK_KF_CHECK_LVL);
-
-	permaRef_mutex.lock();
-
-	if(permaRef_colorAndVarData != 0)
-		delete permaRef_colorAndVarData;
-	if(permaRef_posData != 0)
-		delete permaRef_posData;
-
-	permaRefNumPts = reference->numData[QUICK_KF_CHECK_LVL];
-	permaRef_colorAndVarData = new Eigen::Vector2f[permaRefNumPts];
-	permaRef_posData = new Eigen::Vector3f[permaRefNumPts];
-
-	memcpy(permaRef_colorAndVarData,
-			reference->colorAndVarData[QUICK_KF_CHECK_LVL],
-			sizeof(Eigen::Vector2f) * permaRefNumPts);
-
-	memcpy(permaRef_posData,
-			reference->posData[QUICK_KF_CHECK_LVL],
-			sizeof(Eigen::Vector3f) * permaRefNumPts);
-
-	permaRef_mutex.unlock();
-}
+// void Frame::setPermaRef( const std::unique_ptr<TrackingReference> &reference)
+// {
+// 	assert(reference->frameID() == id());
+// 	reference->makePointCloud(QUICK_KF_CHECK_LVL);
+//
+// 	permaRef_mutex.lock();
+//
+// 	if(permaRef_colorAndVarData != 0)
+// 		delete permaRef_colorAndVarData;
+// 	if(permaRef_posData != 0)
+// 		delete permaRef_posData;
+//
+// 	permaRefNumPts = reference->numData[QUICK_KF_CHECK_LVL];
+// 	permaRef_colorAndVarData = new Eigen::Vector2f[permaRefNumPts];
+// 	permaRef_posData = new Eigen::Vector3f[permaRefNumPts];
+//
+// 	memcpy(permaRef_colorAndVarData,
+// 			reference->colorAndVarData[QUICK_KF_CHECK_LVL],
+// 			sizeof(Eigen::Vector2f) * permaRefNumPts);
+//
+// 	memcpy(permaRef_posData,
+// 			reference->posData[QUICK_KF_CHECK_LVL],
+// 			sizeof(Eigen::Vector3f) * permaRefNumPts);
+//
+// 	permaRef_mutex.unlock();
+// }
 
 void Frame::calculateMeanInformation()
 {
@@ -261,7 +266,7 @@ void Frame::calculateMeanInformation()
 }
 
 
-void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
+void Frame::setDepth(const DepthMap::SharedPtr &depthMap )  //PixelHypothesis* newDepth)
 {
 
 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
@@ -275,6 +280,8 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
 	float* pyrIDepth = data.idepth[0];
 	float* pyrIDepthVar = data.idepthVar[0];
 	float* pyrIDepthMax = pyrIDepth + (data.width[0]*data.height[0]);
+
+	DepthMapPixelHypothesis *newDepth = depthMap->hypothesisAt(0,0);
 
 	float sumIdepth=0;
 	int numIdepth=0;
@@ -305,7 +312,7 @@ void Frame::setDepth(const DepthMapPixelHypothesis* newDepth)
 	release(IDEPTH | IDEPTH_VAR, true, true);
 
 	data.hasIDepthBeenSet = true;
-	depthHasBeenUpdatedFlag = true;
+	//depthHasBeenUpdatedFlag = true;
 }
 
 void Frame::setDepthFromGroundTruth(const float* depth, float cov_scale)

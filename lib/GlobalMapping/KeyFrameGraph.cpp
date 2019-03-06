@@ -111,19 +111,19 @@ void KeyFrameGraph::addFrame(const Frame::SharedPtr &frame)
 	allFramePosesMutex.unlock();
 
 	// if( conf().SLAMEnabled )
-	{
-		boost::shared_lock_guard<boost::shared_mutex> lock( idToKeyFrameMutex );
-		idToKeyFrame.insert(std::make_pair( frame->id(), frame ));
-	}
+	// {
+	// 	boost::shared_lock_guard<boost::shared_mutex> lock( idToKeyFrameMutex );
+	// 	idToKeyFrame.insert(std::make_pair( kf->id(), kf ));
+	// }
 }
 
-void KeyFrameGraph::dropKeyFrame(const Frame::SharedPtr &frame)
+void KeyFrameGraph::dropKeyFrame(const KeyFrame::SharedPtr &kf)
 {
 	{
 		boost::shared_lock_guard< boost::shared_mutex > lock( allFramePosesMutex );
 		for(auto p : allFramePoses)
 		{
-			if(p->frame.isTrackingParent( frame ) ) {
+			if(p->frame.isTrackingParent( kf->frame() ) ) {
 				p->frame.setTrackingParent( nullptr );
 			}
 		}
@@ -131,7 +131,7 @@ void KeyFrameGraph::dropKeyFrame(const Frame::SharedPtr &frame)
 
 	{
 		boost::shared_lock_guard< boost::shared_mutex > lock(idToKeyFrameMutex);
-		idToKeyFrame.erase(frame->id());
+		idToKeyFrame.erase(kf->id());
 	}
 }
 
@@ -144,21 +144,23 @@ void KeyFrameGraph::dumpMap(std::string folder)
 	int succ = system(("rm -rf "+folder).c_str());
 	succ += system(("mkdir "+folder).c_str());
 
-	for(unsigned int i=0;i<keyframesAll.size();i++)
-	{
-		snprintf(buf, 100, "%s/depth-%d.png", folder.c_str(), i);
-		cv::imwrite(buf, getDepthRainbowPlot(keyframesAll[i].get(), 0));
-
-		snprintf(buf, 100, "%s/frame-%d.png", folder.c_str(), i);
-		cv::imwrite(buf, cv::Mat(keyframesAll[i]->height(), keyframesAll[i]->width(),CV_32F,keyframesAll[i]->image()));
-
-		snprintf(buf, 100, "%s/var-%d.png", folder.c_str(), i);
-		cv::imwrite(buf, getVarRedGreenPlot(keyframesAll[i]->idepthVar(),keyframesAll[i]->image(),keyframesAll[i]->width(),keyframesAll[i]->height()));
-	}
-
-
-	int i = keyframesAll.size()-1;
-	Util::displayImage("VAR PREVIEW", getVarRedGreenPlot(keyframesAll[i]->idepthVar(),keyframesAll[i]->image(),keyframesAll[i]->width(),keyframesAll[i]->height()));
+	//!!TODO.  Can't imagine fixing this now...
+	//
+	// for(unsigned int i=0;i<keyframesAll.size();i++)
+	// {
+	// 	snprintf(buf, 100, "%s/depth-%d.png", folder.c_str(), i);
+	// 	cv::imwrite(buf, getDepthRainbowPlot(keyframesAll[i].get(), 0));
+	//
+	// 	snprintf(buf, 100, "%s/frame-%d.png", folder.c_str(), i);
+	// 	cv::imwrite(buf, cv::Mat(keyframesAll[i]->height(), keyframesAll[i]->width(),CV_32F,keyframesAll[i]->image()));
+	//
+	// 	snprintf(buf, 100, "%s/var-%d.png", folder.c_str(), i);
+	// 	cv::imwrite(buf, getVarRedGreenPlot(keyframesAll[i]->idepthVar(),keyframesAll[i]->image(),keyframesAll[i]->width(),keyframesAll[i]->height()));
+	// }
+	//
+	//
+	// int i = keyframesAll.size()-1;
+	// Util::displayImage("VAR PREVIEW", getVarRedGreenPlot(keyframesAll[i]->idepthVar(),keyframesAll[i]->image(),keyframesAll[i]->width(),keyframesAll[i]->height()));
 
 	printf("DUMP MAP (succ %d): dumped %d depthmaps\n", succ,  (int)keyframesAll.size());
 
@@ -184,28 +186,27 @@ void KeyFrameGraph::dumpMap(std::string folder)
 	meanRootInformation.setZero();
 	usedPixels.setZero();
 
-	for(unsigned int i=0;i<keyframesAll.size();i++)
-	{
-		meanRootInformation[i] = keyframesAll[i]->meanInformation;
-		usedPixels[i] = keyframesAll[i]->numPoints / (float)keyframesAll[i]->numMappablePixels;
-	}
-
-
-	edgesListsMutex.lock_shared();
-	for(unsigned int i=0;i<edgesAll.size();i++)
-	{
-		KFConstraintStruct* e = edgesAll[i];
-
-		res(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->meanResidual;
-		resD(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->meanResidualD;
-		resP(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->meanResidualP;
-		usage(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->usage;
-		consistency(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->reciprocalConsistency;
-		distance(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->secondToFirst.translation().norm();
-		error(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->edge->chi2();
-	}
-	edgesListsMutex.unlock_shared();
-	keyframesAllMutex.unlock_shared();
+	// for(unsigned int i=0;i<keyframesAll.size();i++)
+	// {
+	// 	meanRootInformation[i] = keyframesAll[i]->meanInformation;
+	// 	usedPixels[i] = keyframesAll[i]->numPoints / (float)keyframesAll[i]->numMappablePixels;
+	// }
+	//
+	// edgesListsMutex.lock_shared();
+	// for(unsigned int i=0;i<edgesAll.size();i++)
+	// {
+	// 	KFConstraintStruct* e = edgesAll[i];
+	//
+	// 	res(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->meanResidual;
+	// 	resD(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->meanResidualD;
+	// 	resP(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->meanResidualP;
+	// 	usage(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->usage;
+	// 	consistency(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->reciprocalConsistency;
+	// 	distance(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->secondToFirst.translation().norm();
+	// 	error(e->firstFrame->idxInKeyframes, e->secondFrame->idxInKeyframes) = e->edge->chi2();
+	// }
+	// edgesListsMutex.unlock_shared();
+	 keyframesAllMutex.unlock_shared();
 
 
 	std::ofstream fle;
@@ -251,26 +252,26 @@ void KeyFrameGraph::dumpMap(std::string folder)
 
 
 
-void KeyFrameGraph::addKeyFrame( const Frame::SharedPtr &frame)
+void KeyFrameGraph::addKeyFrame( const KeyFrame::SharedPtr &keyframe)
 {
-	if(frame->pose->graphVertex != nullptr)
+	if(keyframe->frame()->pose->graphVertex != nullptr)
 		return;
 
 	// Insert vertex into g2o graph
 	VertexSim3* vertex = new VertexSim3();
-	vertex->setId(frame->id());
+	vertex->setId(keyframe->id());
 
-	Sophus::Sim3d camToWorld_estimate = frame->getCamToWorld();
+	Sophus::Sim3d camToWorld_estimate = keyframe->frame()->getCamToWorld();
 
-	if(!frame->hasTrackingParent())
+	if(!keyframe->frame()->hasTrackingParent())
 		vertex->setFixed(true);
 
 	vertex->setEstimate(camToWorld_estimate);
 	vertex->setMarginalized(false);
 
-	frame->pose->graphVertex = vertex;
+	keyframe->frame()->pose->graphVertex = vertex;
 
-	newKeyframesBuffer.push_back(frame);
+	newKeyframesBuffer.push_back(keyframe);
 
 }
 
@@ -287,10 +288,10 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
 	edge->setRobustKernel(constraint->robustKernel);
 
 	edge->resize(2);
-	assert(constraint->firstFrame->pose->graphVertex != nullptr);
-	edge->setVertex(0, constraint->firstFrame->pose->graphVertex);
-	assert(constraint->secondFrame->pose->graphVertex != nullptr);
-	edge->setVertex(1, constraint->secondFrame->pose->graphVertex);
+	assert(constraint->firstFrame->frame()->pose->graphVertex != nullptr);
+	edge->setVertex(0, constraint->firstFrame->frame()->pose->graphVertex);
+	assert(constraint->secondFrame->frame()->pose->graphVertex != nullptr);
+	edge->setVertex(1, constraint->secondFrame->frame()->pose->graphVertex);
 
 	constraint->edge = edge;
 	newEdgeBuffer.push_back(constraint);
@@ -322,9 +323,9 @@ bool KeyFrameGraph::addElementsFromBuffer()
 	keyframesForRetrackMutex.lock();
 	for (auto newKF : newKeyframesBuffer)
 	{
-		graph.addVertex(newKF->pose->graphVertex);
-		assert(!newKF->pose->isInGraph);
-		newKF->pose->isInGraph = true;
+		graph.addVertex(newKF->frame()->pose->graphVertex);
+		CHECK(!newKF->frame()->pose->isInGraph) << "Keyframe" << newKF->id() << " was already in the graph when attempted to add it";
+		newKF->frame()->pose->isInGraph = true;
 
 		keyframesForRetrack.push_back(newKF);
 
@@ -359,18 +360,18 @@ int KeyFrameGraph::optimize(int num_iterations)
 
 
 
-void KeyFrameGraph::calculateGraphDistancesToFrame(const Frame::SharedPtr &startFrame, std::unordered_map< Frame::SharedPtr, int > &distanceMap)
+void KeyFrameGraph::calculateGraphDistancesToFrame(const KeyFrame::SharedPtr &startFrame, std::unordered_map< KeyFrame::SharedPtr, int > &distanceMap)
 {
 	distanceMap.insert(std::make_pair(startFrame, 0));
 
-	std::multimap< int, Frame::SharedPtr > priorityQueue;
+	std::multimap< int, KeyFrame::SharedPtr > priorityQueue;
 	priorityQueue.insert(std::make_pair(0, startFrame));
 
 	while (! priorityQueue.empty())
 	{
 		auto it = priorityQueue.begin();
 		int length = it->first;
-		Frame::SharedPtr frame( it->second );
+		KeyFrame::SharedPtr frame( it->second );
 		priorityQueue.erase(it);
 
 		auto mapEntry = distanceMap.find(frame);

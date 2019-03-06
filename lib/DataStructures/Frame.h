@@ -36,8 +36,10 @@ namespace lsd_slam
 using libvideoio::Camera;
 using libvideoio::ImageSize;
 
+class KeyFrame;
 class DepthMapPixelHypothesis;
 class TrackingReference;
+class DepthMap;
 /**
  */
 
@@ -119,7 +121,7 @@ public:
 	~Frame();
 
 	/** Sets or updates idepth and idepthVar on level zero. Invalidates higher levels. */
-	void setDepth(const DepthMapPixelHypothesis* newDepth);
+	void setDepth(const std::shared_ptr<DepthMap> &depthMap ); //PixelHypothesis* newDepth);
 
 	/** Calculates mean information for statistical purposes. */
 	void calculateMeanInformation();
@@ -198,8 +200,8 @@ public:
   // For SLAM-like features, KeyFrames can own their own TrackingReference
 	// this is copied into the keyframe when the keyframe is finalized
 	// This used for loop closure and re-localization
-	void setPermaRef( const std::unique_ptr<TrackingReference> &reference);
-	void takeReActivationData(DepthMapPixelHypothesis* depthMap);
+	// void setPermaRef( const std::unique_ptr<TrackingReference> &reference);
+	// void takeReActivationData(DepthMapPixelHypothesis* depthMap);
 
 
 	// shared_lock this as long as any minimizable arrays are being used.
@@ -223,31 +225,27 @@ public:
 
 
 	// parent, the frame originally tracked on. never changes.
-	SharedPtr &setTrackingParent( const SharedPtr &newParent  ) { return _trackingParent = newParent; }
-	bool      hasTrackingParent() const     { return (bool)_trackingParent; }
-	const SharedPtr &trackingParent() const       { return _trackingParent; }
+	void setTrackingParent( const std::shared_ptr<KeyFrame> &newParent  ) { _trackingParent = newParent; }
+	bool      hasTrackingParent() const     															{ return (bool)_trackingParent; }
+	const std::shared_ptr<KeyFrame> &trackingParent() const       				{ return _trackingParent; }
 
-	bool isTrackingParent( const SharedPtr &other ) const;
+	bool isTrackingParent( const std::shared_ptr<Frame> &other ) const;
+	bool isTrackingParent( const std::shared_ptr<KeyFrame> &other ) const;
+	bool isTrackingParent( int id ) const;
+
 
 	Sim3 lastConstraintTrackedCamToWorld;
 
-	/** Pointers to all adjacent Frames in graph. empty for non-keyframes.*/
-	std::unordered_set< Frame::SharedPtr > neighbors;
-
-	/** Multi-Map indicating for which other keyframes with which initialization tracking failed.*/
-	std::unordered_multimap< Frame::SharedPtr, Sim3 > trackingFailed;
-
-
 	// flag set when depth is updated.
-	bool depthHasBeenUpdatedFlag;
+	//bool depthHasBeenUpdatedFlag;
 
 
 	// Tracking Reference for quick test. Always available, never taken out of memory.
 	// this is used for re-localization and re-Keyframe positioning.
-	boost::mutex permaRef_mutex;
-	Eigen::Vector3f* permaRef_posData;	// (x,y,z)
-	Eigen::Vector2f* permaRef_colorAndVarData;	// (I, Var)
-	int permaRefNumPts;
+	// boost::mutex permaRef_mutex;
+	// Eigen::Vector3f* permaRef_posData;	// (x,y,z)
+	// Eigen::Vector2f* permaRef_colorAndVarData;	// (I, Var)
+	// int permaRefNumPts;
 
 
 
@@ -281,7 +279,7 @@ public:
 
 private:
 
-	SharedPtr _trackingParent;
+	std::shared_ptr<KeyFrame> _trackingParent;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);

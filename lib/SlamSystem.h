@@ -35,6 +35,7 @@
 
 #include "DataStructures/Frame.h"
 #include "DataStructures/ImageSet.h"
+#include "DataStructures/KeyFrame.h"
 
 #include "DepthEstimation/DepthMap.h"
 
@@ -97,11 +98,13 @@ public:
 	Sophus::Sim3d getCurrentPoseEstimateScale();
 
 	//==== KeyFrame maintenance functions ====
-        Frame::SharedPtr &currentKeyFrame() { return depthMap()->currentKeyFrame(); }
+  KeyFrame::SharedPtr &currentKeyFrame();
 
-	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
-	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
-	void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
+	void addKeyFrame( const KeyFrame::SharedPtr &keyframe );
+
+	// void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
+	// void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
+	// void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
 
 	// void requestDepthMapScreenshot(const std::string& filename);
 
@@ -124,10 +127,7 @@ public:
 
 	void updateDisplayDepthMap();
 
-	unique_ptr<TrackingThread> trackingThread;
-	unique_ptr<OptimizationThread> optThread;
-	unique_ptr<MappingThread> mapThread;
-	unique_ptr<ConstraintSearchThread> constraintThread;
+
 
 	// mutex to lock frame pose consistency. within a shared lock of this, *->getCamToWorld() is
 	// GUARANTEED to give the same result each call, and to be compatible to each other.
@@ -137,7 +137,12 @@ public:
 	const shared_ptr<KeyFrameGraph> &keyFrameGraph() { return _keyFrameGraph; };	  // has own locks
 	shared_ptr<TrackableKeyFrameSearch> &trackableKeyFrameSearch() { return _trackableKeyFrameSearch; }
 
-	unique_ptr<DepthMap> &depthMap() { return _depthMap; }
+	// unique_ptr<DepthMap> &depthMap() { return _depthMap; }
+
+	unique_ptr<MappingThread> &mapThread()       { return _mapThread; }
+	unique_ptr<TrackingThread> &trackingThread() { return _trackingThread; }
+	unique_ptr<OptimizationThread> &optThread()  { return _optThread; }
+
 
 
 private:
@@ -155,17 +160,25 @@ private:
 
 	// ======= Functions =====
 
+	// Called for first ImageSet
 	void initialize( const std::shared_ptr<ImageSet> &set );
+
 	void logPerformanceData();
 
-	// == Shared "global" data structures ==
+	//== Component threads
+	unique_ptr<TrackingThread>         _trackingThread;
+	unique_ptr<OptimizationThread>     _optThread;
+	unique_ptr<MappingThread>          _mapThread;
+	unique_ptr<ConstraintSearchThread> _constraintThread;
 
+	// == Shared "global" data structures ==
+	std::vector< KeyFrame::SharedPtr > _keyFrames;
 	std::shared_ptr<KeyFrameGraph> _keyFrameGraph;	  // has own locks
 	//Frame::SharedPtr  _currentKeyFrame;
 
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;
 
-	std::unique_ptr<DepthMap> _depthMap;
+//	std::unique_ptr<DepthMap> _depthMap;
 
 };
 

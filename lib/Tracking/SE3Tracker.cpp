@@ -24,6 +24,7 @@ using std::stringstream;
 #include "SE3Tracker.h"
 #include <opencv2/highgui/highgui.hpp>
 #include "DataStructures/Frame.h"
+#include "DataStructures/KeyFrame.h"
 #include "Tracking/TrackingReference.h"
 #include "util/globalFuncs.h"
 #include "IOWrapper/ImageDisplay.h"
@@ -108,25 +109,27 @@ SE3Tracker::~SE3Tracker()
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
 float SE3Tracker::checkPermaRefOverlap(
-		const std::shared_ptr<Frame> &reference,
+		const std::shared_ptr<KeyFrame> &reference,
 		SE3 referenceToFrameOrg)
 {
 	Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
-	boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
+	//boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
+	const std::shared_ptr<Frame> &frame( reference->frame() );
+	const std::shared_ptr<TrackingReference> &ref( reference->trackingReference() );
 
-	int w2 = reference->width(QUICK_KF_CHECK_LVL)-1;
-	int h2 = reference->height(QUICK_KF_CHECK_LVL)-1;
-	Eigen::Matrix3f KLvl = reference->K(QUICK_KF_CHECK_LVL);
-	float fx_l = KLvl(0,0);
-	float fy_l = KLvl(1,1);
-	float cx_l = KLvl(0,2);
-	float cy_l = KLvl(1,2);
+	const int w2 = frame->width(QUICK_KF_CHECK_LVL)-1;
+	const int h2 = frame->height(QUICK_KF_CHECK_LVL)-1;
+	const Eigen::Matrix3f KLvl = frame->K(QUICK_KF_CHECK_LVL);
+	const float fx_l = KLvl(0,0);
+	const float fy_l = KLvl(1,1);
+	const float cx_l = KLvl(0,2);
+	const float cy_l = KLvl(1,2);
 
 	Eigen::Matrix3f rotMat = referenceToFrame.rotationMatrix();
 	Eigen::Vector3f transVec = referenceToFrame.translation();
 
-	const Eigen::Vector3f* refPoint_max = reference->permaRef_posData + reference->permaRefNumPts;
-	const Eigen::Vector3f* refPoint = reference->permaRef_posData;
+	const Eigen::Vector3f* refPoint_max = ref->posData[QUICK_KF_CHECK_LVL] + ref->numData[QUICK_KF_CHECK_LVL];
+	const Eigen::Vector3f* refPoint = ref->posData[QUICK_KF_CHECK_LVL];
 
 	float usageCount = 0;
 	for(;refPoint<refPoint_max; refPoint++)
@@ -141,7 +144,7 @@ float SE3Tracker::checkPermaRefOverlap(
 		}
 	}
 
-	pointUsage = usageCount / (float)reference->permaRefNumPts;
+	pointUsage = usageCount / (float)ref->numData[QUICK_KF_CHECK_LVL];
 	return pointUsage;
 }
 
@@ -149,15 +152,18 @@ float SE3Tracker::checkPermaRefOverlap(
 // tracks a frame.
 // first_frame has depth, second_frame DOES NOT have depth.
 SE3 SE3Tracker::trackFrameOnPermaref(
-		const std::shared_ptr<Frame> &reference,
+		const std::shared_ptr<KeyFrame> &reference,
 		const std::shared_ptr<Frame> &frame,
 		SE3 referenceToFrameOrg)
 {
 
 	Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
 
-	boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
-	boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
+	// boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
+	// boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
+
+	// const std::shared_ptr<Frame> &refFrame( reference->frame() );
+	const std::shared_ptr<TrackingReference> &ref( reference->trackingReference() );
 
 	affineEstimation_a = 1; affineEstimation_b = 0;
 
@@ -165,7 +171,7 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 	diverged = false;
 	trackingWasGood = true;
 
-	callOptimized(calcResidualAndBuffers, (reference->permaRef_posData, reference->permaRef_colorAndVarData, 0, reference->permaRefNumPts, frame, referenceToFrame, QUICK_KF_CHECK_LVL, false));
+	callOptimized(calcResidualAndBuffers, (ref->posData[QUICK_KF_CHECK_LVL], ref->colorAndVarData[QUICK_KF_CHECK_LVL], 0, ref->numData[QUICK_KF_CHECK_LVL], frame, referenceToFrame, QUICK_KF_CHECK_LVL, false));
 	if(buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (_imgSize.width>>QUICK_KF_CHECK_LVL)*(_imgSize.height>>QUICK_KF_CHECK_LVL))
 	{
 		diverged = true;
@@ -200,7 +206,7 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 			Sophus::SE3f new_referenceToFrame = Sophus::SE3f::exp((inc)) * referenceToFrame;
 
 			// re-evaluate residual
-			callOptimized(calcResidualAndBuffers, (reference->permaRef_posData, reference->permaRef_colorAndVarData, 0, reference->permaRefNumPts, frame, new_referenceToFrame, QUICK_KF_CHECK_LVL, false));
+			callOptimized(calcResidualAndBuffers, (ref->posData[QUICK_KF_CHECK_LVL], ref->colorAndVarData[QUICK_KF_CHECK_LVL], 0, ref->numData[QUICK_KF_CHECK_LVL], frame, new_referenceToFrame, QUICK_KF_CHECK_LVL, false));
 			if(buf_warped_size < MIN_GOODPERALL_PIXEL_ABSMIN * (_imgSize.width>>QUICK_KF_CHECK_LVL)*(_imgSize.height>>QUICK_KF_CHECK_LVL))
 			{
 				diverged = true;
@@ -269,10 +275,12 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 
 // tracks a frame.
 SE3 SE3Tracker::trackFrame(
-		const std::shared_ptr<TrackingReference> &reference,
+		const std::shared_ptr<KeyFrame> &keyframe,
 		const std::shared_ptr<Frame> &frame,
 		const SE3& frameToReference_initialEstimate)
 {
+
+	std::shared_ptr<TrackingReference> &reference( keyframe->trackingReference() );
 
 	boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
 	diverged = false;
@@ -311,7 +319,7 @@ SE3 SE3Tracker::trackFrame(
 
 		reference->makePointCloud(lvl);
 
-		LOG(INFO) << "Calculating initial residual on frame " << frame->id() << ", level " << lvl << " against reference frame " << reference->frameID << " with " << reference->numData[lvl] << " points";
+		LOG(INFO) << "Calculating initial residual on frame " << frame->id() << ", level " << lvl << " against reference frame " << reference->frameID() << " with " << reference->numData[lvl] << " points";
 		callOptimized(calcResidualAndBuffers, (reference->posData[lvl],
 			reference->colorAndVarData[lvl],
 			SE3TRACKING_MIN_LEVEL == lvl ? reference->pointPosInXYGrid[lvl] : 0,
@@ -473,7 +481,7 @@ SE3 SE3Tracker::trackFrame(
 
 	frame->initialTrackedResidual = lastResidual / pointUsage;
 	frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()),1);
-	frame->setTrackingParent( reference->keyframe );
+	frame->setTrackingParent( keyframe );
 	return toSophus(referenceToFrame.inverse());
 }
 

@@ -6,6 +6,7 @@
 
 #include "util/Configuration.h"
 #include "util/ThreadMutexObject.h"
+#include "DataStructures/KeyFrame.h"
 #include "GlobalMapping/TrackableKeyFrameSearch.h"
 #include "Tracking/SE3Tracker.h"
 #include "Tracking/Sim3Tracker.h"
@@ -24,10 +25,10 @@ public:
 
 	void doFullReConstraintTrack( void )
 	{ fullReConstraintTrackComplete.reset();
-		if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::callbackDoFullReConstraintTrack, this )); }
+		if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::fullReconstraintTrackImpl, this )); }
 
-	void newKeyFrame( const Frame::SharedPtr &frame )
-	{ if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::callbackNewKeyFrame, this, frame )); }
+	void doNewKeyFrame( const KeyFrame::SharedPtr &keyframe )
+	{ if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::newKeyFrameImpl, this, keyframe )); }
 
 	ThreadSynchronizer fullReConstraintTrackComplete;
 
@@ -46,25 +47,25 @@ private:
 
 	std::shared_ptr<Sim3Tracker>       constraintTracker;
 	std::shared_ptr<SE3Tracker>        constraintSE3Tracker;
-	std::shared_ptr<TrackingReference> newKFTrackingReference;
-	std::shared_ptr<TrackingReference> candidateTrackingReference;
+	//std::shared_ptr<KeyFrame> 					newKF; //TrackingReference;
+	//std::shared_ptr<TrackingReference> candidateTrackingReference;
 
 	int _failedToRetrack;
 	int lastNumConstraintsAddedOnFullRetrack;
 
 	//=== Callbacks ===
-	void callbackIdle( void );
-	int  callbackDoFullReConstraintTrack( void );
-	void callbackNewKeyFrame( const Frame::SharedPtr &frame );
+	void idleImpl( void );
+	int  fullReconstraintTrackImpl( void );
+	void newKeyFrameImpl( const KeyFrame::SharedPtr &keyframe );
 
 	//=== Internal functions ====
-	int findConstraintsForNewKeyFrames(const Frame::SharedPtr &newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH);
+	int findConstraintsForNewKeyFrames(const KeyFrame::SharedPtr &newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH);
 
 	std::unique_ptr<active_object::ActiveIdle> _thread;
 
 	float tryTrackSim3(
-			const std::shared_ptr<TrackingReference> &A,
-			const std::shared_ptr<TrackingReference> &B,
+			const KeyFrame::SharedPtr &kfA,
+			const KeyFrame::SharedPtr &kfB,
 			int lvlStart, int lvlEnd,
 			bool useSSE,
 			Sim3 &AtoB,
@@ -73,7 +74,8 @@ private:
 			KFConstraintStruct* e2=nullptr);
 
 	void testConstraint(
-			const Frame::SharedPtr &candidate,
+			const KeyFrame::SharedPtr &keyframe,
+			const KeyFrame::SharedPtr &candidate,
 			KFConstraintStruct* e1_out, KFConstraintStruct* e2_out,
 			Sim3 candidateToFrame_initialEstimate,
 			float strictness);

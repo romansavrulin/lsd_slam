@@ -33,15 +33,27 @@ namespace lsd_slam
 {
 
 class Sim3Tracker;
+class KeyFrame;
 
 struct RelocalizerResult {
-	RelocalizerResult( const Frame::SharedPtr &out_kf, std::shared_ptr<Frame> &f, int out_id, SE3 out_se3 )
-		: keyframe( out_kf ), successfulFrame( f ),
+
+	// Null constructor means "no result"
+	RelocalizerResult()
+		: keyframe(nullptr),
+			successfulFrame(nullptr),
+			successfulFrameID( -1 ),
+			successfulFrameToKeyframe( SE3() )
+	{;}
+
+
+	RelocalizerResult( const std::shared_ptr<KeyFrame> &out_kf, Frame::SharedPtr &f, int out_id, SE3 out_se3 )
+		: keyframe( out_kf ),
+			successfulFrame( f ),
 			successfulFrameID( out_id ), successfulFrameToKeyframe( out_se3 )
 	{;}
 
-	Frame::SharedPtr keyframe;
-	std::shared_ptr<Frame> successfulFrame;
+	std::shared_ptr<KeyFrame> keyframe;
+	Frame::SharedPtr successfulFrame;
 	int successfulFrameID;
 	SE3 successfulFrameToKeyframe;
 };
@@ -52,8 +64,8 @@ public:
 	Relocalizer();
 	~Relocalizer();
 
-	void updateCurrentFrame(std::shared_ptr<Frame> currentFrame);
-	void start(std::vector< Frame::SharedPtr > &allKeyframesList);
+	void updateCurrentFrame( std::shared_ptr<Frame> currentFrame);
+	void start(std::vector< std::shared_ptr<KeyFrame> > &allKeyframesList);
 	void stop();
 
 	bool waitResult(int milliseconds);
@@ -67,13 +79,13 @@ private:
 	bool running[RELOCALIZE_THREADS];
 
 	// locking & signalling structures
-	boost::mutex exMutex;
-	boost::condition_variable newCurrentFrameSignal;
-	boost::condition_variable resultReadySignal;
+	std::mutex exMutex;
+	std::condition_variable newCurrentFrameSignal;
+	std::condition_variable resultReadySignal;
 
 	// for rapid-checking
-	std::vector<Frame::SharedPtr> KFForReloc;
-	std::shared_ptr<Frame> CurrentRelocFrame;
+	std::deque< std::shared_ptr<KeyFrame> > KFForReloc;
+	Frame::SharedPtr CurrentRelocFrame;
 	int nextRelocIDX;
 	int maxRelocIDX;
 	bool continueRunning;
@@ -81,7 +93,7 @@ private:
 	// result!
 	Frame::SharedPtr resultRelocFrame;
 	bool hasResult;
-	Frame::SharedPtr resultKF;
+	std::shared_ptr<KeyFrame> resultKF;
 	int resultFrameID;
 	SE3 resultFrameToKeyframe;
 

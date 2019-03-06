@@ -32,7 +32,7 @@
 
 #include "util/SophusUtil.h"
 
-#include "DataStructures/Frame.h"
+#include "DataStructures/KeyFrame.h"
 
 namespace lsd_slam
 {
@@ -62,8 +62,8 @@ struct KFConstraintStruct
 	~KFConstraintStruct();
 
 
-	Frame::SharedPtr firstFrame;
-	Frame::SharedPtr secondFrame;
+	KeyFrame::SharedPtr firstFrame;
+	KeyFrame::SharedPtr secondFrame;
 	Sophus::Sim3d secondToFirst;
 	Eigen::Matrix<double, 7, 7> information;
 	g2o::RobustKernel* robustKernel;
@@ -98,9 +98,8 @@ public:
 	~KeyFrameGraph();
 
 	/** Adds a new KeyFrame to the graph. */
-	void addKeyFrame( const Frame::SharedPtr &frame);
-	void dropKeyFrame( const Frame::SharedPtr &frame );
-
+	void addKeyFrame( const KeyFrame::SharedPtr &keyframe);
+	void dropKeyFrame( const KeyFrame::SharedPtr &keyframe );
 
 	/** Adds a new Frame to the graph. Doesnt actually keep the frame, but only it's pose-struct. */
 	void addFrame(const Frame::SharedPtr &frame);
@@ -129,7 +128,7 @@ public:
 	/**
 	 * Creates a hash map of keyframe -> distance to given frame.
 	 */
-	void calculateGraphDistancesToFrame(const Frame::SharedPtr &frame, std::unordered_map<Frame::SharedPtr, int> &distanceMap);
+	void calculateGraphDistancesToFrame(const KeyFrame::SharedPtr &frame, std::unordered_map<KeyFrame::SharedPtr, int> &distanceMap);
 
 
 	int totalPoints;
@@ -145,13 +144,13 @@ public:
 	// contains ALL keyframes, as soon as they are "finished".
 	// does NOT yet contain the keyframe that is currently being created.
 	boost::shared_mutex keyframesAllMutex;
-	std::vector< Frame::SharedPtr > keyframesAll;
+	std::vector< KeyFrame::SharedPtr > keyframesAll;
 
 
 	/** Maps frame ids to keyframes. Contains ALL Keyframes allocated, including the one that currently being created. */
 	/* this is where the shared pointers of Keyframe Frames are kept, so they are not deleted ever */
 	boost::shared_mutex idToKeyFrameMutex;
-	std::unordered_map< int, Frame::SharedPtr > idToKeyFrame;
+	std::unordered_map< int, KeyFrame::SharedPtr > idToKeyFrame;
 
 
 	// contains ALL edges, as soon as they are created
@@ -171,7 +170,7 @@ public:
 	// it is put to the end of this list; frames for re-tracking are always chosen from the first third of
 	// this list.
 	std::mutex keyframesForRetrackMutex;
-	std::deque< Frame::SharedPtr > keyframesForRetrack;
+	std::deque< KeyFrame::SharedPtr > keyframesForRetrack;
 
 	// Used to live with the optimizer, but not needed as signal anymore,
 	// now just used as a simple data mutex.
@@ -183,7 +182,7 @@ private:
 	/** Pose graph representation in g2o */
 	g2o::SparseOptimizer graph;
 
-	std::vector< Frame::SharedPtr > newKeyframesBuffer;
+	std::vector< KeyFrame::SharedPtr > newKeyframesBuffer;
 	std::vector< KFConstraintStruct* > newEdgeBuffer;
 
 

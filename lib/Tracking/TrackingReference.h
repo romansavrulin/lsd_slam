@@ -49,14 +49,25 @@ class KeyFrameGraph;
 class TrackingReference
 {
 public:
+
+	typedef std::shared_ptr<TrackingReference> SharedPtr;
+
+	TrackingReference( const TrackingReference & ) = delete;
+
 	/** Creates an empty TrackingReference with optional preallocation per level. */
 	TrackingReference();
+	TrackingReference( const Frame::SharedPtr &frame );
+
 	~TrackingReference();
+
+	int frameID()    { return ((bool)keyframe) ? keyframe->id() : -1; }
+
+
 	void importFrame( const Frame::SharedPtr &source);
 
 	Frame::SharedPtr keyframe;
 	boost::shared_lock<boost::shared_mutex> keyframeLock;
-	int frameID;
+
 
 	void makePointCloud(int level);
 	void clearAll();
@@ -69,7 +80,7 @@ public:
 
 private:
 	int wh_allocated;
-	boost::mutex accessMutex;
+	std::mutex _accessMutex;
 	void releaseAll();
 };
 }

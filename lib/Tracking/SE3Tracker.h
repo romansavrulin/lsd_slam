@@ -32,6 +32,7 @@ namespace lsd_slam
 
 class TrackingReference;
 class Frame;
+class KeyFrame;
 
 
 class SE3Tracker
@@ -49,28 +50,25 @@ public:
 	cv::Mat debugImageOldImageSource;
 	cv::Mat debugImageOldImageWarped;
 
-
-	SE3Tracker( const ImageSize &sz );
 	SE3Tracker(const SE3Tracker&) = delete;
 	SE3Tracker& operator=(const SE3Tracker&) = delete;
+
+	SE3Tracker( const ImageSize &sz );
 	~SE3Tracker();
 
-	// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	SE3 trackFrame(
-			const std::shared_ptr<TrackingReference> &reference,
+			const std::shared_ptr<KeyFrame> &keyframe,
 			const std::shared_ptr<Frame> &frame,
 			const SE3& frameToReference_initialEstimate);
 
-			// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	SE3 trackFrameOnPermaref(
-			const std::shared_ptr<Frame> &reference,
+			const std::shared_ptr<KeyFrame> &reference,
 			const std::shared_ptr<Frame> &frame,
-			SE3 referenceToFrame);
+			SE3 referenceToFrame );
 
-			// TODO:  Migrate away from Frame * to Frame::SharedPtr
 	float checkPermaRefOverlap(
-				const std::shared_ptr<Frame> &reference,
-				SE3 referenceToFrame);
+				const std::shared_ptr<KeyFrame> &reference,
+				SE3 referenceToFrame );
 
 
 	float pointUsage;

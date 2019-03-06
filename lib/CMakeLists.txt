@@ -10,6 +10,7 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/ImageSet.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/KeyFrame.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapDebugImages.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapPixelHypothesis.cpp

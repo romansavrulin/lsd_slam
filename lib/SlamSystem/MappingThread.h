@@ -12,6 +12,8 @@
 #include "util/MovingAverage.h"
 #include "util/ThreadMutexObject.h"
 
+#include "DataStructures/KeyFrame.h"
+
 #include "DepthEstimation/DepthMap.h"
 #include "Tracking/TrackingReference.h"
 
@@ -30,15 +32,15 @@ public:
 	~MappingThread();
 
 	//=== Callbacks into the thread ===
-	void pushDoIteration()
-	{
-	  //if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
-	  if( _thread ) {
-			_thread->send( std::bind( &MappingThread::doMappingIterationSet, this ));
-		} else {
-			doMappingIterationSet();
-		}
-	}
+	// void pushDoIteration()
+	// {
+	//   //if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
+	//   if( _thread ) {
+	// 		_thread->send( std::bind( &MappingThread::doMappingIterationSet, this ));
+	// 	} else {
+	// 		doMappingIterationSet();
+	// 	}
+	// }
         /* REDUNDANT
 	void pushUnmappedTrackedFrame( const Frame::SharedPtr &frame )
 	{
@@ -51,23 +53,27 @@ public:
 	}
         */
 
-	void pushUnmappedTrackedSet (const ImageSet::SharedPtr &set)
+	void doMapSet( const KeyFrame::SharedPtr &kf, const ImageSet::SharedPtr &set)
 	{
-	    {
-	        std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
-	        unmappedTrackedSets.push_back( set );
-	    }
-
 	    if( _thread )
-				_thread->send( std::bind( &MappingThread::callbackUnmappedTrackedSet, this ));
+				_thread->send( std::bind( &MappingThread::mapSetImpl, this, kf, set ));
 			else
-				callbackUnmappedTrackedSet();
+				mapSetImpl(kf, set);
 	}
 
-	void mergeOptimizationUpdate( void )
+	void doMergeOptimizationUpdate( void )
 	{
 		optimizationUpdateMerged.reset();
-		if( _thread ) _thread->send( std::bind( &MappingThread::callbackMergeOptimizationOffset, this ));
+		if( _thread ) _thread->send( std::bind( &MappingThread::mergeOptimizationOffsetImpl, this ));
+	}
+
+	void doCreateNewKeyFrame( const KeyFrame::SharedPtr &keyframe, const Frame::SharedPtr &frame )
+	{
+		if( _thread )
+			_thread->send( std::bind( &MappingThread::createNewKeyFrameImpl, this, keyframe, frame ));
+		else
+			createNewKeyFrameImpl( keyframe, frame );
+
 	}
 
         /* REDUNDANT
@@ -87,60 +93,66 @@ public:
 	}
         */
 
-	void createNewImageSet( const ImageSet::SharedPtr &set )
-	{
-	        if( newImageSetPending() )
-	        {
-	            LOG(WARNING) << "Asked to make " << set->id() << " a keyframe when " << _newImageSet()->id() << " is already pending";
-	        }
-	        _newImageSet = set;
+	// void createNewImageSet( const ImageSet::SharedPtr &set )
+	// {
+	//         if( newImageSetPending() )
+	//         {
+	//             LOG(WARNING) << "Asked to make " << set->id() << " a keyframe when " << _newImageSet()->id() << " is already pending";
+	//         }
+	//         _newImageSet = set;
+	//
+	// }
 
-	}
-
-	bool newImageSetPending( void )
-	{
-	                return (bool)(_newImageSet.get());
-	}
+	// bool newImageSetPending( void )
+	// {
+	//                 return (bool)(_newImageSet.get());
+	// }
 
 	// SET & READ EVERYWHERE
 	// std::mutex currentKeyFrameMutex;
 
-	std::deque< Frame::SharedPtr > unmappedTrackedFrames;
-  std::deque< ImageSet::SharedPtr > unmappedTrackedSets;
+	// std::deque< Frame::SharedPtr > unmappedTrackedFrames;
+  // std::deque< ImageSet::SharedPtr > unmappedTrackedSets;
 
-	std::mutex unmappedTrackedFramesMutex;
-	ThreadSynchronizer trackedFramesMapped;
+	// std::mutex unmappedTrackedFramesMutex;
+	// ThreadSynchronizer trackedFramesMapped;
 
-	// during re-localization used
+	// Used during re-localization
 	Relocalizer relocalizer;
 
-	std::unique_ptr<TrackingReference> mappingTrackingReference;
+	//std::unique_ptr<TrackingReference> mappingTrackingReference;
 
 	ThreadSynchronizer optimizationUpdateMerged;
+
 
 private:
 
 	SlamSystem &_system;
 
-  MutexObject< ImageSet::SharedPtr > _newImageSet;
-	MutexObject< Frame::SharedPtr > _newKeyFrame;
+  // MutexObject< ImageSet::SharedPtr > _newImageSet;
+	// MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
   //REDUNDANT void callbackUnmappedTrackedFrames( void );
-  void callbackUnmappedTrackedSet ( void );
+  void mapSetImpl( const KeyFrame::SharedPtr &kf, const ImageSet::SharedPtr &set );
+
+
+	void createNewKeyFrameImpl( const KeyFrame::SharedPtr &keyframe, const Frame::SharedPtr &frame );
+
 	//void callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame );
 
 	// == Local functions ==
 
   //REDUNDANT bool doMappingIteration();
-  bool doMappingIterationSet();
+  //bool doMappingIterationSet();
 
-	void callbackMergeOptimizationOffset();
+	void mergeOptimizationOffsetImpl();
+
 
 	// == Local functions ==
 
 	//REDUNDANT bool updateKeyframe();
-	bool updateImageSet();
+	//bool updateImageSet();
 
 	void addTimingSamples();
 

@@ -32,7 +32,6 @@ namespace lsd_slam
 TrackingReference::TrackingReference()
 	: keyframe( nullptr )
 {
-	frameID=-1;
 	wh_allocated = 0;
 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
 	{
@@ -43,6 +42,26 @@ TrackingReference::TrackingReference()
 		numData[level] = 0;
 	}
 }
+
+TrackingReference::TrackingReference( const Frame::SharedPtr &frame )
+	: keyframe( nullptr ),
+		_accessMutex()
+{
+	wh_allocated = 0;
+	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	{
+		posData[level] = nullptr;
+		gradData[level] = nullptr;
+		colorAndVarData[level] = nullptr;
+		pointPosInXYGrid[level] = nullptr;
+		numData[level] = 0;
+	}
+
+	importFrame( frame );
+}
+
+
+
 void TrackingReference::releaseAll()
 {
 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
@@ -55,27 +74,26 @@ void TrackingReference::releaseAll()
 	}
 	wh_allocated = 0;
 }
+
 void TrackingReference::clearAll()
 {
 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
 		numData[level] = 0;
 }
+
 TrackingReference::~TrackingReference()
 {
-	boost::unique_lock<boost::mutex> lock(accessMutex);
+	std::lock_guard<std::mutex> lock(_accessMutex);
 	invalidate();
 	releaseAll();
 }
 
 void TrackingReference::importFrame(const Frame::SharedPtr &sourceKF)
 {
-	boost::unique_lock<boost::mutex> lock(accessMutex);
+	std::lock_guard<std::mutex> lock(_accessMutex);
 
 	keyframeLock = sourceKF->getActiveLock();
-
 	keyframe = sourceKF;
-	frameID = keyframe->id();
-
 
 	// reset allocation if dimensions differ (shouldnt happen usually)
 	if(sourceKF->width(0) * sourceKF->height(0) != wh_allocated)
@@ -85,7 +103,6 @@ void TrackingReference::importFrame(const Frame::SharedPtr &sourceKF)
 	}
 
 	clearAll();
-	lock.unlock();
 }
 
 void TrackingReference::invalidate()
@@ -98,7 +115,7 @@ void TrackingReference::invalidate()
 void TrackingReference::makePointCloud(int level)
 {
 	assert(keyframe != 0);
-	boost::unique_lock<boost::mutex> lock(accessMutex);
+	std::lock_guard<std::mutex> lock(_accessMutex);
 
 	if(numData[level] > 0)
 		return;	// already exists.
@@ -145,7 +162,7 @@ void TrackingReference::makePointCloud(int level)
 	}
 
 	numData[level] = posDataPT - posData[level];
-	LOG(INFO) << "Keyframe " << frameID << " has " << numData[level] << " tracked points at level " << level;
+	LOG(INFO) << "Keyframe " << frameID() << " has " << numData[level] << " tracked points at level " << level;
 }
 
 
