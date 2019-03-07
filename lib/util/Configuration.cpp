@@ -10,8 +10,8 @@ namespace lsd_slam {
     return TheInstance;
   }
 
-  Configuration::Configuration() :
-      runRealTime( true ),
+  Configuration::Configuration()
+    : runRealTime( true ),
       doDepth( NO_STEREO ),
       stopOnFailedRead( true ),
       SLAMEnabled( true ),
@@ -27,7 +27,8 @@ namespace lsd_slam {
       onSceenInfoDisplay( true ),
       displayDepthMap( true ),
       dumpMap( false ),
-      doFullReConstraintTrack( false )
+      doFullReConstraintTrack( false ),
+      print()
   {
   }
 
@@ -39,6 +40,14 @@ namespace lsd_slam {
     slamImageSize = sz;
     return slamImageSize;
   }
+
+
+  //==
+  Configuration::PrintConfiguration::PrintConfiguration()
+    : threadingInfo( true ),
+      memoryDebugInfo(false),
+      trackingIterationInfo(false)
+    {;}
 
 
 }

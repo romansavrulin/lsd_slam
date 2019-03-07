@@ -254,6 +254,7 @@ void KeyFrameGraph::dumpMap(std::string folder)
 
 void KeyFrameGraph::addKeyFrame( const KeyFrame::SharedPtr &keyframe)
 {
+	CHECK( (bool)keyframe ) << "Received null keyframe";
 	if(keyframe->frame()->pose->graphVertex != nullptr)
 		return;
 

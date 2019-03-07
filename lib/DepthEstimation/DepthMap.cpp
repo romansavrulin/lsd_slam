@@ -42,10 +42,10 @@ namespace lsd_slam
 
 
 // Constructor when unable to proagate from previous
-DepthMap::DepthMap( const Frame::SharedPtr &keyframe )
+DepthMap::DepthMap( const Frame::SharedPtr &frame )
 	: _perf(),
 		_debugImages( Conf().slamImageSize ),
-		_frame( keyframe ),
+		_frame( frame ),
 		activeKeyFrameIsReactivated( false )
 {
 	const size_t imgArea( Conf().slamImageSize.area() );
@@ -56,6 +56,7 @@ DepthMap::DepthMap( const Frame::SharedPtr &keyframe )
 
 	reset();
 }
+
 
 
 // // Constructor when propagation from an existing Depthmap
@@ -224,7 +225,7 @@ bool DepthMap::updateDepthFrom( const Frame::SharedPtr &updateFrame )
 {
 	// assert(isValid());
 
-	LOG(INFO) << "In DepthMap::updateKeyframe";
+	// LOG(INFO) << "In DepthMap::updateKeyframe";
 
 	Timer timeAll;
 
@@ -355,6 +356,18 @@ void DepthMap::propagateFrom( const DepthMap::SharedPtr &other )
 	// //activeKeyFrameImageData = new_keyframe->image(0);
 	// activeKeyFrameIsReactivated = false;
 
+	{
+		int validCount = 0;
+		for(DepthMapPixelHypothesis* source = currentDepthMap; source < currentDepthMap+Conf().slamImageSize.area(); source++)
+		{
+			if(!source->isValid)
+				continue;
+			++validCount;
+		}
+		LOG(DEBUG) << "After propagation, DepthMap has " << validCount << " valid points";
+	}
+
+
 
 
 	{
@@ -379,13 +392,18 @@ void DepthMap::propagateFrom( const DepthMap::SharedPtr &other )
 
 	// make mean inverse depth be one.
 	float sumIdepth=0, numIdepth=0;
+	int validCount = 0;
 	for(DepthMapPixelHypothesis* source = currentDepthMap; source < currentDepthMap+Conf().slamImageSize.area(); source++)
 	{
 		if(!source->isValid)
 			continue;
+
 		sumIdepth += source->idepth_smoothed;
 		numIdepth++;
+		++validCount;
 	}
+
+	LOG(DEBUG) << "DepthMap has " << validCount << " valid points";
 
 	float rescaleFactor = numIdepth / sumIdepth;
 	float rescaleFactor2 = rescaleFactor*rescaleFactor;
@@ -538,7 +556,7 @@ void DepthMap::observeDepth( const Frame::SharedPtr &updateFrame )
 	threadReducer.reduce(boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3, Conf().slamImageSize.height-3, 10);
 
 	LOGF_IF(DEBUG, Conf().print.observeStatistics, "OBSERVE (%d): %d / %d created; %d / %d updated; %d skipped; %d init-blacklisted",
-			_frame->id(),
+			frame()->id(),
 			runningStats.num_observe_created,
 			runningStats.num_observe_create_attempted,
 			runningStats.num_observe_updated,
@@ -548,7 +566,7 @@ void DepthMap::observeDepth( const Frame::SharedPtr &updateFrame )
 
 	LOGF_IF(DEBUG, Conf().print.observePurgeStatistics,
 		 "OBS-PRG (%d): Good: %d; inconsistent: %d; notfound: %d; oob: %d; failed: %d; addSkip: %d;",
-			_frame->id(),
+			frame()->id(),
 			runningStats.num_observe_good,
 			runningStats.num_observe_inconsistent,
 			runningStats.num_observe_notfound,
@@ -559,7 +577,7 @@ void DepthMap::observeDepth( const Frame::SharedPtr &updateFrame )
 
 void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats* stats)
 {
-	const float* keyFrameMaxGradBuf = _frame->maxGradients(0);
+	const float* keyFrameMaxGradBuf = frame()->maxGradients(0);
 
 	int successes = 0;
 
@@ -598,7 +616,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx, Ru
 
 //	Frame::SharedPtr _observeFrame( activeKeyFrameIsReactivated ? newest_referenceFrame : oldest_referenceFrame );
 
-	if(_observeFrame->isTrackingParent( _frame->id() ) )
+	if(_observeFrame->isTrackingParent( frame()->id() ) )
 	{
 		bool* wasGoodDuringTracking = _observeFrame->refPixelWasGoodNoCreate();
 		if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (Conf().slamImageSize.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
@@ -673,7 +691,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 	// 	refFrame = newest_referenceFrame;
 
 
-	if(_observeFrame->isTrackingParent( _frame->id() ) ) {
+	if(_observeFrame->isTrackingParent( frame()->id() ) ) {
 		bool* wasGoodDuringTracking = _observeFrame->refPixelWasGoodNoCreate();
 		if(wasGoodDuringTracking != 0 && !wasGoodDuringTracking[(x >> SE3TRACKING_MIN_LEVEL) + (Conf().slamImageSize.width >> SE3TRACKING_MIN_LEVEL)*(y >> SE3TRACKING_MIN_LEVEL)])
 		{
@@ -795,7 +813,10 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx, co
 		// increase Skip!
 		if(result_eplLength < MIN_EPL_LENGTH_CROP)
 		{
-			float inc = _frame->numFramesTrackedOnThis / (float)(_frame->numMappedOnThis+5);
+			//!!TODO.  Disabled this because I can't get to the statistics from here...
+			//float inc = _parent->numFramesTrackedOnThis / (float)(_parent->numMappedOnThis+5);
+			float inc = 3;
+
 			if(inc < 3) inc = 3;
 
 			inc +=  ((int)(result_eplLength*10000)%2);
@@ -974,7 +995,7 @@ void DepthMap::propagateDepthFrom( const DepthMap::SharedPtr &other)
 				}
 			}
 
-			DepthMapPixelHypothesis* targetBest = otherDepthMap +  newIDX;
+			DepthMapPixelHypothesis* targetBest = currentDepthMap +  newIDX;
 
 			// large idepth = point is near = large increase in variance.
 			// small idepth = point is far = small increase in variance.
@@ -1073,7 +1094,7 @@ void DepthMap::regularizeDepthMapFillHoles()
 void DepthMap::regularizeDepthMapFillHolesRow(int yMin, int yMax, RunningStats* stats)
 {
 	// =========== regularize fill holes
-	const float* keyFrameMaxGradBuf = _frame->maxGradients(0);
+	const float* keyFrameMaxGradBuf = frame()->maxGradients(0);
 
 	int width = Conf().slamImageSize.width;
 
@@ -1177,7 +1198,7 @@ void DepthMap::regularizeDepthMap(bool removeOcclusions, int validityTH)
 		threadReducer.reduce(boost::bind(&DepthMap::regularizeDepthMapRow<false>, this, validityTH, _1, _2, _3), 2, Conf().slamImageSize.height-2, 10);
 
 	LOGF_IF(INFO, Conf().print.regularizeStatistics, "REGULARIZE (%d): %d smeared; %d blacklisted /%d new); %d deleted; %d occluded; %d filled\n",
-			_frame->id(),
+			frame()->id(),
 			runningStats.num_reg_smeared,
 			runningStats.num_reg_blacklisted,
 			runningStats.num_reg_setBlacklisted,
@@ -1331,9 +1352,9 @@ void DepthMap::logPerformanceData()
 // 	return 1;
 // }
 
-void DepthMap::debugPlotDepthMap( const char *buf1, const char *buf2) {
+void DepthMap::plotDepthMap( const char *buf1, const char *buf2) {
 	// TODO:  0 arg was referenceFrameByID_offset, but that doesn't exist anymore
-  _debugImages.debugPlotDepthMap( _frame, currentDepthMap, 0, buf1, buf2 );
+	_debugImages.debugPlotDepthMap( frame(), currentDepthMap, 0, buf1, buf2 );
 }
 
 
@@ -1833,7 +1854,7 @@ inline float DepthMap::doLineStereo(
 	float trackingErrorFac = 0.25f*(1.0f+referenceFrame->initialTrackedResidual);
 
 	// calculate error from geometric noise (wrong camera pose / calibration)
-	Eigen::Vector2f gradsInterp = getInterpolatedElement42(_frame->gradients(0), u, v, width);
+	Eigen::Vector2f gradsInterp = getInterpolatedElement42(frame()->gradients(0), u, v, width);
 	float geoDispError = (gradsInterp[0]*epxn + gradsInterp[1]*epyn) + DIVISION_EPS;
 	geoDispError = trackingErrorFac*trackingErrorFac*(gradsInterp[0]*gradsInterp[0] + gradsInterp[1]*gradsInterp[1]) / (geoDispError*geoDispError);
 

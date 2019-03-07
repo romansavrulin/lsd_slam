@@ -468,16 +468,15 @@ SE3 SE3Tracker::trackFrame(
 	_pctGoodPerTotal = _lastGoodCount / (frame->width(SE3TRACKING_MIN_LEVEL)*frame->height(SE3TRACKING_MIN_LEVEL));
 	_pctGoodPerGoodBad = _lastGoodCount / (_lastGoodCount + _lastBadCount);
 
-	LOG(INFO) << "lastGoodCount " << _lastGoodCount << " lastBadCount " << _lastBadCount;
-	LOG(INFO) << frame->width(SE3TRACKING_MIN_LEVEL) << " " << frame->height(SE3TRACKING_MIN_LEVEL);
-	LOG(INFO) << _pctGoodPerTotal << " " << _pctGoodPerGoodBad;
+	LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << "lastGoodCount " << _lastGoodCount << " lastBadCount " << _lastBadCount;
+	LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << frame->width(SE3TRACKING_MIN_LEVEL) << " " << frame->height(SE3TRACKING_MIN_LEVEL);
+	LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << _pctGoodPerTotal << " " << _pctGoodPerGoodBad;
 
 	trackingWasGood = !diverged
 			&& _pctGoodPerTotal > MIN_GOODPERALL_PIXEL
 			&& _pctGoodPerGoodBad > MIN_GOODPERGOODBAD_PIXEL;
 
-	if(trackingWasGood)
-		reference->keyframe->numFramesTrackedOnThis++;
+	if(trackingWasGood) keyframe->numFramesTrackedOnThis++;
 
 	frame->initialTrackedResidual = lastResidual / pointUsage;
 	frame->pose->thisToParent_raw = sim3FromSE3(toSophus(referenceToFrame.inverse()),1);
@@ -741,7 +740,7 @@ float SE3Tracker::calcResidualAndBuffers(
 	_lastBadCount = badCount;
 	lastMeanRes = sumSignedRes / goodCount;
 
-	LOG(DEBUG) << "loop: " << loop << " buf_warped_size = " << buf_warped_size << "; goodCount = " << goodCount << "; badCount = " << badCount;
+	LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << "loop: " << loop << " buf_warped_size = " << buf_warped_size << "; goodCount = " << goodCount << "; badCount = " << badCount;
 	// if( buf_warped_size == 0 ) {
 	// 		LOG(DEBUG) << "Trap!";
 	// }

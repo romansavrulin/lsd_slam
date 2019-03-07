@@ -52,7 +52,7 @@ SlamSystem::SlamSystem( )
 : _perf(),
 	_outputWrapper( new NullOutput3DWrapper() ),
 	_finalized(),
-	_initialized( false ),
+	// _initialized( false ),
 	_keyFrames(),
 	_keyFrameGraph( new KeyFrameGraph ),
 	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph ) )
@@ -117,33 +117,31 @@ void SlamSystem::finalize()
 
 }
 
-void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
-{
-	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
-
-	//depthMap()->setCurrentKeyFrame( set->refFrame() );
-
-	// // Todo.  If multiple images are available in the set,
-	// // use stereo disparity to initialize?
-	// if( set->refFrame()->hasIDepthBeenSet() ) {
-	// 	LOG(INFO) << "Using initial Depth estimate in first frame.";
-	// 	depthMap()->initializeFromGTDepth( set->refFrame() );
-	// } else {
-	// 	LOG(INFO) << "Doing Stereo initialization!";
-	// 	//depthMap()->initializeRandomly( set->refFrame() );
-	// 	depthMap()->initializefromStereo(set);
-	// }
-	updateDisplayDepthMap();
-
-	keyFrameGraph()->addKeyFrame( currentKeyFrame() );
-
-	if( Conf().continuousPCOutput) {
-		LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
-		publishCurrentKeyframe();
-	}
-
-	_initialized = true;
-}
+// void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
+// {
+// 	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
+//
+// 	//depthMap()->setCurrentKeyFrame( set->refFrame() );
+//
+// 	// // Todo.  If multiple images are available in the set,
+// 	// // use stereo disparity to initialize?
+// 	// if( set->refFrame()->hasIDepthBeenSet() ) {
+// 	// 	LOG(INFO) << "Using initial Depth estimate in first frame.";
+// 	// 	depthMap()->initializeFromGTDepth( set->refFrame() );
+// 	// } else {
+// 	// 	LOG(INFO) << "Doing Stereo initialization!";
+// 	// 	//depthMap()->initializeRandomly( set->refFrame() );
+// 	// 	depthMap()->initializefromStereo(set);
+// 	// }
+// 	//updateDisplayDepthMap();
+//
+// 	// if( Conf().continuousPCOutput) {
+// 	// 	LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
+// 	// 	publishCurrentKeyframe();
+// 	// }
+//
+// 	_initialized = true;
+// }
 
 
 void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam )
@@ -153,10 +151,10 @@ void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoi
 
 void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
 {
-	if( !_initialized ) {
-		initialize( set );
-		return;
-	}
+	// if( !_initialized ) {
+	// 	initialize( set );
+	// 	return;
+	// }
 
 	//LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
 	_trackingThread->doTrackSet( set );
@@ -172,6 +170,8 @@ void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
 void SlamSystem::addKeyFrame( const KeyFrame::SharedPtr &keyframe )
 {
 	_keyFrames.push_back( keyframe );
+
+//	keyFrameGraph()->addKeyFrame( currentKeyFrame() );
 
 	keyFrameGraph()->idToKeyFrame.insert(std::make_pair(keyframe->id(), keyframe));
 }
@@ -264,10 +264,9 @@ void SlamSystem::logPerformanceData()
 
 void SlamSystem::updateDisplayDepthMap()
 {
-	if( !Conf().displayDepthMap ) return;  //&& !depthMapScreenshotFlag)
-	double scale = 1;
+	if( !Conf().displayDepthMap ) return;
 
-	if( (bool)currentKeyFrame() ) scale = currentKeyFrame()->frame()->getCamToWorld().scale();
+	const double scale = (bool)currentKeyFrame() ? currentKeyFrame()->frame()->getCamToWorld().scale() : 1.0;
 
 	// debug plot depthmap
 	char buf1[200] = "";
@@ -292,10 +291,10 @@ void SlamSystem::updateDisplayDepthMap()
 
 	}
 
-	// depthMap()->debugPlotDepthMap( buf1, buf2 );
-	//
-	// CHECK( depthMap()->debugImages().depthImage().data != NULL );
-	//publishDepthImage( depthMap()->debugImages().depthImage().data );
+	currentKeyFrame()->depthMap()->plotDepthMap( buf1, buf2 );
+
+	CHECK( currentKeyFrame()->depthMap()->debugImages().depthImage().data != NULL );
+	publishDepthImage( currentKeyFrame()->depthMap()->debugImages().depthImage().data );
 }
 
 
@@ -306,7 +305,7 @@ Sophus::SE3d SlamSystem::getCurrentPoseEstimate()
 	if( keyFrameGraph()->allFramePoses.size() > 0)
 		return se3FromSim3(keyFrameGraph()->allFramePoses.back()->getCamToWorld());
 
-	return Sophus::SE3d();
+	return SE3();
 }
 
 Sophus::Sim3d SlamSystem::getCurrentPoseEstimateScale()
@@ -315,7 +314,7 @@ Sophus::Sim3d SlamSystem::getCurrentPoseEstimateScale()
 	if(keyFrameGraph()->allFramePoses.size() > 0)
 		return keyFrameGraph()->allFramePoses.back()->getCamToWorld().cast<double>();
 
-	return Sophus::Sim3d();
+	return Sim3();
 }
 
 std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()
@@ -333,6 +332,7 @@ void SlamSystem::publishKeyframe( const Frame::SharedPtr &frame )
 
 void SlamSystem::publishCurrentKeyframe( )
 {
+	LOG(DEBUG) << "Publishing current keyframe " << currentKeyFrame()->id();
 	if( _outputWrapper  && currentKeyFrame() ) {
 		_outputWrapper->publishKeyframe( currentKeyFrame()->frame() );
 	} else {

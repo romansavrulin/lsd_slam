@@ -156,12 +156,12 @@ private:
 	std::shared_ptr<Output3DWrapper> _outputWrapper;	// no lock required
 
 	ThreadSynchronizer _finalized;
-	bool _initialized;
+	//bool _initialized;
 
 	// ======= Functions =====
 
 	// Called for first ImageSet
-	void initialize( const std::shared_ptr<ImageSet> &set );
+	//void initialize( const std::shared_ptr<ImageSet> &set );
 
 	void logPerformanceData();
 

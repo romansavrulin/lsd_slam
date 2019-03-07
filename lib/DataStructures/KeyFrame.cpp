@@ -13,7 +13,6 @@ namespace lsd_slam {
     kf->depthMap()->initializeFromFrame();
     kf->syncDepthMapToFrame();
 
-
     return kf;
   }
 
@@ -27,13 +26,6 @@ namespace lsd_slam {
 //    kf->frame()->pose->thisToParent_raw = sim3FromSE3( se3FromSim3( frame()->pose->thisToParent_raw ), rescaleFactor);
   	kf->frame()->pose->invalidateCache();
 
-  	// Update depth in keyframe
-  	// {
-  	// 	Timer time;
-  	// 	keyframe()->setDepth(currentDepthMap);
-  	// 	_perf.setDepth.update( time );
-  	// }
-
     return kf;
   }
 
@@ -41,7 +33,10 @@ namespace lsd_slam {
   //=== Class functions
 
   KeyFrame::KeyFrame( const Frame::SharedPtr &frame )
-    : _frame( frame ),
+    : numFramesTrackedOnThis(0),
+      numMappedOnThis(0),
+      numMappedOnThisTotal(0),
+      _frame( frame ),
       _depthMap( new DepthMap( frame ) ),
       _trackingReference( new TrackingReference( frame ) )
     {
@@ -66,16 +61,10 @@ namespace lsd_slam {
       return;
     }
 
+    syncDepthMapToFrame();
 
-  // Update depth in keyframe
-	// if(!frame()->depthHasBeenUpdatedFlag) {
-	// 	Timer time;
-  syncDepthMapToFrame();
-	// 	_perf.setDepth.update( time );
-	// }
-
-  	_frame->numMappedOnThis++;
-  	_frame->numMappedOnThisTotal++;
+  	numMappedOnThis++;
+  	numMappedOnThisTotal++;
 
   }
 

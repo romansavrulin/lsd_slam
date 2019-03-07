@@ -40,6 +40,12 @@ namespace lsd_slam {
     /** Multi-Map indicating for which other keyframes with which initialization tracking failed.*/
     std::unordered_multimap< KeyFrame::SharedPtr, Sim3 > trackingFailed;
 
+    //== Meta statistics ==
+    int numFramesTrackedOnThis;
+    int numMappedOnThis;
+    int numMappedOnThisTotal;
+
+
 
   protected:
 

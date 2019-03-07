@@ -52,10 +52,10 @@ public:
 
 	typedef std::shared_ptr<TrackingReference> SharedPtr;
 
+	TrackingReference() = delete;
 	TrackingReference( const TrackingReference & ) = delete;
 
 	/** Creates an empty TrackingReference with optional preallocation per level. */
-	TrackingReference();
 	TrackingReference( const Frame::SharedPtr &frame );
 
 	~TrackingReference();
@@ -63,7 +63,7 @@ public:
 	int frameID()    { return ((bool)keyframe) ? keyframe->id() : -1; }
 
 
-	void importFrame( const Frame::SharedPtr &source);
+	//void importFrame( const Frame::SharedPtr &source);
 
 	Frame::SharedPtr keyframe;
 	boost::shared_lock<boost::shared_mutex> keyframeLock;
@@ -71,7 +71,7 @@ public:
 
 	void makePointCloud(int level);
 	void clearAll();
-	void invalidate();
+	//void invalidate();
 	Eigen::Vector3f* posData[PYRAMID_LEVELS];	// (x,y,z)
 	Eigen::Vector2f* gradData[PYRAMID_LEVELS];	// (dx, dy)
 	Eigen::Vector2f* colorAndVarData[PYRAMID_LEVELS];	// (I, Var)

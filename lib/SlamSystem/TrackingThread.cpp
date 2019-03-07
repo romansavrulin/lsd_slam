@@ -61,9 +61,10 @@ TrackingThread::TrackingThread( SlamSystem &system, bool threaded )
 : _system( system ),
 	_perf(),
 	_tracker( new SE3Tracker( Conf().slamImageSize ) ),
-	_trackingReference( new TrackingReference() ),
+	//_trackingReference( new TrackingReference() ),
 	_initialized( false ),
 	_trackingIsGood( true ),
+	_newKeyFramePending( false ),
 	_thread( threaded ? Active::createActive() : NULL )
 {
 
@@ -137,8 +138,12 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
 		// Take ref frame in set as keyframe
 		_currentKeyFrame = KeyFrame::Create( set->refFrame() );
 
+		_system.keyFrameGraph()->allFramePoses.push_back( _currentKeyFrame->pose() );
+		_system.addKeyFrame( _currentKeyFrame );
+
 		_initialized = true;
 
+		// TODO.  How to handle multi-image sets?
 		return;
 	}
 
@@ -168,16 +173,18 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
 
         //FramePoseStruct &trackingReferencePose( *_trackingReference->keyframe->pose);
 
-				const FramePoseStruct::SharedPtr &trackingFramePose( _currentKeyFrame->pose() );
+				//const FramePoseStruct::SharedPtr &trackingFramePose( _currentKeyFrame->pose() );
 
         // DO TRACKING & Show tracking result.
         LOG_IF(DEBUG, Conf().print.threadingInfo) << "TRACKING frame " << set->refFrame()->id() << " onto ref. " << _currentKeyFrame->id();
 
-				// TODO.  WHAT THE HELL?
         SE3 frameToReference_initialEstimate;
         {
             boost::shared_lock_guard<boost::shared_mutex> lock( _system.poseConsistencyMutex );
-            frameToReference_initialEstimate = se3FromSim3( trackingFramePose->getCamToWorld().inverse() * _system.keyFrameGraph()->allFramePoses.back()->getCamToWorld());
+						CHECK( _system.keyFrameGraph()->allFramePoses.size() > 0 ) << "No poses in allFramePoses";
+
+						// Estimate pose from currentFrame and most recent pose
+            frameToReference_initialEstimate = se3FromSim3(  _currentKeyFrame->pose()->getCamToWorld().inverse() * _system.keyFrameGraph()->allFramePoses.back()->getCamToWorld());
         }
 
 
@@ -205,7 +212,7 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
                                 _tracker->trackingWasGood ? "GOOD" : "BAD",
                                 _tracker->diverged ? "DIVERGED" : "NOT DIVERGED");
 
-                _trackingReference->invalidate();
+                //_trackingReference->invalidate();
                 setTrackingIsBad();
 
 								//!!TODO.  What does mapping thread do while tracking is bad?
@@ -219,12 +226,18 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
         _system.publishTrackedFrame(set->refFrame());
         _system.publishPose(set->getRefTransformation().cast<float>());
 
+
         // Keyframe selection
         LOG(INFO) << "Tracking " << set->id() << " against keyframe " << _currentKeyFrame->id();
-        LOG_IF( INFO, Conf().print.threadingInfo ) << _currentKeyFrame->frame()->numMappedOnThisTotal << " frames mapped on to keyframe " << _currentKeyFrame->id() << ", considering " << set->refFrame()->id() << " as new keyframe.";
+        LOG_IF( INFO, Conf().print.threadingInfo ) << _currentKeyFrame->numMappedOnThisTotal << " frames mapped on to keyframe " << _currentKeyFrame->id() << ", considering " << set->refFrame()->id() << " as new keyframe.";
+
+				LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Pushing tracked frame to mapThread.";
+
+				// Push to mapping before checking if its the new keyframe
+        _system.mapThread()->doMapSet( _currentKeyFrame, set );
 
 				//if(!_system.mapThread->newImageSetPending() && _currentKeyFrame->frame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
-				if( _currentKeyFrame->frame()->numMappedOnThisTotal > MIN_NUM_MAPPED)
+				if( !_newKeyFramePending && _currentKeyFrame->numMappedOnThisTotal > MIN_NUM_MAPPED)
         {
           Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() * _currentKeyFrame->frame()->meanIdepth;
           float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f / INITIALIZATION_PHASE_COUNT,1.0f);
@@ -241,6 +254,7 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
             //_system.mapThread->createNewKeyFrame( set->refFrame() );
 
 						//TODO.  Need to add synchronization so we don't propose multiple new keyframes
+						_newKeyFramePending = true;
             _system.mapThread()->doCreateNewKeyFrame( _currentKeyFrame, set->refFrame() );
 
             LOGF_IF( INFO, Conf().print.keyframeSelectionInfo,
@@ -253,23 +267,15 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
           }
         }
 
-        LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Push unmapped tracked frame.";
-
-        //ADD UNTRACKED FRAME/SET
-        //_system.mapThread->pushUnmappedTrackedFrame( set->refFrame() );
-
-				// Either threaded (and non-blocking) or non-threaded and blocking
-        _system.mapThread()->doMapSet( _currentKeyFrame, set );
-
-        // If blocking is requested...
-        // if( !Conf().runRealTime && trackingIsGood() ){
-        //         while( _system.mapThread->unmappedTrackedSets.size() > 0 ) {
-        //                 _system.mapThread->trackedFramesMapped.wait( );
-        //         }
-        // }
-
         LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Exiting trackFrame";
 
+}
+
+void TrackingThread::useNewKeyFrameImpl( const std::shared_ptr<KeyFrame> &kf )
+{
+	LOG(WARNING) << "Taking " << kf->id() << " as new keyframe";
+	_newKeyFramePending = false;
+	_currentKeyFrame = kf;
 }
 
 /*
@@ -467,7 +473,7 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 	if(!_tracker->trackingWasGood || _tracker->lastGoodCount() / (_tracker->lastGoodCount()) < 1-0.75f*(1-MIN_GOODPERGOODBAD_PIXEL))
 	{
 		LOG_IF(DEBUG, Conf().print.relocalizationInfo) << "RELOCALIZATION FAILED BADLY! discarding result.";
-		_trackingReference->invalidate();
+		//_trackingReference->invalidate();
 	}
 	else
 	{

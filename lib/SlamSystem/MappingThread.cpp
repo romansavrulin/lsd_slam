@@ -94,8 +94,14 @@ void MappingThread::mapSetImpl( const KeyFrame::SharedPtr &kf, const ImageSet::S
     // if(sz < 50 ||
     //   (sz < 100 && nMapped) ) {
 
+		LOG(INFO) << "Mapping set " << set->id() << " onto KeyFrame " << kf->id();
 
-		kf->depthMap()->updateDepthFrom( set->refFrame() );
+		kf->updateDepthFrom( set->refFrame() );
+
+		_system.updateDisplayDepthMap();
+		_system.publishCurrentKeyframe();
+		_system.publishPointCloud();
+
 
 
 //            while( doMappingIterationSet() ) { ; }
@@ -146,10 +152,14 @@ void MappingThread::mergeOptimizationOffsetImpl()
 
 void MappingThread::createNewKeyFrameImpl( const KeyFrame::SharedPtr &currentKeyFrame, const Frame::SharedPtr &frame )
 {
+	LOG(WARNING) << "Making " << frame->id() << " into new keyframe!";
+
 	CHECK( frame->isTrackingParent( currentKeyFrame ) ) << "New keyframe does not track on current keyframe!";
 
 	KeyFrame::SharedPtr kf( KeyFrame::PropagateAndCreate( currentKeyFrame, frame ) );
-	_system.trackingThread()->doUseNewKeyFrame( kf );
+		_system.trackingThread()->doUseNewKeyFrame( kf );
+
+	LOG(WARNING) << "Done making new keyframe";
 }
 
 // void MappingThread::callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame )

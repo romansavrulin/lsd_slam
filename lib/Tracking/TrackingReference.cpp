@@ -29,22 +29,22 @@ namespace lsd_slam
 {
 
 
-TrackingReference::TrackingReference()
-	: keyframe( nullptr )
-{
-	wh_allocated = 0;
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
-	{
-		posData[level] = nullptr;
-		gradData[level] = nullptr;
-		colorAndVarData[level] = nullptr;
-		pointPosInXYGrid[level] = nullptr;
-		numData[level] = 0;
-	}
-}
+// TrackingReference::TrackingReference()
+// 	: keyframe( nullptr )
+// {
+// 	wh_allocated = 0;
+// 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+// 	{
+// 		posData[level] = nullptr;
+// 		gradData[level] = nullptr;
+// 		colorAndVarData[level] = nullptr;
+// 		pointPosInXYGrid[level] = nullptr;
+// 		numData[level] = 0;
+// 	}
+// }
 
 TrackingReference::TrackingReference( const Frame::SharedPtr &frame )
-	: keyframe( nullptr ),
+	: keyframe( frame ),
 		_accessMutex()
 {
 	wh_allocated = 0;
@@ -57,7 +57,7 @@ TrackingReference::TrackingReference( const Frame::SharedPtr &frame )
 		numData[level] = 0;
 	}
 
-	importFrame( frame );
+	//importFrame( frame );
 }
 
 
@@ -84,37 +84,37 @@ void TrackingReference::clearAll()
 TrackingReference::~TrackingReference()
 {
 	std::lock_guard<std::mutex> lock(_accessMutex);
-	invalidate();
+	//invalidate();
 	releaseAll();
 }
 
-void TrackingReference::importFrame(const Frame::SharedPtr &sourceKF)
-{
-	std::lock_guard<std::mutex> lock(_accessMutex);
-
-	keyframeLock = sourceKF->getActiveLock();
-	keyframe = sourceKF;
-
-	// reset allocation if dimensions differ (shouldnt happen usually)
-	if(sourceKF->width(0) * sourceKF->height(0) != wh_allocated)
-	{
-		releaseAll();
-		wh_allocated = sourceKF->width(0) * sourceKF->height(0);
-	}
-
-	clearAll();
-}
-
-void TrackingReference::invalidate()
-{
-	if( (bool)keyframe ) keyframeLock.unlock();
-
-	keyframe.reset();
-}
+// void TrackingReference::importFrame(const Frame::SharedPtr &sourceKF)
+// {
+// 	std::lock_guard<std::mutex> lock(_accessMutex);
+//
+// 	keyframeLock = sourceKF->getActiveLock();
+// 	keyframe = sourceKF;
+//
+// 	// reset allocation if dimensions differ (shouldnt happen usually)
+// 	if(sourceKF->width(0) * sourceKF->height(0) != wh_allocated)
+// 	{
+// 		releaseAll();
+// 		wh_allocated = sourceKF->width(0) * sourceKF->height(0);
+// 	}
+//
+// 	clearAll();
+// }
+//
+// void TrackingReference::invalidate()
+// {
+// 	if( (bool)keyframe ) keyframeLock.unlock();
+//
+// 	keyframe.reset();
+// }
 
 void TrackingReference::makePointCloud(int level)
 {
-	assert(keyframe != 0);
+	CHECK( (bool)keyframe ) << "Keyframe is zero.  It shouldn't be.";
 	std::lock_guard<std::mutex> lock(_accessMutex);
 
 	if(numData[level] > 0)

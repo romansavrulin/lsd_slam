@@ -267,9 +267,6 @@ public:
 
 	// statistics
 	float initialTrackedResidual;
-	int numFramesTrackedOnThis;
-	int numMappedOnThis;
-	int numMappedOnThisTotal;
 	float meanIdepth;
 	int numPoints;
 	int idxInKeyframes;

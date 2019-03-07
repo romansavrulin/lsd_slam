@@ -54,7 +54,7 @@ public:
 	DepthMap(const DepthMap&) = delete;
 	DepthMap& operator=(const DepthMap&) = delete;
 
-	DepthMap( const Frame::SharedPtr &frame );
+	DepthMap( const std::shared_ptr<Frame> &parent );
 
 	// //== Propagation constructor for subsequent keyframes
 	// DepthMap( const DepthMap::SharedPtr &other, const Frame::SharedPtr &frame );
@@ -83,8 +83,10 @@ public:
 	// inline bool isValid() {return (bool)activeKeyFrame;};
 
 	//int debugPlotDepthMap();
-	void debugPlotDepthMap( const char *buf1, const char *buf2 );
 	const DepthMapDebugImages &debugImages() const { return _debugImages; }
+
+	// This is the only debug plot which is triggered externally..
+	void plotDepthMap( const char *buf1, const char *buf2 );
 
 
 	//== Initializers, required only when propagating from a previous keyframe
@@ -113,7 +115,7 @@ public:
 	PerformanceData perf() const { return _perf; }
 
 	// Convenience accessors
-	Frame::SharedPtr frame()     { return _frame; }
+	std::shared_ptr<Frame> &frame() { return _frame; }
 
 	//
 	DepthMapPixelHypothesis *hypothesisAt( const int x, const int y )
@@ -164,7 +166,7 @@ private:
 	void propagateDepthFrom(const DepthMap::SharedPtr &new_keyframe );
 
 
-	// This is a local state variable.  Sucks, I know
+	// This is a local state variable used to share data between the observeDepth* functions.  Sucks, I know
 	Frame::SharedPtr _observeFrame;
 	void observeDepth( const Frame::SharedPtr &updateFrame );
 	void observeDepthRow(int yMin, int yMax, RunningStats* stats);

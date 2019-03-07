@@ -49,7 +49,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
 	CHECK(image != nullptr ) << "Image not defined!";
 
-	LOG(INFO) << "Image width " << data.width[0] << " x " << data.height[0];
+	//LOG(INFO) << "Image width " << data.width[0] << " x " << data.height[0];
 
 	//memcpy( data.image[0], image, data.width[0]*data.height[0] );
 	for(float* pt = data.image[0]; pt < maxPt; pt++)
@@ -118,8 +118,6 @@ void Frame::initialize(double timestamp)
 
 	meanIdepth = 1;
 	numPoints = 0;
-
-	numFramesTrackedOnThis = numMappedOnThis = numMappedOnThisTotal = 0;
 
 	idxInKeyframes = -1;
 
@@ -305,6 +303,8 @@ void Frame::setDepth(const DepthMap::SharedPtr &depthMap )  //PixelHypothesis* n
 
 	meanIdepth = sumIdepth / numIdepth;
 	numPoints = numIdepth;
+
+	LOG(INFO) << "Imported " << numPoints << " points from DepthMap";
 
 
 	data.idepthValid[0] = true;
