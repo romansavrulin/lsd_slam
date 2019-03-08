@@ -157,7 +157,7 @@ void MappingThread::createNewKeyFrameImpl( const KeyFrame::SharedPtr &currentKey
 	CHECK( frame->isTrackingParent( currentKeyFrame ) ) << "New keyframe does not track on current keyframe!";
 
 	KeyFrame::SharedPtr kf( KeyFrame::PropagateAndCreate( currentKeyFrame, frame ) );
-		_system.trackingThread()->doUseNewKeyFrame( kf );
+	_system.trackingThread()->doUseNewKeyFrame( kf );
 
 	LOG(WARNING) << "Done making new keyframe";
 }

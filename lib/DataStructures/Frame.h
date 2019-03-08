@@ -221,7 +221,7 @@ public:
 	 * generally, everything is stored relative to the frame
 	 */
 	FramePoseStruct::SharedPtr pose;
-	Sim3 getCamToWorld(int num=0)  { return pose->getCamToWorld(); }
+	Sim3 getCamToWorld()  { return pose->getCamToWorld(); }
 
 
 	// parent, the frame originally tracked on. never changes.
