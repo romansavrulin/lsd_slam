@@ -56,16 +56,20 @@ public:
 	SE3Tracker( const ImageSize &sz );
 	~SE3Tracker();
 
+	// Trackes _frame_ onto _keyframe_.  Modifies _frame_
 	SE3 trackFrame(
 			const std::shared_ptr<KeyFrame> &keyframe,
 			const std::shared_ptr<Frame> &frame,
 			const SE3& frameToReference_initialEstimate);
 
+	// This version does not recurse through levels of the pyramid,
+	// It only checks QUICK_KF_CHECK_LVL
 	SE3 trackFrameOnPermaref(
 			const std::shared_ptr<KeyFrame> &reference,
 			const std::shared_ptr<Frame> &frame,
 			SE3 referenceToFrame );
 
+	// Calculates the percentage overlap between the two keyframes
 	float checkPermaRefOverlap(
 				const std::shared_ptr<KeyFrame> &reference,
 				SE3 referenceToFrame );

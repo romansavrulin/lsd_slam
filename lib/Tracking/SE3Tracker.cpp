@@ -106,8 +106,7 @@ SE3Tracker::~SE3Tracker()
 }
 
 
-// tracks a frame.
-// first_frame has depth, second_frame DOES NOT have depth.
+// Calculates the percentage overlap between the two keyframes
 float SE3Tracker::checkPermaRefOverlap(
 		const std::shared_ptr<KeyFrame> &reference,
 		SE3 referenceToFrameOrg)
@@ -157,13 +156,8 @@ SE3 SE3Tracker::trackFrameOnPermaref(
 		SE3 referenceToFrameOrg)
 {
 
-	Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
-
-	// boost::shared_lock<boost::shared_mutex> lock = frame->getActiveLock();
-	// boost::unique_lock<boost::mutex> lock2 = boost::unique_lock<boost::mutex>(reference->permaRef_mutex);
-
-	// const std::shared_ptr<Frame> &refFrame( reference->frame() );
 	const std::shared_ptr<TrackingReference> &ref( reference->trackingReference() );
+	Sophus::SE3f referenceToFrame = referenceToFrameOrg.cast<float>();
 
 	affineEstimation_a = 1; affineEstimation_b = 0;
 
@@ -366,7 +360,7 @@ SE3 SE3Tracker::trackFrame(
 				incTry++;
 
 				// apply increment. pretty sure this way round is correct, but hard to test.
-				Sophus::SE3f exp_increment = Sophus::SE3f::exp((inc));
+				//Sophus::SE3f exp_increment = Sophus::SE3f::exp((inc));
 				Sophus::SE3f new_referenceToFrame = Sophus::SE3f::exp((inc)) * referenceToFrame;
 				//Sophus::SE3f new_referenceToFrame = referenceToFrame * Sophus::SE3f::exp((inc));
 
