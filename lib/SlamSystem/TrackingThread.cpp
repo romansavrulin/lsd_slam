@@ -183,6 +183,10 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
             boost::shared_lock_guard<boost::shared_mutex> lock( _system.poseConsistencyMutex );
 						CHECK( _system.keyFrameGraph()->allFramePoses.size() > 0 ) << "No poses in allFramePoses";
 
+						// LOG(DEBUG) << "Building initial estimate";
+						// LOG(DEBUG) << "Tracking reference " << _currentKeyFrame->pose()->getCamToWorld().translation();
+						// LOG(DEBUG) << "Last pose (" << _system.keyFrameGraph()->allFramePoses.size() << "): " << _system.keyFrameGraph()->allFramePoses.back()->getCamToWorld().translation();
+
 						// Estimate pose from currentFrame and most recent pose
             frameToReference_initialEstimate = se3FromSim3(  _currentKeyFrame->pose()->getCamToWorld().inverse() * _system.keyFrameGraph()->allFramePoses.back()->getCamToWorld());
         }
@@ -220,7 +224,7 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
                 manualTrackingLossIndicated = false;
                 return;
         }
-        //_system.keyFrameGraph()->addFrame(set->refFrame());
+        _system.keyFrameGraph()->addFrame(set->refFrame());
 
         LOG_IF( DEBUG,  Conf().print.threadingInfo ) << "Publishing tracked frame";
         _system.publishTrackedFrame(set->refFrame());
@@ -228,7 +232,7 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
 
 
         // Keyframe selection
-        LOG(INFO) << "Tracking " << set->id() << " against keyframe " << _currentKeyFrame->id();
+        LOG(INFO) << "Tracked " << set->id() << " against keyframe " << _currentKeyFrame->id();
         LOG_IF( INFO, Conf().print.threadingInfo ) << _currentKeyFrame->numMappedOnThisTotal << " frames mapped on to keyframe " << _currentKeyFrame->id() << ", considering " << set->refFrame()->id() << " as new keyframe.";
 
 				LOG_IF( DEBUG, Conf().print.threadingInfo ) << "Pushing tracked frame to mapThread.";

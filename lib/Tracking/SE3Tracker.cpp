@@ -469,8 +469,8 @@ SE3 SE3Tracker::trackFrame(
 	_pctGoodPerGoodBad = _lastGoodCount / (_lastGoodCount + _lastBadCount);
 
 	LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << "lastGoodCount " << _lastGoodCount << " lastBadCount " << _lastBadCount;
-	LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << frame->width(SE3TRACKING_MIN_LEVEL) << " " << frame->height(SE3TRACKING_MIN_LEVEL);
-	LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << _pctGoodPerTotal << " " << _pctGoodPerGoodBad;
+	//LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << frame->width(SE3TRACKING_MIN_LEVEL) << " " << frame->height(SE3TRACKING_MIN_LEVEL);
+	//LOG_IF(DEBUG, Conf().print.trackingIterationInfo ) << _pctGoodPerTotal << " " << _pctGoodPerGoodBad;
 
 	trackingWasGood = !diverged
 			&& _pctGoodPerTotal > MIN_GOODPERALL_PIXEL
