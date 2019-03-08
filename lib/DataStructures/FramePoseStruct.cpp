@@ -93,11 +93,7 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 			LOG(DEBUG) << "Frame " << frame.id() << ": Calculating pose from tracked parent...";
 			// abs. pose is computed from the parent's abs. pose, and cached.
 			cacheValidFor = cacheValidCounter;
-<<<<<<< HEAD
-			return camToWorld = frame.trackingParent()->frame()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
-=======
-			return camToWorld = frame.trackingParent()->pose->getCamToWorld(recursionDepth+1) * thisToParent_raw;
->>>>>>> 115fbf6... Merge
+			return camToWorld = frame.trackingParent()->frame()->pose->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 	} else {
 		LOG(DEBUG) << "Frame " << frame.id() << ": No parent, returning identity pose";
 

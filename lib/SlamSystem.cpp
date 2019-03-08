@@ -351,12 +351,12 @@ void SlamSystem::publishKeyframe( const Frame::SharedPtr &frame ) {
 void SlamSystem::publishCurrentKeyframe( )
 {
 	if( currentKeyFrame() ) {
-		OUTPUT_FOR_EACH( publishKeyframe( currentKeyFrame() ) )
+		OUTPUT_FOR_EACH( publishKeyframe( currentKeyFrame()->frame() ) )
 	} else {
 		LOG(DEBUG) << "No currentKeyframe, unable to publish";
 	}
 }
 
 void SlamSystem::publishPointCloud( ) {
-	OUTPUT_FOR_EACH( publishPointCloud( currentKeyFrame() ) )
+	OUTPUT_FOR_EACH( publishPointCloud( currentKeyFrame()->frame() ) )
 }
