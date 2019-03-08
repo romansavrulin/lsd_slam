@@ -31,7 +31,7 @@
 #include "IOWrapper/Timestamp.h"
 #include "opencv2/core/core.hpp"
 
-#include "IOWrapper/Output3DWrapper.h"
+#include "IOWrapper/OutputIOWrapper.h"
 
 #include "DataStructures/Frame.h"
 #include "DataStructures/ImageSet.h"
@@ -113,17 +113,17 @@ public:
 	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
 	//=== Debugging output functions =====
-	const shared_ptr<Output3DWrapper> &outputWrapper( void )       { return _outputWrapper; }
-	void set3DOutputWrapper( Output3DWrapper* outputWrapper )      {	_outputWrapper.reset(outputWrapper); }
-	void set3DOutputWrapper( const shared_ptr<Output3DWrapper> &outputWrapper) {	_outputWrapper = outputWrapper; }
+	//const shared_ptr<Output3DWrapper> &outputWrapper( void )       { return _outputWrapper; }
+	//void set3DOutputWrapper( Output3DWrapper* outputWrapper )      {	_outputWrapper.reset(outputWrapper); }
+	void addOutputWrapper( const shared_ptr<OutputIOWrapper> &outputWrapper) {	_outputWrappers.push_back( outputWrapper ); }
 
-	void publishPose(const Sophus::Sim3f &pose ) 	                 { if( _outputWrapper ) _outputWrapper->publishPose(pose);}
-	void publishTrackedFrame( const Frame::SharedPtr &frame )      { if( _outputWrapper ) _outputWrapper->publishTrackedFrame( frame ); }
-	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
+	void publishPose(const Sophus::Sim3f &pose );
+	void publishTrackedFrame( const Frame::SharedPtr &frame );
+	void publishKeyframeGraph( void );
 	void publishKeyframe(  const Frame::SharedPtr &frame );
 	void publishCurrentKeyframe();
 	void publishPointCloud();
-	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
+	void publishDepthImage( unsigned char* data  );
 
 	void updateDisplayDepthMap();
 
@@ -153,7 +153,7 @@ private:
 
 	Timer timeLastUpdate;
 
-	std::shared_ptr<Output3DWrapper> _outputWrapper;	// no lock required
+	std::list<std::shared_ptr<OutputIOWrapper> > _outputWrappers;	// no lock required
 
 	ThreadSynchronizer _finalized;
 	//bool _initialized;

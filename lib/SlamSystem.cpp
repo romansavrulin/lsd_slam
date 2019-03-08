@@ -50,7 +50,7 @@ using namespace lsd_slam;
 
 SlamSystem::SlamSystem( )
 : _perf(),
-	_outputWrapper( new NullOutput3DWrapper() ),
+	_outputWrappers( ),
 	_finalized(),
 	// _initialized( false ),
 	_keyFrames(),
@@ -92,7 +92,7 @@ KeyFrame::SharedPtr &SlamSystem::currentKeyFrame()
 SlamSystem *SlamSystem::fullReset( void )
 {
 	SlamSystem *newSystem = new SlamSystem( );
-	newSystem->set3DOutputWrapper( _outputWrapper );
+	for( auto &wrapper : _outputWrappers ) { newSystem->addOutputWrapper( wrapper ); }
 	return newSystem;
 }
 
@@ -325,21 +325,38 @@ std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()
 
 //=== 3DOutputWrapper functions ==
 
-void SlamSystem::publishKeyframe( const Frame::SharedPtr &frame )
-{
-	if( _outputWrapper ) _outputWrapper->publishKeyframe( frame );
+#define OUTPUT_FOR_EACH( func ) \
+	for( auto &wrapper  : _outputWrappers ) { wrapper->func; }
+
+void SlamSystem::publishPose(const Sophus::Sim3f &pose ) {
+	 OUTPUT_FOR_EACH( publishPose( pose ) )
+ }
+
+void SlamSystem::publishTrackedFrame( const Frame::SharedPtr &frame ) {
+	OUTPUT_FOR_EACH( publishTrackedFrame( frame ) )
+}
+
+void SlamSystem::publishKeyframeGraph( void ) {
+	OUTPUT_FOR_EACH( publishKeyframeGraph( keyFrameGraph() ) )
+}
+
+void SlamSystem::publishDepthImage( unsigned char* data  ) {
+	OUTPUT_FOR_EACH( updateDepthImage( data ) )
+}
+
+void SlamSystem::publishKeyframe( const Frame::SharedPtr &frame ) {
+	OUTPUT_FOR_EACH( publishKeyframe( frame ) )
 }
 
 void SlamSystem::publishCurrentKeyframe( )
 {
-	LOG(DEBUG) << "Publishing current keyframe " << currentKeyFrame()->id();
-	if( _outputWrapper  && currentKeyFrame() ) {
-		_outputWrapper->publishKeyframe( currentKeyFrame()->frame() );
+	if( currentKeyFrame() ) {
+		OUTPUT_FOR_EACH( publishKeyframe( currentKeyFrame() ) )
 	} else {
 		LOG(DEBUG) << "No currentKeyframe, unable to publish";
 	}
 }
 
-void SlamSystem::publishPointCloud( ){
-	if( _outputWrapper ) _outputWrapper->publishPointCloud( currentKeyFrame()->frame() );
+void SlamSystem::publishPointCloud( ) {
+	OUTPUT_FOR_EACH( publishPointCloud( currentKeyFrame() ) )
 }
