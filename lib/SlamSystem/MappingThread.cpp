@@ -150,6 +150,15 @@ void MappingThread::mergeOptimizationOffsetImpl()
 	optimizationUpdateMerged.notify();
 }
 
+void MappingThread::createFirstKeyFrame( const Frame::SharedPtr &frame )
+{
+	LOG(WARNING) << "Making " << frame->id() << " into new keyframe!";
+
+	KeyFrame::SharedPtr kf( KeyFrame::Create( frame ) );
+	_system.keyFrameGraph()->addKeyFrame( kf );
+	_system.trackingThread()->doUseNewKeyFrame( kf );
+}
+
 void MappingThread::createNewKeyFrameImpl( const KeyFrame::SharedPtr &currentKeyFrame, const Frame::SharedPtr &frame )
 {
 	LOG(WARNING) << "Making " << frame->id() << " into new keyframe!";
@@ -157,9 +166,8 @@ void MappingThread::createNewKeyFrameImpl( const KeyFrame::SharedPtr &currentKey
 	CHECK( frame->isTrackingParent( currentKeyFrame ) ) << "New keyframe does not track on current keyframe!";
 
 	KeyFrame::SharedPtr kf( KeyFrame::PropagateAndCreate( currentKeyFrame, frame ) );
+	_system.keyFrameGraph()->addKeyFrame( kf );
 	_system.trackingThread()->doUseNewKeyFrame( kf );
-
-	LOG(WARNING) << "Done making new keyframe";
 }
 
 // void MappingThread::callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame )

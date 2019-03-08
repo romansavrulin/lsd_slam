@@ -28,7 +28,7 @@ namespace lsd_slam
 
 int FramePoseStruct::cacheValidCounter = 0;
 
-int privateFramePoseStructAllocCount = 0;
+//int privateFramePoseStructAllocCount = 0;
 
 FramePoseStruct::FramePoseStruct( Frame &f )
 	:frame( f ),
@@ -41,15 +41,23 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	hasUnmergedPose = false;
 	isInGraph = false;
 
-	privateFramePoseStructAllocCount++;
-	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+	// privateFramePoseStructAllocCount++;
+	// LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 FramePoseStruct::~FramePoseStruct()
 {
-	privateFramePoseStructAllocCount--;
-	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+	// privateFramePoseStructAllocCount--;
+	// LOG_IF(INFO, Conf().print.memoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
+
+FramePoseStruct &FramePoseStruct::operator=( const FramePoseStruct &other )
+{
+	thisToParent_raw = other.thisToParent_raw;
+	invalidateCache();
+	return *this;
+}
+
 
 void FramePoseStruct::setPoseGraphOptResult(Sim3 camToWorld)
 {

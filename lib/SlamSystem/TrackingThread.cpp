@@ -62,58 +62,16 @@ TrackingThread::TrackingThread( SlamSystem &system, bool threaded )
 	_perf(),
 	_tracker( new SE3Tracker( Conf().slamImageSize ) ),
 	//_trackingReference( new TrackingReference() ),
-	_initialized( false ),
 	_trackingIsGood( true ),
 	_newKeyFramePending( false ),
+	_latestGoodPoseCamToWorld(),
 	_thread( threaded ? Active::createActive() : NULL )
 {
-
-
-	// this->width = w;
-	// this->height = h;
-	// this->K = K;
-	// trackingIsGood = true;
-
-	// keyFrameGraph = new KeyFrameGraph();
-
-	// createNewKeyFrame = false;
-
-	// map =  new DepthMap( conf );
-
-	// newConstraintAdded = false;
-	//haveUnmergedOptimizationOffset = false;
-
 
 	// Do not use more than 4 levels for odometry tracking
 	for (int level = 4; level < PYRAMID_LEVELS; ++level)
 		_tracker->settings.maxItsPerLvl[level] = 0;
 
-	// trackingReference = new TrackingReference();
-	//mappingTrackingReference = new TrackingReference();
-
-
-	// if(SLAMEnabled)
-	// {
-	// 	trackableKeyFrameSearch = new TrackableKeyFrameSearch(keyFrameGraph,conf);
-	// 	constraintTracker = new Sim3Tracker( _conf.slamImage );
-	// 	constraintSE3Tracker = new SE3Tracker( _conf.slamImage );
-	// 	newKFTrackingReference = new TrackingReference();
-	// 	candidateTrackingReference = new TrackingReference();
-	// }
-	// else
-	// {
-	// 	constraintSE3Tracker = 0;
-	// 	trackableKeyFrameSearch = 0;
-	// 	constraintTracker = 0;
-	// 	newKFTrackingReference = 0;
-	// 	candidateTrackingReference = 0;
-	// }
-
-
-	// outputWrapper = 0;
-
-	// keepRunning = true;
-	// depthMapScreenshotFlag = false;
 	lastTrackingClosenessScore = 0;
 }
 
@@ -123,30 +81,9 @@ TrackingThread::~TrackingThread()
 }
 
 
-/*
-void TrackingThread::trackSet( const std::shared_ptr<ImageSet> &set )
-{
-	trackFrame( set->refFrame() );
-}
-*/
-
 
 void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
 {
-
-	if( !_initialized ) {
-		// Take ref frame in set as keyframe
-		_currentKeyFrame = KeyFrame::Create( set->refFrame() );
-
-		_system.keyFrameGraph()->allFramePoses.push_back( _currentKeyFrame->pose() );
-		_system.addKeyFrame( _currentKeyFrame );
-
-		_initialized = true;
-
-		// TODO.  How to handle multi-image sets?
-		return;
-	}
-
         if(!_trackingIsGood) {
                 // Prod mapping to check the relocalizer
 
@@ -157,38 +94,17 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
                 return;
         }
 
-        // // Are the following two calls atomic enough or should I lock before the next two lines?
-        // _system.currentKeyFrame()->frameMutex.lock();
-        // Frame::SharedPtr keyframe( _system.currentKeyFrame() );
-        // _system.currentKeyFrame()->frameMutex.unlock();
-
-
-
-        // if(_trackingReference->frameID != keyframe->id() || keyframe->depthHasBeenUpdatedFlag ) {
-        //         LOG(DEBUG) << "Importing new tracking reference from frame " << keyframe->id();
-        //         _trackingReference->importFrame( keyframe );
-        //         keyframe->depthHasBeenUpdatedFlag = false;
-        //         _trackingReferenceFrameSharedPT = keyframe;
-        // }
-
-        //FramePoseStruct &trackingReferencePose( *_trackingReference->keyframe->pose);
-
-				//const FramePoseStruct::SharedPtr &trackingFramePose( _currentKeyFrame->pose() );
-
         // DO TRACKING & Show tracking result.
         LOG_IF(DEBUG, Conf().print.threadingInfo) << "TRACKING frame " << set->refFrame()->id() << " onto ref. " << _currentKeyFrame->id();
 
         SE3 frameToReference_initialEstimate;
         {
-            boost::shared_lock_guard<boost::shared_mutex> lock( _system.poseConsistencyMutex );
-						CHECK( _system.keyFrameGraph()->allFramePoses.size() > 0 ) << "No poses in allFramePoses";
-
 						// LOG(DEBUG) << "Building initial estimate";
 						// LOG(DEBUG) << "Tracking reference " << _currentKeyFrame->pose()->getCamToWorld().translation();
 						// LOG(DEBUG) << "Last pose (" << _system.keyFrameGraph()->allFramePoses.size() << "): " << _system.keyFrameGraph()->allFramePoses.back()->getCamToWorld().translation();
 
 						// Estimate pose from currentFrame and most recent pose
-            frameToReference_initialEstimate = se3FromSim3(  _currentKeyFrame->pose()->getCamToWorld().inverse() * _system.keyFrameGraph()->allFramePoses.back()->getCamToWorld());
+            frameToReference_initialEstimate = se3FromSim3(  _currentKeyFrame->pose()->getCamToWorld().inverse() * _latestGoodPoseCamToWorld);
         }
 
 
@@ -224,7 +140,8 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
                 manualTrackingLossIndicated = false;
                 return;
         }
-        _system.keyFrameGraph()->addFrame(set->refFrame());
+				_latestGoodPoseCamToWorld = set->refFrame()->pose->getCamToWorld();
+//        _system.keyFrameGraph()->addFrame(set->refFrame());
 
         LOG_IF( DEBUG,  Conf().print.threadingInfo ) << "Publishing tracked frame";
         _system.publishTrackedFrame(set->refFrame());
@@ -481,7 +398,7 @@ void TrackingThread::takeRelocalizeResult( const RelocalizerResult &result  )
 	}
 	else
 	{
-		_system.keyFrameGraph()->addFrame(result.successfulFrame );
+		//_system.keyFrameGraph()->addFrame(result.successfulFrame );
 
                 //TODO commenting this out in the assumption I don't need it... need to revist
                 //_system.mapThread->pushUnmappedTrackedFrame( result.successfulFrame );

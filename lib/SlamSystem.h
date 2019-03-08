@@ -78,33 +78,15 @@ public:
 	// Creates a new SlamSystem, and passes over relevant configuration info
 	SlamSystem *fullReset();
 
-	// OLD API: tracks a frame.
-	// first frame will return Identity = camToWord.
-	// returns camToWord transformation of the tracked frame.
-	// frameID needs to be monotonically increasing.
-	//void trackFrame( Frame *newFrame ); //, bool blockUntilMapped );
-
 	void nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam );
 	void nextImageSet( const std::shared_ptr<ImageSet> &set );
-
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
 	void finalize();
 	ThreadSynchronizer &finalized() { return _finalized; }
 
-	/** Returns the current pose estimate. */
-	Sophus::SE3d getCurrentPoseEstimate();
-
-	Sophus::Sim3d getCurrentPoseEstimateScale();
-
 	//==== KeyFrame maintenance functions ====
-  KeyFrame::SharedPtr &currentKeyFrame();
-
-	void addKeyFrame( const KeyFrame::SharedPtr &keyframe );
-
-	// void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
-	// void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
-	// void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
+  std::shared_ptr<KeyFrame> &currentKeyFrame();
 
 	// void requestDepthMapScreenshot(const std::string& filename);
 
@@ -113,8 +95,6 @@ public:
 	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
 	//=== Debugging output functions =====
-	//const shared_ptr<Output3DWrapper> &outputWrapper( void )       { return _outputWrapper; }
-	//void set3DOutputWrapper( Output3DWrapper* outputWrapper )      {	_outputWrapper.reset(outputWrapper); }
 	void addOutputWrapper( const shared_ptr<OutputIOWrapper> &outputWrapper) {	_outputWrappers.push_back( outputWrapper ); }
 
 	void publishPose(const Sophus::Sim3f &pose );
@@ -126,8 +106,6 @@ public:
 	void publishDepthImage( unsigned char* data  );
 
 	void updateDisplayDepthMap();
-
-
 
 	// mutex to lock frame pose consistency. within a shared lock of this, *->getCamToWorld() is
 	// GUARANTEED to give the same result each call, and to be compatible to each other.
@@ -155,13 +133,10 @@ private:
 
 	std::list<std::shared_ptr<OutputIOWrapper> > _outputWrappers;	// no lock required
 
+	bool _initialized;
 	ThreadSynchronizer _finalized;
-	//bool _initialized;
 
 	// ======= Functions =====
-
-	// Called for first ImageSet
-	//void initialize( const std::shared_ptr<ImageSet> &set );
 
 	void logPerformanceData();
 
@@ -172,13 +147,8 @@ private:
 	unique_ptr<ConstraintSearchThread> _constraintThread;
 
 	// == Shared "global" data structures ==
-	std::vector< KeyFrame::SharedPtr > _keyFrames;
 	std::shared_ptr<KeyFrameGraph> _keyFrameGraph;	  // has own locks
-	//Frame::SharedPtr  _currentKeyFrame;
-
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;
-
-//	std::unique_ptr<DepthMap> _depthMap;
 
 };
 

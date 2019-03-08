@@ -52,8 +52,8 @@ SlamSystem::SlamSystem( )
 : _perf(),
 	_outputWrappers( ),
 	_finalized(),
-	// _initialized( false ),
-	_keyFrames(),
+	_initialized( false ),
+//	_keyFrames(),
 	_keyFrameGraph( new KeyFrameGraph ),
 	_trackableKeyFrameSearch( new TrackableKeyFrameSearch( _keyFrameGraph ) )
 {
@@ -84,10 +84,6 @@ SlamSystem::~SlamSystem()
 	FrameMemory::getInstance().releaseBuffers();
 }
 
-KeyFrame::SharedPtr &SlamSystem::currentKeyFrame()
-{ return _trackingThread->currentKeyFrame(); }
-
-
 
 SlamSystem *SlamSystem::fullReset( void )
 {
@@ -117,49 +113,28 @@ void SlamSystem::finalize()
 
 }
 
-// void SlamSystem::initialize( const std::shared_ptr<ImageSet> &set )
-// {
-// 	LOG_IF(FATAL, !Conf().doMapping ) << "WARNING: mapping is disabled, but we just initialized... THIS WILL NOT WORK! Set doMapping to true.";
-//
-// 	//depthMap()->setCurrentKeyFrame( set->refFrame() );
-//
-// 	// // Todo.  If multiple images are available in the set,
-// 	// // use stereo disparity to initialize?
-// 	// if( set->refFrame()->hasIDepthBeenSet() ) {
-// 	// 	LOG(INFO) << "Using initial Depth estimate in first frame.";
-// 	// 	depthMap()->initializeFromGTDepth( set->refFrame() );
-// 	// } else {
-// 	// 	LOG(INFO) << "Doing Stereo initialization!";
-// 	// 	//depthMap()->initializeRandomly( set->refFrame() );
-// 	// 	depthMap()->initializefromStereo(set);
-// 	// }
-// 	//updateDisplayDepthMap();
-//
-// 	// if( Conf().continuousPCOutput) {
-// 	// 	LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id();
-// 	// 	publishCurrentKeyframe();
-// 	// }
-//
-// 	_initialized = true;
-// }
+std::shared_ptr<KeyFrame> &SlamSystem::currentKeyFrame()
+{
+	return trackingThread()->currentKeyFrame();
+}
 
-
+// Thin wrapped which turns a bare cv::Mat image into an ImageSe
 void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam )
 {
 	nextImageSet( std::make_shared<ImageSet>(id, img, cam) );
 }
 
+
 void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
 {
-	// if( !_initialized ) {
-	// 	initialize( set );
-	// 	return;
-	// }
+	 if( !_initialized ) {
+		_mapThread->createFirstKeyFrame( set->refFrame() );
+		_initialized = true;
+	 	return;
+	}
 
-	//LOG(INFO) << "Tracking frame; " << ( blockUntilMapped ? "WILL" : "won't") << " block";
 	_trackingThread->doTrackSet( set );
 
-	//TODO: At present only happens at frame rate.  Push to a thread?
 	logPerformanceData();
 }
 
@@ -167,14 +142,13 @@ void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
 
 //=== Keyframe maintenance functions ====
 
-void SlamSystem::addKeyFrame( const KeyFrame::SharedPtr &keyframe )
-{
-	_keyFrames.push_back( keyframe );
-
-//	keyFrameGraph()->addKeyFrame( currentKeyFrame() );
-
-	keyFrameGraph()->idToKeyFrame.insert(std::make_pair(keyframe->id(), keyframe));
-}
+// void SlamSystem::addKeyFrame( const KeyFrame::SharedPtr &keyframe )
+// {
+// 	_keyFrames.push_back( keyframe );
+//
+//
+// 	keyFrameGraph()->idToKeyFrame.insert(std::make_pair(keyframe->id(), keyframe));
+// }
 
 // void SlamSystem::changeKeyframe( const Frame::SharedPtr &candidate, bool noCreate, bool force, float maxScore)
 // {
@@ -299,31 +273,7 @@ void SlamSystem::updateDisplayDepthMap()
 
 
 
-Sophus::SE3d SlamSystem::getCurrentPoseEstimate()
-{
-	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->allFramePosesMutex );
-	if( keyFrameGraph()->allFramePoses.size() > 0)
-		return se3FromSim3(keyFrameGraph()->allFramePoses.back()->getCamToWorld());
-
-	return SE3();
-}
-
-Sophus::Sim3d SlamSystem::getCurrentPoseEstimateScale()
-{
-	boost::shared_lock_guard< boost::shared_mutex > lock( keyFrameGraph()->allFramePosesMutex );
-	if(keyFrameGraph()->allFramePoses.size() > 0)
-		return keyFrameGraph()->allFramePoses.back()->getCamToWorld().cast<double>();
-
-	return Sim3();
-}
-
-std::vector<FramePoseStruct::SharedPtr> SlamSystem::getAllPoses()
-{
-	return keyFrameGraph()->allFramePoses;
-}
-
-
-//=== 3DOutputWrapper functions ==
+//=== OutputWrapper functions ==
 
 #define OUTPUT_FOR_EACH( func ) \
 	for( auto &wrapper  : _outputWrappers ) { wrapper->func; }

@@ -102,7 +102,7 @@ public:
 	void dropKeyFrame( const KeyFrame::SharedPtr &keyframe );
 
 	/** Adds a new Frame to the graph. Doesnt actually keep the frame, but only it's pose-struct. */
-	void addFrame(const Frame::SharedPtr &frame);
+//	void addFrame(const Frame::SharedPtr &frame);
 
 	void dumpMap(std::string folder);
 
@@ -136,10 +136,11 @@ public:
 	int totalVertices;
 
 
-	//=========================== Keyframe & Posen Lists & Maps ====================================
+	//=========================== Keyframe & Pose Lists & Maps ====================================
 	// Always lock the list with the corresponding mutex!
 	// central point to administer keyframes, iterate over keyframes, do lookups etc.
 
+	std::vector< KeyFrame::SharedPtr > _keyFrames;
 
 	// contains ALL keyframes, as soon as they are "finished".
 	// does NOT yet contain the keyframe that is currently being created.
@@ -162,8 +163,8 @@ public:
 	// contains ALL frame poses, chronologically, as soon as they are tracked.
 	// the corresponding frame may have been removed / deleted in the meantime.
 	// these are the ones that are also referenced by the corresponding Frame / Keyframe object
-	boost::shared_mutex allFramePosesMutex;
-	std::vector< FramePoseStruct::SharedPtr  > allFramePoses;
+	// boost::shared_mutex allFramePosesMutex;
+	// std::vector< FramePoseStruct::SharedPtr  > allFramePoses;
 
 
 	// contains all keyframes in graph, in some arbitrary (random) order. if a frame is re-tracked,

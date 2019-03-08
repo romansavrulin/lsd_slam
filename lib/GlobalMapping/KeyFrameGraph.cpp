@@ -97,37 +97,37 @@ KeyFrameGraph::~KeyFrameGraph()
 	// deletes keyframes (by deleting respective shared pointers).
 
 	idToKeyFrame.clear();
-	allFramePoses.clear();
+	//allFramePoses.clear();
 }
 
 
-void KeyFrameGraph::addFrame(const Frame::SharedPtr &frame)
-{
-
-	frame->pose->isRegisteredToGraph = true;
-
-	allFramePosesMutex.lock();
-	allFramePoses.push_back(frame->pose);
-	allFramePosesMutex.unlock();
-
-	// if( conf().SLAMEnabled )
-	// {
-	// 	boost::shared_lock_guard<boost::shared_mutex> lock( idToKeyFrameMutex );
-	// 	idToKeyFrame.insert(std::make_pair( kf->id(), kf ));
-	// }
-}
+// void KeyFrameGraph::addFrame(const Frame::SharedPtr &frame)
+// {
+//
+// 	frame->pose->isRegisteredToGraph = true;
+//
+// 	allFramePosesMutex.lock();
+// 	allFramePoses.push_back(frame->pose);
+// 	allFramePosesMutex.unlock();
+//
+// 	// if( conf().SLAMEnabled )
+// 	// {
+// 	// 	boost::shared_lock_guard<boost::shared_mutex> lock( idToKeyFrameMutex );
+// 	// 	idToKeyFrame.insert(std::make_pair( kf->id(), kf ));
+// 	// }
+// }
 
 void KeyFrameGraph::dropKeyFrame(const KeyFrame::SharedPtr &kf)
 {
-	{
-		boost::shared_lock_guard< boost::shared_mutex > lock( allFramePosesMutex );
-		for(auto p : allFramePoses)
-		{
-			if(p->frame.isTrackingParent( kf->frame() ) ) {
-				p->frame.setTrackingParent( nullptr );
-			}
-		}
-	}
+	// {
+	// 	boost::shared_lock_guard< boost::shared_mutex > lock( allFramePosesMutex );
+	// 	for(auto p : allFramePoses)
+	// 	{
+	// 		if(p->frame.isTrackingParent( kf->frame() ) ) {
+	// 			p->frame.setTrackingParent( nullptr );
+	// 		}
+	// 	}
+	// }
 
 	{
 		boost::shared_lock_guard< boost::shared_mutex > lock(idToKeyFrameMutex);
@@ -257,6 +257,8 @@ void KeyFrameGraph::addKeyFrame( const KeyFrame::SharedPtr &keyframe)
 	CHECK( (bool)keyframe ) << "Received null keyframe";
 	if(keyframe->frame()->pose->graphVertex != nullptr)
 		return;
+
+	_keyFrames.push_back( keyframe );
 
 	// Insert vertex into g2o graph
 	VertexSim3* vertex = new VertexSim3();
