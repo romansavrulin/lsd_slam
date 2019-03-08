@@ -70,6 +70,7 @@ void FramePoseStruct::applyPoseGraphOptResult()
 	hasUnmergedPose = false;
 	cacheValidCounter++;
 }
+
 void FramePoseStruct::invalidateCache()
 {
 	cacheValidFor = -1;
@@ -89,10 +90,13 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 
 	// return identity if there is no parent (very first frame)
 	if( frame.hasTrackingParent() ) {
+			LOG(DEBUG) << "Frame " << frame.id() << ": Calculating pose from tracked parent...";
 			// abs. pose is computed from the parent's abs. pose, and cached.
 			cacheValidFor = cacheValidCounter;
 			return camToWorld = frame.trackingParent()->frame()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 	} else {
+		LOG(DEBUG) << "Frame " << frame.id() << ": No parent, returning identity pose";
+
 		return camToWorld = Sim3();
 	}
 }

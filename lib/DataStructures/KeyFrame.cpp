@@ -19,11 +19,12 @@ namespace lsd_slam {
   KeyFrame::SharedPtr KeyFrame::PropagateAndCreate( const KeyFrame::SharedPtr &other, const Frame::SharedPtr &frame ) {
     KeyFrame::SharedPtr kf( new KeyFrame( frame ) );
 
-    kf->depthMap()->propagateFrom( other->depthMap() );
+    float rescaleFactor = 1.0;
+    kf->depthMap()->propagateFrom( other->depthMap(), rescaleFactor );
     kf->syncDepthMapToFrame();
 
 // TODO.  Need to get rescaleFactor from depthMap()->propagateFrom()
-//    kf->frame()->pose->thisToParent_raw = sim3FromSE3( se3FromSim3( frame()->pose->thisToParent_raw ), rescaleFactor);
+    kf->frame()->pose->thisToParent_raw = sim3FromSE3( se3FromSim3( kf->frame()->pose->thisToParent_raw ), rescaleFactor);
   	kf->frame()->pose->invalidateCache();
 
     return kf;

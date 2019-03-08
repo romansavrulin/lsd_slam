@@ -95,7 +95,7 @@ public:
 	void initializeRandomly();
 	// void initializefromStereo( const std::shared_ptr<ImageSet> &set);
 
-	void propagateFrom( const DepthMap::SharedPtr &new_keyframe );
+	void propagateFrom( const DepthMap::SharedPtr &new_keyframe, float &rescaleFactor );
 
 	void finalize();
 
@@ -163,7 +163,7 @@ private:
 			RunningStats* const stats);
 
 	// Reset currentDepthMap by re-projecting is from activeKeyFrame to new_keyframe
-	void propagateDepthFrom(const DepthMap::SharedPtr &new_keyframe );
+	void propagateDepthFrom(const DepthMap::SharedPtr &new_keyframe, float &rescaleFactor );
 
 
 	// This is a local state variable used to share data between the observeDepth* functions.  Sucks, I know

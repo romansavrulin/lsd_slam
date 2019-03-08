@@ -324,7 +324,7 @@ bool DepthMap::updateDepthFrom( const Frame::SharedPtr &updateFrame )
 // 	activeKeyFramelock.unlock();
 // }
 
-void DepthMap::propagateFrom( const DepthMap::SharedPtr &other )
+void DepthMap::propagateFrom( const DepthMap::SharedPtr &other, float &rescaleFactor )
 {
 	// assert(isValid());
 	// assert(new_keyframe != nullptr);
@@ -347,7 +347,7 @@ void DepthMap::propagateFrom( const DepthMap::SharedPtr &other )
 
 	{
 		Timer time;
-		propagateDepthFrom(other);
+		propagateDepthFrom(other, rescaleFactor );
 		_perf.propagate.update( time );
 	}
 
@@ -405,7 +405,7 @@ void DepthMap::propagateFrom( const DepthMap::SharedPtr &other )
 
 	LOG(DEBUG) << "DepthMap has " << validCount << " valid points";
 
-	float rescaleFactor = numIdepth / sumIdepth;
+	rescaleFactor = numIdepth / sumIdepth;
 	float rescaleFactor2 = rescaleFactor*rescaleFactor;
 	for(DepthMapPixelHypothesis* source = currentDepthMap; source < currentDepthMap+Conf().slamImageSize.area(); source++)
 	{
@@ -895,7 +895,7 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame* const ref,
 
 
 
-void DepthMap::propagateDepthFrom( const DepthMap::SharedPtr &other)
+void DepthMap::propagateDepthFrom( const DepthMap::SharedPtr &other, float &rescaleFactor )
 {
 	runningStats.num_prop_removed_out_of_bounds = 0;
 	runningStats.num_prop_removed_colorDiff = 0;

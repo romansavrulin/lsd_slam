@@ -224,7 +224,7 @@ void TrackingThread::trackSetImpl( const std::shared_ptr<ImageSet> &set )
 
         LOG_IF( DEBUG,  Conf().print.threadingInfo ) << "Publishing tracked frame";
         _system.publishTrackedFrame(set->refFrame());
-        _system.publishPose(set->getRefTransformation().cast<float>());
+        _system.publishPose(set->refFrame()->getCamToWorld().cast<float>());
 
 
         // Keyframe selection
