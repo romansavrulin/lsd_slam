@@ -70,11 +70,9 @@ FrameData::~FrameData() {
 void FrameData::setImage( const unsigned char *img ) {
   image[0] = FrameMemory::getInstance().getFloatBuffer(width[0]*height[0]);
 
-	const float* maxPt = image[0] + width[0]*height[0];
-	for(float* pt = image[0]; pt < maxPt; pt++)
-	{
-	       *pt = *img;
-	       img++;
+	float *pt = image[0];
+	for(unsigned int i = 0; i < width[0]*height[0]; ++i, ++pt ) {
+	       *pt = img[i];
 	}
 
 	imageValid[0] = true;
