@@ -6,6 +6,8 @@ gtest_begin( lsdslam )
       test_test.cpp
       test_FrameData.cpp
       test_Frame.cpp
+      base64.cpp
+      data_images.cpp
     )
 
     fips_deps( lsdslam videoio )

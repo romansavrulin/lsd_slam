@@ -6,6 +6,8 @@
 
 #include "DataStructures/FrameData.h"
 
+#include "data_images.h"
+
 TEST( FrameData, constructor )
 {
   const libvideoio::Camera cam(1000,1000,320,240);

@@ -6,6 +6,8 @@
 
 #include "DataStructures/Frame.h"
 
+#include "data_images.h"
+
 TEST( Frame, constructor )
 {
   const libvideoio::Camera cam(1000,1000,320,240);
@@ -13,12 +15,11 @@ TEST( Frame, constructor )
   const int id = 123;
   const double timestamp = 1.5;
 
-  const unsigned char *img = new unsigned char[ sz.width * sz.height ];
+  std::vector<BYTE> img = TestImage( 0 );
 
   {
-    lsd_slam::Frame frame( id, cam, sz, timestamp, img );
+    lsd_slam::Frame frame( id, cam, sz, timestamp, img.data() );
 
 
   }
-  delete[] img;
 }
