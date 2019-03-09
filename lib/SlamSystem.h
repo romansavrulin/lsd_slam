@@ -28,7 +28,6 @@
 #include <chrono>
 
 #include "util/settings.h"
-#include "IOWrapper/Timestamp.h"
 #include "opencv2/core/core.hpp"
 
 #include "IOWrapper/OutputIOWrapper.h"
