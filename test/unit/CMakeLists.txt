@@ -11,6 +11,7 @@ gtest_begin( lsdslam )
       test_test.cpp
       test_FrameData.cpp
       test_Frame.cpp
+      ../testdata/test_testimages.cpp
       ${TESTIMAGES_SRCS}
     )
 

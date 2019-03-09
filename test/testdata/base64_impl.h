@@ -51,7 +51,5 @@ static std::vector<BYTE> base64_decode(std::string const& encoded_string) {
     for (j = 0; (j < i - 1); j++) ret.push_back(char_array_3[j]);
   }
 
-  std::cout << " Decoded " << encoded_string.size() << " bytes to " << ret.size() << " bytes " << std::endl;
-
   return ret;
 }
