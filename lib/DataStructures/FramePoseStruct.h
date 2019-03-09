@@ -40,6 +40,8 @@ public:
 
 	FramePoseStruct &operator=( const FramePoseStruct &other );
 
+	Sim3 setThisToParent( const Sim3 &val );
+
 	// set initially as tracking result (then it's a SE(3)),
 	// and is changed only once, when the frame becomes a KF (->rescale).
 	Sim3 thisToParent_raw;

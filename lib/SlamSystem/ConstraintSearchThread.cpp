@@ -66,36 +66,27 @@ void ConstraintSearchThread::idleImpl( void )
 
 	// If you did something, go again immediately
 	// if( doneSomething ) _thread->send( std::bind( &ConstraintSearchThread::callbackIdle, this ) );
-
-			// if(!doneSomething)
-			// {
-			// 	LOG_IF(DEBUG, enablePrintDebugInfo && printConstraintSearchInfo) << "nothing to re-track... waiting.";
-			// 	newKeyFrames.cv().wait_for(lock,std::chrono::milliseconds(500));
-			//
-			// }
 }
 
-int ConstraintSearchThread::fullReconstraintTrackImpl( void )
+int ConstraintSearchThread::fullReconstraintSearchImpl( void )
 {
-	// 	std::unique_lock<std::mutex> lock(newKeyFrames.mutex());
-	LOG(INFO) << "Optimizing Full Map!";
+	LOG(INFO) << "Searching full map for constraints!";
 
 	int added = 0;
-	for(unsigned int i=0;i<_system.keyFrameGraph()->keyframesAll.size();i++)
-	{
-		if(_system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph)
-			added += findConstraintsForNewKeyFrames(_system.keyFrameGraph()->keyframesAll[i], false, false, 1.0);
+	for( auto &keyframe : _system.keyFrameGraph()->keyframesAll ) {
+		if(keyframe->frame()->pose->isInGraph)
+			added += findConstraintsForNewKeyFrames(keyframe, false, false, 1.0);
 	}
 
-	LOG(INFO) << "Done optimizing Full Map! Added " << added << " constraints.";
+	LOG(INFO) << "Done searching full map! Added " << added << " constraints.";
 
 	// doFullReConstraintTrack = false;
-	fullReConstraintTrackComplete.notify();
+	fullReConstraintSearchComplete.notify();
 
-	return lastNumConstraintsAddedOnFullRetrack = added;
+	return added;
 }
 
-void ConstraintSearchThread::newKeyFrameImpl( const KeyFrame::SharedPtr &keyframe  )
+void ConstraintSearchThread::checkNewKeyFrameImpl( const KeyFrame::SharedPtr &keyframe  )
 {
 	{
 		Timer timer;

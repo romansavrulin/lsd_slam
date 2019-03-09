@@ -84,6 +84,7 @@ void MappingThread::createFirstKeyFrame( const Frame::SharedPtr &frame )
 	_system.trackingThread()->doUseNewKeyFrame( kf );
 }
 
+
 void MappingThread::createNewKeyFrameImpl( const KeyFrame::SharedPtr &currentKeyFrame, const Frame::SharedPtr &frame )
 {
 	LOG(WARNING) << "Making " << frame->id() << " into new keyframe!";
@@ -93,6 +94,7 @@ void MappingThread::createNewKeyFrameImpl( const KeyFrame::SharedPtr &currentKey
 	KeyFrame::SharedPtr kf( KeyFrame::PropagateAndCreate( currentKeyFrame, frame ) );
 	_system.keyFrameGraph()->addKeyFrame( kf );
 	_system.trackingThread()->doUseNewKeyFrame( kf );
+	_system.constraintThread()->doCheckNewKeyFrame( kf );
 }
 
 //==== Actual meat ====
@@ -319,63 +321,6 @@ bool MappingThread::doMappingIteration()
 // }
 
 
-
-
-/* REDUNDANT
-bool MappingThread::updateKeyframe()
-{
-	std::shared_ptr<Frame> reference = nullptr;
-	std::deque< std::shared_ptr<Frame> > references;
-
-	unmappedTrackedFramesMutex.lock();
-
-	// Drops frames that have a different tracking parent.
-	while(unmappedTrackedFrames.size() > 0 &&
-			  (!unmappedTrackedFrames.front()->hasTrackingParent() ||
-			   !unmappedTrackedFrames.front()->isTrackingParent( _system.currentKeyFrame() ) ) ) {
-					 if( unmappedTrackedFrames.front()->hasTrackingParent() ) {
-					 LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id()
-					  				<< " its has tracking parent " << unmappedTrackedFrames.front()->trackingParent()->id()
-										<< " current keyframe is " << _system.currentKeyFrame()->id();
-						} else {
-							LOG(INFO) << "Dropping frame " << unmappedTrackedFrames.front()->id() << " which doesn't have a tracking parent";
-						}
-		unmappedTrackedFrames.front()->clear_refPixelWasGood();
-		unmappedTrackedFrames.pop_front();
-	}
-
-	// clone list
-	if(unmappedTrackedFrames.size() > 0) {
-		// Copies all but only pops one?
-		 for(unsigned int i=0;i<unmappedTrackedFrames.size(); i++)
-		 	references.push_back(unmappedTrackedFrames[i]);
-		//unmappedTrackedFrames().swap( references );
-
-		std::shared_ptr<Frame> popped = unmappedTrackedFrames.front();
-		unmappedTrackedFrames.pop_front();
-		unmappedTrackedFramesMutex.unlock();
-
-		LOGF_IF( INFO, Conf().print.threadingInfo,
-			"MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame()->id());
-
-		_system.depthMap()->updateKeyframe(references);
-
-		popped->clear_refPixelWasGood();
-		references.clear();
-	}
-	else
-	{
-		unmappedTrackedFramesMutex.unlock();
-		return false;
-	}
-
-	_system.publishCurrentKeyframe();
-	//TODO when should we update the pointcloud?
-        //_system.publishPointCloud();
-
-	return true;
-}
-*/
 
 
 }

@@ -51,6 +51,13 @@ FramePoseStruct::~FramePoseStruct()
 	// LOG_IF(INFO, Conf().print.memoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
+Sim3 FramePoseStruct::setThisToParent( const Sim3 &val )
+{
+	thisToParent_raw = val;
+	invalidateCache();
+	return thisToParent_raw;
+}
+
 FramePoseStruct &FramePoseStruct::operator=( const FramePoseStruct &other )
 {
 	thisToParent_raw = other.thisToParent_raw;

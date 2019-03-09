@@ -23,9 +23,7 @@ namespace lsd_slam {
     kf->depthMap()->propagateFrom( other->depthMap(), rescaleFactor );
     kf->syncDepthMapToFrame();
 
-// TODO.  Need to get rescaleFactor from depthMap()->propagateFrom()
-    kf->frame()->pose->thisToParent_raw = sim3FromSE3( se3FromSim3( kf->frame()->pose->thisToParent_raw ), rescaleFactor);
-  	kf->frame()->pose->invalidateCache();
+    kf->frame()->pose->setThisToParent( sim3FromSE3( se3FromSim3( kf->frame()->pose->thisToParent_raw ), rescaleFactor ) );
 
     return kf;
   }
@@ -57,7 +55,7 @@ namespace lsd_slam {
   	}
 
     if( !_depthMap->updateDepthFrom( frame ) ) {
-      // Handle error
+      // TODO Handle error
 
       return;
     }
@@ -80,7 +78,6 @@ namespace lsd_slam {
     syncDepthMapToFrame();
     frame()->calculateMeanInformation();
     //frame()->takeReActivationData(currentDepthMap);
-
   }
 
 

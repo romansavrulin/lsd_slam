@@ -45,6 +45,8 @@
 #include "util/Timer.h"
 #include "util/ThreadMutexObject.h"
 
+#include "SlamSystem/TrackingThread.h"
+
 #include "Tracking/Relocalizer.h"
 
 namespace lsd_slam
@@ -86,9 +88,7 @@ public:
 	ThreadSynchronizer &finalized() { return _finalized; }
 
 	//==== KeyFrame maintenance functions ====
-  std::shared_ptr<KeyFrame> &currentKeyFrame();
-
-	// void requestDepthMapScreenshot(const std::string& filename);
+  std::shared_ptr<KeyFrame> &currentKeyFrame() { return trackingThread()->currentKeyFrame(); }
 
 	// int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent=true, bool useFABMAP=true, float closeCandidatesTH=1.0);
 
@@ -111,14 +111,13 @@ public:
 	// locked exclusively during the pose-update by Mapping.
 	boost::shared_mutex poseConsistencyMutex;
 
-	const shared_ptr<KeyFrameGraph> &keyFrameGraph() { return _keyFrameGraph; };	  // has own locks
+	const shared_ptr<KeyFrameGraph> &keyFrameGraph() 				{ return _keyFrameGraph; };	  // has own locks
 	shared_ptr<TrackableKeyFrameSearch> &trackableKeyFrameSearch() { return _trackableKeyFrameSearch; }
 
-	// unique_ptr<DepthMap> &depthMap() { return _depthMap; }
-
-	unique_ptr<MappingThread> &mapThread()       { return _mapThread; }
-	unique_ptr<TrackingThread> &trackingThread() { return _trackingThread; }
-	unique_ptr<OptimizationThread> &optThread()  { return _optThread; }
+	unique_ptr<MappingThread> &mapThread()       						{ return _mapThread; }
+	unique_ptr<TrackingThread> &trackingThread() 						{ return _trackingThread; }
+	unique_ptr<OptimizationThread> &optThread()  						{ return _optThread; }
+	unique_ptr<ConstraintSearchThread> &constraintThread()  { return _constraintThread; }
 
 
 
@@ -130,7 +129,7 @@ private:
 
 	Timer timeLastUpdate;
 
-	std::list<std::shared_ptr<OutputIOWrapper> > _outputWrappers;	// no lock required
+	std::list<std::shared_ptr<OutputIOWrapper> > _outputWrappers;
 
 	bool _initialized;
 	ThreadSynchronizer _finalized;

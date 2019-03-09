@@ -21,10 +21,12 @@ namespace lsd_slam {
     KeyFrame( const KeyFrame & ) = delete;
 
     //== Thin pass-throughs to Frame ==
-    int id() const { return _frame->id(); }
-    FramePoseStruct::SharedPtr pose() { return _frame->pose; }
+    int id() const                      { return _frame->id(); }
+    FramePoseStruct::SharedPtr pose()   { return frame()->pose; }
+    Sim3 getCamToWorld()                { return pose()->getCamToWorld(); }
 
-    //== Accessors ==
+
+    //== Member accessors ==
     std::shared_ptr<Frame> &frame() { return _frame;}
     DepthMap::SharedPtr depthMap()  { return _depthMap; }
     TrackingReference::SharedPtr &trackingReference()   { return _trackingReference; }

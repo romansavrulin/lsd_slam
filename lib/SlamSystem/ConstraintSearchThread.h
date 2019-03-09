@@ -23,14 +23,15 @@ public:
 	ConstraintSearchThread( SlamSystem &system, bool threaded );
 	~ConstraintSearchThread();
 
-	void doFullReConstraintTrack( void )
-	{ fullReConstraintTrackComplete.reset();
-		if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::fullReconstraintTrackImpl, this )); }
+	void doFullReConstraintSearch( void )
+	{ fullReConstraintSearchComplete.reset();
+		if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::fullReconstraintSearchImpl, this )); }
 
-	void doNewKeyFrame( const KeyFrame::SharedPtr &keyframe )
-	{ if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::newKeyFrameImpl, this, keyframe )); }
+	// Note in non-threaded mode, this does nothing!
+	void doCheckNewKeyFrame( const KeyFrame::SharedPtr &keyframe )
+	{ if( _thread ) _thread->send( std::bind( &ConstraintSearchThread::checkNewKeyFrameImpl, this, keyframe )); }
 
-	ThreadSynchronizer fullReConstraintTrackComplete;
+	ThreadSynchronizer fullReConstraintSearchComplete;
 
 	struct PerformanceData {
 		MsRateAverage findConstraint;
@@ -47,16 +48,14 @@ private:
 
 	std::shared_ptr<Sim3Tracker>       constraintTracker;
 	std::shared_ptr<SE3Tracker>        constraintSE3Tracker;
-	//std::shared_ptr<KeyFrame> 					newKF; //TrackingReference;
-	//std::shared_ptr<TrackingReference> candidateTrackingReference;
 
 	int _failedToRetrack;
-	int lastNumConstraintsAddedOnFullRetrack;
 
 	//=== Callbacks ===
 	void idleImpl( void );
-	int  fullReconstraintTrackImpl( void );
-	void newKeyFrameImpl( const KeyFrame::SharedPtr &keyframe );
+	int  fullReconstraintSearchImpl( void );
+
+	void checkNewKeyFrameImpl( const KeyFrame::SharedPtr &keyframe );
 
 	//=== Internal functions ====
 	int findConstraintsForNewKeyFrames(const KeyFrame::SharedPtr &newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH);

@@ -42,7 +42,6 @@
 #include "SlamSystem/MappingThread.h"
 #include "SlamSystem/ConstraintSearchThread.h"
 #include "SlamSystem/OptimizationThread.h"
-#include "SlamSystem/TrackingThread.h"
 
 using namespace lsd_slam;
 
@@ -60,7 +59,7 @@ SlamSystem::SlamSystem( )
 
 	// Because some of these rely on Conf(), need to explicitly call after
  	// static initialization.  Is this true?
-	const bool threaded = Conf().SLAMEnabled && Conf().runRealTime;
+	const bool threaded = Conf().runRealTime;
 	_optThread.reset( new OptimizationThread( *this, threaded ) );
 	_mapThread.reset( new MappingThread( *this, threaded ) );
 	_constraintThread.reset( new ConstraintSearchThread( *this, threaded ) );
@@ -97,10 +96,11 @@ void SlamSystem::finalize()
 	LOG(INFO) << "Finalizing Graph... adding final constraints!!";
 
 	// Run this in the foreground
-	_constraintThread->doFullReConstraintTrack();
-	_constraintThread->fullReConstraintTrackComplete.wait();
+	_constraintThread->doFullReConstraintSearch();
+	_constraintThread->fullReConstraintSearchComplete.wait();
 
 	LOG(INFO) << "Finalizing Graph... optimizing!!";
+
 	// This happens in the foreground
 	// This will kick off a final map publication with the newly optimized offsets (also in foreground)
 	_optThread->doFinalOptimization();
@@ -113,10 +113,8 @@ void SlamSystem::finalize()
 
 }
 
-std::shared_ptr<KeyFrame> &SlamSystem::currentKeyFrame()
-{
-	return trackingThread()->currentKeyFrame();
-}
+//std::shared_ptr<KeyFrame> &SlamSystem::currentKeyFrame()
+
 
 // Thin wrapped which turns a bare cv::Mat image into an ImageSe
 void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam )
