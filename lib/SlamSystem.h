@@ -102,7 +102,6 @@ public:
 	void publishKeyframeGraph( void );
 	void publishKeyframe(  const Frame::SharedPtr &frame );
 	void publishCurrentKeyframe();
-	void publishPointCloud();
 	void publishDepthImage( unsigned char* data  );
 
 	void updateDisplayDepthMap();

@@ -35,13 +35,11 @@ class Frame;
 class KeyFrame;
 
 
-class SE3Tracker
-{
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+struct SE3TrackerDebugImages {
+	SE3TrackerDebugImages() = delete;
+	SE3TrackerDebugImages( const SE3TrackerDebugImages & ) = delete;
 
-	DenseDepthTrackerSettings settings;
-
+	SE3TrackerDebugImages( const ImageSize &imgSize );
 
 	// debug images
 	cv::Mat debugImageResiduals;
@@ -49,6 +47,15 @@ public:
 	cv::Mat debugImageSecondFrame;
 	cv::Mat debugImageOldImageSource;
 	cv::Mat debugImageOldImageWarped;
+
+};
+
+class SE3Tracker
+{
+public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	DenseDepthTrackerSettings settings;
 
 	SE3Tracker(const SE3Tracker&) = delete;
 	SE3Tracker& operator=(const SE3Tracker&) = delete;
@@ -97,7 +104,6 @@ private:
 
 	const ImageSize &_imgSize;
 
-
 	float* buf_warped_residual;
 	float* buf_warped_dx;
 	float* buf_warped_dy;
@@ -111,6 +117,7 @@ private:
 
 	int buf_warped_size;
 
+	SE3TrackerDebugImages _debugImages;
 
 
 	void calculateWarpUpdate(LGS6 &ls);

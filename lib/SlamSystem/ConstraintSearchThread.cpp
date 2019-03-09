@@ -592,7 +592,7 @@ float ConstraintSearchThread::tryTrackSim3(
 
 	BtoA = constraintTracker->trackFrameSim3(
 			A,
-			B->keyframe,
+			B->frame,
 			BtoA,
 			lvlStart,lvlEnd);
 	Matrix7x7 BtoAInfo = constraintTracker->lastSim3Hessian;
@@ -614,7 +614,7 @@ float ConstraintSearchThread::tryTrackSim3(
 
 	AtoB = constraintTracker->trackFrameSim3(
 			B,
-			A->keyframe,
+			A->frame,
 			AtoB,
 			lvlStart,lvlEnd);
 	Matrix7x7 AtoBInfo = constraintTracker->lastSim3Hessian;

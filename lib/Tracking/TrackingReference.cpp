@@ -28,23 +28,8 @@
 namespace lsd_slam
 {
 
-
-// TrackingReference::TrackingReference()
-// 	: keyframe( nullptr )
-// {
-// 	wh_allocated = 0;
-// 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
-// 	{
-// 		posData[level] = nullptr;
-// 		gradData[level] = nullptr;
-// 		colorAndVarData[level] = nullptr;
-// 		pointPosInXYGrid[level] = nullptr;
-// 		numData[level] = 0;
-// 	}
-// }
-
 TrackingReference::TrackingReference( const Frame::SharedPtr &frame )
-	: keyframe( frame ),
+	: frame( frame ),
 		_accessMutex()
 {
 	wh_allocated = 0;
@@ -56,14 +41,12 @@ TrackingReference::TrackingReference( const Frame::SharedPtr &frame )
 		pointPosInXYGrid[level] = nullptr;
 		numData[level] = 0;
 	}
-
-	//importFrame( frame );
 }
 
-
-
-void TrackingReference::releaseAll()
+TrackingReference::~TrackingReference()
 {
+	std::lock_guard<std::mutex> lock(_accessMutex);
+
 	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
 	{
 		if(posData[level] != nullptr) delete[] posData[level];
@@ -77,61 +60,31 @@ void TrackingReference::releaseAll()
 
 void TrackingReference::clearAll()
 {
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	for (int level = 0; level < PYRAMID_LEVELS; ++level)
 		numData[level] = 0;
 }
 
-TrackingReference::~TrackingReference()
-{
-	std::lock_guard<std::mutex> lock(_accessMutex);
-	//invalidate();
-	releaseAll();
-}
 
-// void TrackingReference::importFrame(const Frame::SharedPtr &sourceKF)
-// {
-// 	std::lock_guard<std::mutex> lock(_accessMutex);
-//
-// 	keyframeLock = sourceKF->getActiveLock();
-// 	keyframe = sourceKF;
-//
-// 	// reset allocation if dimensions differ (shouldnt happen usually)
-// 	if(sourceKF->width(0) * sourceKF->height(0) != wh_allocated)
-// 	{
-// 		releaseAll();
-// 		wh_allocated = sourceKF->width(0) * sourceKF->height(0);
-// 	}
-//
-// 	clearAll();
-// }
-//
-// void TrackingReference::invalidate()
-// {
-// 	if( (bool)keyframe ) keyframeLock.unlock();
-//
-// 	keyframe.reset();
-// }
 
 void TrackingReference::makePointCloud(int level)
 {
-	CHECK( (bool)keyframe ) << "Keyframe is zero.  It shouldn't be.";
+	CHECK( (bool)frame ) << "frame pointer is NULL when it shouldn't be.";
 	std::lock_guard<std::mutex> lock(_accessMutex);
 
-	if(numData[level] > 0)
-		return;	// already exists.
+	if(numData[level] > 0) return;	// already exists.
 
-	int w = keyframe->width(level);
-	int h = keyframe->height(level);
+	const int w = frame->width(level);
+	const int h = frame->height(level);
 
-	float fxInvLevel = keyframe->fxi(level);
-	float fyInvLevel = keyframe->fyi(level);
-	float cxInvLevel = keyframe->cxi(level);
-	float cyInvLevel = keyframe->cyi(level);
+	const float fxInvLevel = frame->fxi(level);
+	const float fyInvLevel = frame->fyi(level);
+	const float cxInvLevel = frame->cxi(level);
+	const float cyInvLevel = frame->cyi(level);
 
-	const float* pyrIdepthSource = keyframe->idepth(level);
-	const float* pyrIdepthVarSource = keyframe->idepthVar(level);
-	const float* pyrColorSource = keyframe->image(level);
-	const Eigen::Vector4f* pyrGradSource = keyframe->gradients(level);
+	const float* pyrIdepthSource = frame->idepth(level);
+	const float* pyrIdepthVarSource = frame->idepthVar(level);
+	const float* pyrColorSource = frame->image(level);
+	const Eigen::Vector4f* pyrGradSource = frame->gradients(level);
 
 	if(posData[level] == nullptr)          posData[level] = new Eigen::Vector3f[w*h];
 	if(pointPosInXYGrid[level] == nullptr) pointPosInXYGrid[level] = new int[w*h];
@@ -162,7 +115,7 @@ void TrackingReference::makePointCloud(int level)
 	}
 
 	numData[level] = posDataPT - posData[level];
-	LOG(INFO) << "Keyframe " << frameID() << " has " << numData[level] << " tracked points at level " << level;
+	LOG(INFO) << "frame " << frameID() << " has " << numData[level] << " tracked points at level " << level;
 }
 
 

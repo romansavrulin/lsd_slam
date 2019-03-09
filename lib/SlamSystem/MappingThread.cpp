@@ -19,15 +19,9 @@ namespace lsd_slam {
 
 using active_object::Active;
 
-// static const bool depthMapScreenshotFlag = true;
-
-
 MappingThread::MappingThread( SlamSystem &system, bool threaded )
 	: relocalizer(),
-//		mappingTrackingReference( new TrackingReference() ),
 		_system(system ),
-		// _newKeyFrame( nullptr ),
-    // _newImageSet( nullptr ),
 		_thread( threaded ? Active::createActive() : NULL )
 {
 	LOG(INFO) << "Started Mapping thread";
@@ -39,88 +33,18 @@ MappingThread::~MappingThread()
 //	unmappedTrackedFrames.clear();
 }
 
-//==== Callbacks ======
 
-/* REDUNDANT
-void MappingThread::callbackUnmappedTrackedFrames( void )
-{
-	bool nMapped = false;
-	size_t sz = 0;
-	{
-		std::lock_guard<std::mutex> lock( unmappedTrackedFramesMutex );
-		sz = unmappedTrackedFrames.size();
-
-		if( sz > 0 )
-			nMapped = unmappedTrackedFrames.back()->trackingParent()->numMappedOnThisTotal < 10;
-	}
-
-	LOG(INFO) << "In unmapped tracked frames callback with " << sz << " frames";
-
-	if(sz < 50 ||
-	  (sz < 100 && nMapped) ) {
-
-		while( doMappingIteration() ) { ; }
-
-		// TODO:  Was originally in the while() loop above.  However, there are
-		// circumstances (if there's one untracked thread in the queue referenced
-		// to an older keyframe) where doMappingIteration will return false, and this
-		// notify never happens.   If that happens, TrackingThread will stop if it's
-		// waiting on the signal.
-		//
-		// This should be called once per callback otherwise TrackingThread might get hung up?
-
-
-		trackedFramesMapped.notify();
-		//}
-	}
-
-	LOG(INFO) << "Done mapping.";
-}
-*/
 void MappingThread::mapSetImpl( const KeyFrame::SharedPtr &kf, const ImageSet::SharedPtr &set )
 {
-    // bool nMapped = false;
-    // size_t sz = 0;
-    // {
-    //         std::lock_guard<std::mutex> lock( unmappedTrackedFramesMutex );
-    //         sz = unmappedTrackedSets.size();
-		//
-    //         if( sz > 0 )
-    //                 nMapped = unmappedTrackedSets.back()->refFrame()->trackingParent()->numMappedOnThisTotal < 10;
-    // }
-		//
-    // LOG(INFO) << "In unmapped tracked frames callback with " << sz << " frames";
-		//
-    // if(sz < 50 ||
-    //   (sz < 100 && nMapped) ) {
 
-		LOG(INFO) << "Mapping set " << set->id() << " onto KeyFrame " << kf->id();
+	// TODO.  Need code to handle when the queue is growing out of control...
 
-		kf->updateDepthFrom( set->refFrame() );
+	LOG(INFO) << "Mapping set " << set->id() << " onto KeyFrame " << kf->id();
 
-		_system.updateDisplayDepthMap();
-		_system.publishCurrentKeyframe();
-		_system.publishPointCloud();
+	kf->updateDepthFrom( set->refFrame() );
 
-
-
-//            while( doMappingIterationSet() ) { ; }
-
-
-    //         // TODO:  Was originally in the while() loop above.  However, there are
-    //         // circumstances (if there's one untracked thread in the queue referenced
-    //         // to an older keyframe) where doMappingIteration will return false, and this
-    //         // notify never happens.   If that happens, TrackingThread will stop if it's
-    //         // waiting on the signal.
-    //         //
-    //         // This should be called once per callback otherwise TrackingThread might get hung up?
-		//
-    //         //TODO not sure what this is doing...
-    //         trackedFramesMapped.notify();
-    //         //}
-    // }
-		//
-    // LOG(INFO) << "Done mapping.";
+	_system.updateDisplayDepthMap();
+	_system.publishCurrentKeyframe();
 }
 
 void MappingThread::mergeOptimizationOffsetImpl()
@@ -150,6 +74,7 @@ void MappingThread::mergeOptimizationOffsetImpl()
 	optimizationUpdateMerged.notify();
 }
 
+
 void MappingThread::createFirstKeyFrame( const Frame::SharedPtr &frame )
 {
 	LOG(WARNING) << "Making " << frame->id() << " into new keyframe!";
@@ -169,15 +94,6 @@ void MappingThread::createNewKeyFrameImpl( const KeyFrame::SharedPtr &currentKey
 	_system.keyFrameGraph()->addKeyFrame( kf );
 	_system.trackingThread()->doUseNewKeyFrame( kf );
 }
-
-// void MappingThread::callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame )
-// {
-// 	LOG(INFO) << "Set " << frame->id() << " as new key frame";
-// 	finishCurrentKeyframe();
-// 	_system.changeKeyframe(frame, false, true, 1.0f);
-//
-// 	_system.updateDisplayDepthMap();
-// }
 
 //==== Actual meat ====
 
@@ -460,118 +376,6 @@ bool MappingThread::updateKeyframe()
 	return true;
 }
 */
-//
-// bool MappingThread::updateImageSet()
-// {
-//
-//         //TODO this function deals with ImageSets, but the vector 'refrences
-//         // is still of type Frame. Depth map needs to be configured to take a
-//         //vector of ImageSets instead of Frames.
-//
-//         //TODO Feed in ImageSets as apposed to Frames
-//         std::shared_ptr<Frame> reference = nullptr;
-//         std::deque< std::shared_ptr<Frame> > references;
-//
-//         unmappedTrackedFramesMutex.lock();
-//
-//         // Drops frames that have a different tracking parent.
-//         while(unmappedTrackedSets.size() > 0 &&
-//                           (!unmappedTrackedSets.front()->refFrame()->hasTrackingParent() ||
-//                            !unmappedTrackedSets.front()->refFrame()->isTrackingParent( _system.currentKeyFrame() ) ) ) {
-//                                          if( unmappedTrackedSets.front()->refFrame()->hasTrackingParent() ) {
-//                                          LOG(INFO) << "Dropping frame " << unmappedTrackedSets.front()->refFrame()->id()
-//                                                                         << " its has tracking parent " << unmappedTrackedSets.front()->refFrame()->trackingParent()->id()
-//                                                                                 << " current keyframe is " << _system.currentKeyFrame()->id();
-//                                                 } else {
-//                                                         LOG(INFO) << "Dropping frame " << unmappedTrackedSets.front()->id() << " which doesn't have a tracking parent";
-//                                                 }
-//                 unmappedTrackedSets.front()->refFrame()->clear_refPixelWasGood();
-//                 unmappedTrackedSets.pop_front();
-//         }
-//
-//         // clone list
-//         if(unmappedTrackedSets.size() > 0) {
-//                 // Copies all but only pops one?
-//                  for(unsigned int i=0;i<unmappedTrackedSets.size(); i++)
-//                         references.push_back(unmappedTrackedSets[i]->refFrame());
-//                 //unmappedTrackedFrames().swap( references );
-//
-//                 std::shared_ptr<Frame> popped = unmappedTrackedSets.front()->refFrame();
-//                 unmappedTrackedSets.pop_front();
-//                 unmappedTrackedFramesMutex.unlock();
-//
-//                 LOGF_IF( INFO, Conf().print.threadingInfo,
-//                         "MAPPING frames %d to %d (%d frames) onto keyframe %d", references.front()->id(), references.back()->id(), (int)references.size(),  _system.currentKeyFrame()->id());
-//
-//
-//
-//                 _system.depthMap()->updateKeyframe(references);
-//
-//                 popped->clear_refPixelWasGood();
-//                 references.clear();
-//         }
-//         else
-//         {
-//                 unmappedTrackedFramesMutex.unlock();
-//                 return false;
-//         }
-//
-//         _system.publishCurrentKeyframe();
-//         //TODO when should we update the pointcloud?
-//         //_system.publishPointCloud();
-//
-//         return true;
-// }
-
-
-
-//
-// void MappingThread::finishCurrentKeyframe()
-// {
-// 	LOG_IF(DEBUG, Conf().print.threadingInfo) << "FINALIZING KF " << _system.currentKeyFrame()->id();
-//
-// 	_system.depthMap()->finalizeKeyFrame();
-//
-// 	if(Conf().SLAMEnabled)
-// 	{
-// 		mappingTrackingReference->importFrame(_system.currentKeyFrame());
-// 		_system.currentKeyFrame()->setPermaRef(mappingTrackingReference);
-// 		mappingTrackingReference->invalidate();
-//
-// 		if(_system.currentKeyFrame()->idxInKeyframes < 0)
-// 		{
-// 			_system.keyFrameGraph()->keyframesAllMutex.lock();
-// 			_system.currentKeyFrame()->idxInKeyframes = _system.keyFrameGraph()->keyframesAll.size();
-// 			_system.keyFrameGraph()->keyframesAll.push_back(_system.currentKeyFrame() );
-// 			_system.keyFrameGraph()->totalPoints += _system.currentKeyFrame()->numPoints;
-// 			_system.keyFrameGraph()->totalVertices ++;
-// 			_system.keyFrameGraph()->keyframesAllMutex.unlock();
-//
-// 			_system.constraintThread->newKeyFrame( _system.currentKeyFrame() );
-// 		}
-// 	}
-//
-// 	LOG(DEBUG) << "Finishing current keyframe, publishing keyframe " << _system.currentKeyFrame()->id();
-// 	_system.publishCurrentKeyframe();
-// 	_system.publishKeyframeGraph();
-//         //_system.publishPointCloud();
-// }
-//
-//
-// void MappingThread::discardCurrentKeyframe()
-// {
-// 	LOG_IF(DEBUG, Conf().print.threadingInfo) << "DISCARDING KF " << _system.currentKeyFrame()->id();
-//
-// 	if(_system.currentKeyFrame()->idxInKeyframes >= 0)
-// 	{
-// 		LOG(WARNING) << "WARNING: trying to discard a KF that has already been added to the graph... finalizing instead.";
-// 		finishCurrentKeyframe();
-// 		return;
-// 	}
-// 	_system.keyFrameGraph()->dropKeyFrame( _system.currentKeyFrame() );
-//
-// 	_system.depthMap()->invalidate();
-// }
 
 
 }

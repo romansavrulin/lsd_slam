@@ -36,7 +36,7 @@ class KeyFrameGraph;
 /**
  * Point cloud used to track frame poses.
  *
- * Basically this stores a point cloud generated from known frames. It is used to
+ * This stores a point cloud generated from known frames. It is used to
  * track a new frame by finding a projection of the point cloud which makes it
  * look as much like the new frame as possible.
  *
@@ -46,6 +46,8 @@ class KeyFrameGraph;
  * ATTENTION: as the level zero point cloud is not used for tracking, it is not
  * fully calculated. Only the weights are valid on this level!
  */
+
+ // TODO.  Oh my gawd.
 class TrackingReference
 {
 public:
@@ -55,23 +57,17 @@ public:
 	TrackingReference() = delete;
 	TrackingReference( const TrackingReference & ) = delete;
 
-	/** Creates an empty TrackingReference with optional preallocation per level. */
 	TrackingReference( const Frame::SharedPtr &frame );
 
 	~TrackingReference();
 
-	int frameID()    { return ((bool)keyframe) ? keyframe->id() : -1; }
+	int frameID()    { return ((bool)frame) ? frame->id() : -1; }
 
-
-	//void importFrame( const Frame::SharedPtr &source);
-
-	Frame::SharedPtr keyframe;
-	boost::shared_lock<boost::shared_mutex> keyframeLock;
-
+	Frame::SharedPtr frame;
 
 	void makePointCloud(int level);
 	void clearAll();
-	//void invalidate();
+
 	Eigen::Vector3f* posData[PYRAMID_LEVELS];	// (x,y,z)
 	Eigen::Vector2f* gradData[PYRAMID_LEVELS];	// (dx, dy)
 	Eigen::Vector2f* colorAndVarData[PYRAMID_LEVELS];	// (I, Var)
@@ -81,6 +77,5 @@ public:
 private:
 	int wh_allocated;
 	std::mutex _accessMutex;
-	void releaseAll();
 };
 }

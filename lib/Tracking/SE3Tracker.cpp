@@ -50,13 +50,12 @@ SE3Tracker::SE3Tracker(const ImageSize &sz )
 		_pctGoodPerTotal(-1.0),
 		_lastGoodCount(0),
 		_lastBadCount(0),
-		_imgSize( sz )
+		_imgSize( sz ),
+		_debugImages( sz ),
+		settings()
 {
 
-	settings = DenseDepthTrackerSettings();
-	//settings.maxItsPerLvl[0] = 2;
-
-	int area = _imgSize.area();
+	const int area = _imgSize.area();
 
 	buf_warped_residual = new float[area];
 	buf_warped_dx = new float[area];
@@ -71,12 +70,6 @@ SE3Tracker::SE3Tracker(const ImageSize &sz )
 
 	buf_warped_size = 0;
 
-	debugImageWeights = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageResiduals = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageSecondFrame = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageOldImageWarped = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageOldImageSource = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-
 	lastResidual = 0;
 	iterationNumber = 0;
 	pointUsage = 0;
@@ -86,12 +79,6 @@ SE3Tracker::SE3Tracker(const ImageSize &sz )
 
 SE3Tracker::~SE3Tracker()
 {
-	debugImageResiduals.release();
-	debugImageWeights.release();
-	debugImageSecondFrame.release();
-	debugImageOldImageSource.release();
-	debugImageOldImageWarped.release();
-
 
 	delete[] buf_warped_residual;
 	delete[] buf_warped_dx;
@@ -292,7 +279,7 @@ SE3 SE3Tracker::trackFrame(
 		const float* frameImage = frame->image();
 		for (int row = 0; row < _imgSize.height; ++ row)
 			for (int col = 0; col < _imgSize.height; ++ col)
-				setPixelInCvMat(&debugImageSecondFrame,getGrayCvPixel(frameImage[col+row*_imgSize.width]), col, row, 1);
+				setPixelInCvMat(&_debugImages.debugImageSecondFrame,getGrayCvPixel(frameImage[col+row*_imgSize.width]), col, row, 1);
 	}
 
 	// ============ track frame ============
@@ -440,7 +427,7 @@ SE3 SE3Tracker::trackFrame(
 
 
 	if(plotTracking)
-		Util::displayImage("TrackingResidual", debugImageResiduals, false);
+		Util::displayImage("TrackingResidual", _debugImages.debugImageResiduals, false);
 
 
 	if(Conf().print.trackingIterationInfo)
@@ -530,10 +517,10 @@ void SE3Tracker::calcResidualAndBuffers_debugStart()
 	if(plotTrackingIterationInfo || saveAllTrackingStagesInternal)
 	{
 		int other = saveAllTrackingStagesInternal ? 255 : 0;
-		fillCvMat(&debugImageResiduals,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageWeights,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageOldImageSource,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageOldImageWarped,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageResiduals,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageWeights,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageOldImageSource,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageOldImageWarped,cv::Vec3b(other,other,255));
 	}
 }
 
@@ -541,33 +528,11 @@ void SE3Tracker::calcResidualAndBuffers_debugFinish(int w)
 {
 	if(plotTrackingIterationInfo)
 	{
-		Util::displayImage( "Weights", debugImageWeights );
-		Util::displayImage( "second_frame", debugImageSecondFrame );
-		Util::displayImage( "Intensities of second_frame at transformed positions", debugImageOldImageSource );
-		Util::displayImage( "Intensities of second_frame at pointcloud in first_frame", debugImageOldImageWarped );
-		Util::displayImage( "Residuals", debugImageResiduals );
-
-
-		//AMM.  Disable this as well.
-		// wait for key and handle it
-		// bool looping = true;
-		// while(looping)
-		// {
-		// 	int k = Util::waitKey(1);
-		// 	if(k == -1)
-		// 	{
-		// 		if(autoRunWithinFrame)
-		// 			break;
-		// 		else
-		// 			continue;
-		// 	}
-		//
-		// 	char key = k;
-		// 	if(key == ' ')
-		// 		looping = false;
-		// 	else
-		// 		handleKey(k);
-		// }
+		Util::displayImage( "Weights", _debugImages.debugImageWeights );
+		Util::displayImage( "second_frame", _debugImages.debugImageSecondFrame );
+		Util::displayImage( "Intensities of second_frame at transformed positions", _debugImages.debugImageOldImageSource );
+		Util::displayImage( "Intensities of second_frame at pointcloud in first_frame", _debugImages.debugImageOldImageWarped );
+		Util::displayImage( "Residuals", _debugImages.debugImageResiduals );
 	}
 
 	if(saveAllTrackingStagesInternal)
@@ -575,13 +540,13 @@ void SE3Tracker::calcResidualAndBuffers_debugFinish(int w)
 		char charbuf[500];
 
 		snprintf(charbuf,500,"save/%sresidual-%d-%d.png",packagePath.c_str(),w,iterationNumber);
-		cv::imwrite(charbuf,debugImageResiduals);
+		cv::imwrite(charbuf,_debugImages.debugImageResiduals);
 
 		snprintf(charbuf,500,"save/%swarped-%d-%d.png",packagePath.c_str(),w,iterationNumber);
-		cv::imwrite(charbuf,debugImageOldImageWarped);
+		cv::imwrite(charbuf,_debugImages.debugImageOldImageWarped);
 
 		snprintf(charbuf,500,"save/%sweights-%d-%d.png",packagePath.c_str(),w,iterationNumber);
-		cv::imwrite(charbuf,debugImageWeights);
+		cv::imwrite(charbuf,_debugImages.debugImageWeights);
 
 		printf("saved three images for lvl %d, iteration %d\n",w,iterationNumber);
 	}
@@ -600,8 +565,7 @@ float SE3Tracker::calcResidualAndBuffers(
 {
 	calcResidualAndBuffers_debugStart();
 
-	if(plotResidual)
-		debugImageResiduals.setTo(0);
+	if(plotResidual)	_debugImages.debugImageResiduals.setTo(0);
 
 
 	int w = frame->width(level);
@@ -716,13 +680,13 @@ float SE3Tracker::calcResidualAndBuffers(
 
 			if(plotTrackingIterationInfo)
 			{
-				setPixelInCvMat(&debugImageOldImageSource,getGrayCvPixel((float)resInterp[2]),u_new+0.5,v_new+0.5,(width/w));
-				setPixelInCvMat(&debugImageOldImageWarped,getGrayCvPixel((float)resInterp[2]),x,y,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageOldImageSource,getGrayCvPixel((float)resInterp[2]),u_new+0.5,v_new+0.5,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageOldImageWarped,getGrayCvPixel((float)resInterp[2]),x,y,(width/w));
 			}
 			if(isGood)
-				setPixelInCvMat(&debugImageResiduals,getGrayCvPixel(residual+128),x,y,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageResiduals,getGrayCvPixel(residual+128),x,y,(width/w));
 			else
-				setPixelInCvMat(&debugImageResiduals,cv::Vec3b(0,0,255),x,y,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageResiduals,cv::Vec3b(0,0,255),x,y,(width/w));
 
 		}
 	}
@@ -791,6 +755,16 @@ void SE3Tracker::calculateWarpUpdate(
 
 }
 
+
+//=== SE3TrackerDebugImages ==
+
+SE3TrackerDebugImages::SE3TrackerDebugImages( const ImageSize &imgSize )
+		: debugImageWeights( cv::Mat(imgSize.cvSize(),CV_8UC3) ),
+			debugImageResiduals( cv::Mat(imgSize.cvSize(),CV_8UC3) ),
+			debugImageSecondFrame( cv::Mat(imgSize.cvSize(),CV_8UC3) ),
+			debugImageOldImageWarped( cv::Mat(imgSize.cvSize(),CV_8UC3) ),
+			debugImageOldImageSource( cv::Mat(imgSize.cvSize(),CV_8UC3) )
+{;}
 
 
 }

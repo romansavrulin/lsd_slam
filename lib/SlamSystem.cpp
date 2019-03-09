@@ -302,11 +302,8 @@ void SlamSystem::publishCurrentKeyframe( )
 {
 	if( currentKeyFrame() ) {
 		OUTPUT_FOR_EACH( publishKeyframe( currentKeyFrame()->frame() ) )
+		OUTPUT_FOR_EACH( publishPointCloud( currentKeyFrame()->frame() ) )
 	} else {
 		LOG(DEBUG) << "No currentKeyframe, unable to publish";
 	}
-}
-
-void SlamSystem::publishPointCloud( ) {
-	OUTPUT_FOR_EACH( publishPointCloud( currentKeyFrame()->frame() ) )
 }
