@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-#include "data_images.h"
+#include "testimages.h"
 
 static const std::string base64_chars =
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -13,7 +13,7 @@ static inline bool is_base64(BYTE c) {
   return (isalnum(c) || (c == '+') || (c == '/'));
 }
 
-std::vector<BYTE> base64_decode(std::string const& encoded_string) {
+static std::vector<BYTE> base64_decode(std::string const& encoded_string) {
   int in_len = encoded_string.size();
   int i = 0;
   int j = 0;

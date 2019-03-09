@@ -6,7 +6,7 @@
 
 #include "DataStructures/Frame.h"
 
-#include "data_images.h"
+#include "testimages.h"
 
 TEST( Frame, constructor )
 {
