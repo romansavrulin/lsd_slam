@@ -7,6 +7,7 @@ set(GUI_SRCS
 set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/App/InputThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/Frame.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameData.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/ImageSet.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp

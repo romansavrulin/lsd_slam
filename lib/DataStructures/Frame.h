@@ -30,6 +30,8 @@
 #include "util/settings.h"
 #include "util/Configuration.h"
 
+#include "FrameData.h"
+
 namespace lsd_slam
 {
 
@@ -45,71 +47,11 @@ class DepthMap;
 
 class Frame
 {
-private:
-	//!!! Had strange alignement issues if this was at the end of the class.  Something to
-	// do with Eigen alignment?
-	struct Data
-	{
-		// Explicitly delete default and copy constructors
-		Data() = delete;
-		Data( const Data & ) = delete;
-
-		Data( int id, double timestamp, const Camera &camera, const ImageSize &slamImageSize );
-
-		int id;
-
-		int width[PYRAMID_LEVELS], height[PYRAMID_LEVELS];
-
-		Camera camera[PYRAMID_LEVELS];
-
-		// Eigen::Matrix3f K[PYRAMID_LEVELS], KInv[PYRAMID_LEVELS];
-		// float fx[PYRAMID_LEVELS], fy[PYRAMID_LEVELS], cx[PYRAMID_LEVELS], cy[PYRAMID_LEVELS];
-		// float fxInv[PYRAMID_LEVELS], fyInv[PYRAMID_LEVELS], cxInv[PYRAMID_LEVELS], cyInv[PYRAMID_LEVELS];
-
-		double timestamp;
-
-		float* image[PYRAMID_LEVELS];
-		bool imageValid[PYRAMID_LEVELS];
-
-		Eigen::Vector4f* gradients[PYRAMID_LEVELS];
-		bool gradientsValid[PYRAMID_LEVELS];
-
-		float* maxGradients[PYRAMID_LEVELS];
-		bool maxGradientsValid[PYRAMID_LEVELS];
-
-
-		bool hasIDepthBeenSet;
-
-		// negative depthvalues are actually allowed, so setting this to -1 does NOT invalidate the pixel's depth.
-		// a pixel is valid iff idepthVar[i] > 0.
-		float* idepth[PYRAMID_LEVELS];
-		bool idepthValid[PYRAMID_LEVELS];
-
-		// MUST contain -1 for invalid pixel (that dont have depth)!!
-		float* idepthVar[PYRAMID_LEVELS];
-		bool idepthVarValid[PYRAMID_LEVELS];
-
-		// data needed for re-activating the frame. theoretically, this is all data the
-		// frame contains.
-		unsigned char* validity_reAct;
-		float* idepth_reAct;
-		float* idepthVar_reAct;
-		bool reActivationDataValid;
-
-
-		// data from initial tracking, indicating which pixels in the reference frame ware good or not.
-		// deleted as soon as frame is used for mapping.
-		bool* refPixelWasGood;
-	} data;
-
-
-
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class FrameMemory;
 
 	typedef std::shared_ptr<Frame> SharedPtr;
-
 
 	// Explicitly delete default and copy constructors
 	Frame() = delete;
@@ -277,6 +219,8 @@ public:
 private:
 
 	std::shared_ptr<KeyFrame> _trackingParent;
+
+	FrameData data;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
