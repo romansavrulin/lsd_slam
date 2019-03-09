@@ -19,10 +19,13 @@
 */
 
 #pragma once
-#include "util/settings.h"
-#include "boost/thread.hpp"
 #include <stdio.h>
 #include <iostream>
+#include <condition_variable>
+#include <mutex>
+
+#include "util/settings.h"
+#include "boost/thread.hpp"
 #include "util/SophusUtil.h"
 #include "util/Configuration.h"
 
