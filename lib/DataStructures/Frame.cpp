@@ -40,28 +40,19 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const unsigned char* image )
 	: 	data( frameId, timestamp, cam, sz ),
 			pose( new FramePoseStruct(*this) ),
-			_trackingParent( nullptr )
+			_trackingParent( nullptr ),
+			referenceID ( -1 ),
+			referenceLevel( -1 ),
+			numMappablePixels( -1 ),
+			meanIdepth( 1 ),
+			numPoints( 0 ),
+			idxInKeyframes( -1 ),
+			edgeErrorSum( 1 ),
+			edgesNum( 1 ),
+			lastConstraintTrackedCamToWorld( Sim3() ),
+			isActive( false )
 {
-	initialize(timestamp);
-
-	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-	float* maxPt = data.image[0] + data.width[0]*data.height[0];
-
-	CHECK(image != nullptr ) << "Image not defined!";
-
-	//LOG(INFO) << "Image width " << data.width[0] << " x " << data.height[0];
-
-	//memcpy( data.image[0], image, data.width[0]*data.height[0] );
-	for(float* pt = data.image[0]; pt < maxPt; pt++)
-	{
-	       *pt = *image;
-	       image++;
-	}
-
-	CHECK( (data.width[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image width " << data.width[0] << " isn't divisible by " << PYRAMID_DIVISOR;
-	CHECK( (data.height[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image height " << data.height[0] << " isn't divisible by " << PYRAMID_DIVISOR;
-
-	data.imageValid[0] = true;
+	data.setImage( image );
 
 	privateFrameAllocCount++;
 
@@ -74,58 +65,25 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const float* image )
 	:   data( frameId, timestamp, cam, sz ),
 			pose( new FramePoseStruct(*this)),
-		_trackingParent( nullptr )
+		_trackingParent( nullptr ),
+		referenceID ( -1 ),
+		referenceLevel( -1 ),
+		numMappablePixels( -1 ),
+		meanIdepth( 1 ),
+		numPoints( 0 ),
+		idxInKeyframes( -1 ),
+		edgeErrorSum( 1 ),
+		edgesNum( 1 ),
+		lastConstraintTrackedCamToWorld( Sim3() ),
+		isActive( false )
 {
-	initialize(timestamp);
-
-	data.image[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
-	memcpy(data.image[0], image, data.width[0]*data.height[0] * sizeof(float));
-	data.imageValid[0] = true;
+	data.setImage( image );
 
 	privateFrameAllocCount++;
 
 	LOG_IF(INFO, Conf().print.memoryDebugInfo )
 						<< "ALLOCATED frame " << id()
 						<< ", now there are " << privateFrameAllocCount;
-}
-
-
-void Frame::initialize(double timestamp)
-{
-
-	// data.fx[0] = K(0,0);
-	// data.fy[0] = K(1,1);
-	// data.cx[0] = K(0,2);
-	// data.cy[0] = K(1,2);
-	//
-	// data.KInv[0] = K.inverse();
-	// data.fxInv[0] = data.KInv[0](0,0);
-	// data.fyInv[0] = data.KInv[0](1,1);
-	// data.cxInv[0] = data.KInv[0](0,2);
-	// data.cyInv[0] = data.KInv[0](1,2);
-
-//	depthHasBeenUpdatedFlag = false;
-
-	referenceID = -1;
-	referenceLevel = -1;
-
-	numMappablePixels = -1;
-
-
-	// permaRefNumPts = 0;
-	// permaRef_colorAndVarData = 0;
-	// permaRef_posData = 0;
-
-	meanIdepth = 1;
-	numPoints = 0;
-
-	idxInKeyframes = -1;
-
-	edgeErrorSum = edgesNum = 1;
-
-	lastConstraintTrackedCamToWorld = Sim3();
-
-	isActive = false;
 }
 
 
@@ -140,19 +98,6 @@ Frame::~Frame()
 	// 	delete pose;
 	// // else
 	// // 	pose->frame = 0;
-
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
-	{
-		FrameMemory::getInstance().returnBuffer(data.image[level]);
-		FrameMemory::getInstance().returnBuffer(reinterpret_cast<float*>(data.gradients[level]));
-		FrameMemory::getInstance().returnBuffer(data.maxGradients[level]);
-		FrameMemory::getInstance().returnBuffer(data.idepth[level]);
-		FrameMemory::getInstance().returnBuffer(data.idepthVar[level]);
-	}
-
-	FrameMemory::getInstance().returnBuffer((float*)data.validity_reAct);
-	FrameMemory::getInstance().returnBuffer(data.idepth_reAct);
-	FrameMemory::getInstance().returnBuffer(data.idepthVar_reAct);
 
 	// if(permaRef_colorAndVarData != 0)
 	// 	delete permaRef_colorAndVarData;
@@ -172,74 +117,6 @@ bool Frame::isTrackingParent( const std::shared_ptr<KeyFrame> &other ) const
 bool Frame::isTrackingParent( int id ) const
 { return hasTrackingParent() && ( id == trackingParent()->id() ); }
 
-// void Frame::takeReActivationData(DepthMapPixelHypothesis* depthMap)
-// {
-// 	boost::shared_lock<boost::shared_mutex> lock = getActiveLock();
-//
-// 	if(data.validity_reAct == 0)
-// 		data.validity_reAct = (unsigned char*) FrameMemory::getInstance().getBuffer(data.width[0]*data.height[0]);
-//
-// 	if(data.idepth_reAct == 0)
-// 		data.idepth_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
-//
-// 	if(data.idepthVar_reAct == 0)
-// 		data.idepthVar_reAct = FrameMemory::getInstance().getFloatBuffer((data.width[0]*data.height[0]));
-//
-//
-// 	float* id_pt = data.idepth_reAct;
-// 	float* id_pt_max = data.idepth_reAct + (data.width[0]*data.height[0]);
-// 	float* idv_pt = data.idepthVar_reAct;
-// 	unsigned char* val_pt = data.validity_reAct;
-//
-// 	for (; id_pt < id_pt_max; ++ id_pt, ++ idv_pt, ++ val_pt, ++depthMap)
-// 	{
-// 		if(depthMap->isValid)
-// 		{
-// 			*id_pt = depthMap->idepth;
-// 			*idv_pt = depthMap->idepth_var;
-// 			*val_pt = depthMap->validity_counter;
-// 		}
-// 		else if(depthMap->blacklisted < MIN_BLACKLIST)
-// 		{
-// 			*idv_pt = -2;
-// 		}
-// 		else
-// 		{
-// 			*idv_pt = -1;
-// 		}
-// 	}
-//
-// 	data.reActivationDataValid = true;
-// }
-
-
-
-// void Frame::setPermaRef( const std::unique_ptr<TrackingReference> &reference)
-// {
-// 	assert(reference->frameID() == id());
-// 	reference->makePointCloud(QUICK_KF_CHECK_LVL);
-//
-// 	permaRef_mutex.lock();
-//
-// 	if(permaRef_colorAndVarData != 0)
-// 		delete permaRef_colorAndVarData;
-// 	if(permaRef_posData != 0)
-// 		delete permaRef_posData;
-//
-// 	permaRefNumPts = reference->numData[QUICK_KF_CHECK_LVL];
-// 	permaRef_colorAndVarData = new Eigen::Vector2f[permaRefNumPts];
-// 	permaRef_posData = new Eigen::Vector3f[permaRefNumPts];
-//
-// 	memcpy(permaRef_colorAndVarData,
-// 			reference->colorAndVarData[QUICK_KF_CHECK_LVL],
-// 			sizeof(Eigen::Vector2f) * permaRefNumPts);
-//
-// 	memcpy(permaRef_posData,
-// 			reference->posData[QUICK_KF_CHECK_LVL],
-// 			sizeof(Eigen::Vector3f) * permaRefNumPts);
-//
-// 	permaRef_mutex.unlock();
-// }
 
 void Frame::calculateMeanInformation()
 {
@@ -595,9 +472,8 @@ void Frame::buildImage(int level)
 #endif
 
 	// Width and height are valid for level _above_ this one
-
-	assert( width % 2 == 0 );
-	assert( height % 2 == 0 );
+	CHECK( width % 2 == 0 );
+	CHECK( height % 2 == 0 );
 
 	int wh = width*height;
 	const float *s;

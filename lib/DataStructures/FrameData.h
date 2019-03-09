@@ -21,6 +21,11 @@ namespace lsd_slam {
 		FrameData( const FrameData & ) = delete;
 
 		FrameData( int id, double timestamp, const Camera &camera, const ImageSize &slamImageSize );
+    ~FrameData();
+
+    void setImage( const unsigned char *img );
+    void setImage( const float *img );
+
 
 		int id;
 
