@@ -38,19 +38,21 @@ int privateFrameAllocCount = 0;
 
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const unsigned char* image )
-	: 	data( frameId, timestamp, cam, sz ),
-			pose( new FramePoseStruct(*this) ),
-			_trackingParent( nullptr ),
-			referenceID ( -1 ),
-			referenceLevel( -1 ),
-			numMappablePixels( -1 ),
-			meanIdepth( 1 ),
-			numPoints( 0 ),
-			idxInKeyframes( -1 ),
-			edgeErrorSum( 1 ),
-			edgesNum( 1 ),
-			lastConstraintTrackedCamToWorld( Sim3() ),
-			isActive( false )
+	: _trackingParent( nullptr ),
+		_id( frameId ),
+		_timestamp( timestamp ),
+		data( cam, sz ),
+		pose( new FramePoseStruct(*this) ),
+		referenceID ( -1 ),
+		referenceLevel( -1 ),
+		numMappablePixels( -1 ),
+		meanIdepth( 1 ),
+		numPoints( 0 ),
+		idxInKeyframes( -1 ),
+		edgeErrorSum( 1 ),
+		edgesNum( 1 ),
+		lastConstraintTrackedCamToWorld( Sim3() ),
+		isActive( false )
 {
 	data.setImage( image );
 
@@ -63,9 +65,11 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 							double timestamp, const float* image )
-	:   data( frameId, timestamp, cam, sz ),
-			pose( new FramePoseStruct(*this)),
-		_trackingParent( nullptr ),
+	: _trackingParent( nullptr ),
+		_id( frameId ),
+		_timestamp( timestamp ),
+		data( cam, sz ),
+		pose( new FramePoseStruct(*this) ),
 		referenceID ( -1 ),
 		referenceLevel( -1 ),
 		numMappablePixels( -1 ),
@@ -90,7 +94,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 Frame::~Frame()
 {
 
-	LOGF_IF(INFO, Conf().print.frameBuildDebugInfo,"DELETING frame %d", this->id());
+	LOGF_IF(INFO, Conf().print.frameBuildDebugInfo,"DELETING frame %d", id());
 
 	FrameMemory::getInstance().deactivateFrame(this);
 
@@ -105,7 +109,7 @@ Frame::~Frame()
 	// 	delete permaRef_posData;
 
 	privateFrameAllocCount--;
-	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo, "DELETED frame %d, now there are %d\n", this->id(), privateFrameAllocCount);
+	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo, "DELETED frame %d, now there are %d\n", id(), privateFrameAllocCount);
 }
 
 bool Frame::isTrackingParent( const std::shared_ptr<Frame> &other ) const

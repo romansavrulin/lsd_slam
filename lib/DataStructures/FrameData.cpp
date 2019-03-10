@@ -5,8 +5,8 @@
 
 namespace lsd_slam {
 
-FrameData::FrameData( int i, double ts, const Camera &cam, const ImageSize &slamImageSize )
-	: id( i ), timestamp( ts )
+FrameData::FrameData( const Camera &cam, const ImageSize &slamImageSize )
+	:	hasIDepthBeenSet( false )
 {
 
 	camera[0] = cam;
@@ -44,7 +44,6 @@ FrameData::FrameData( int i, double ts, const Camera &cam, const ImageSize &slam
 
 	refPixelWasGood = 0;
 
-	hasIDepthBeenSet = false;
 
   CHECK( (width[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image width " << width[0] << " isn't divisible by " << PYRAMID_DIVISOR;
   CHECK( (height[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image height " << height[0] << " isn't divisible by " << PYRAMID_DIVISOR;

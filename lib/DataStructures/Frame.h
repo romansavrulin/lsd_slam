@@ -80,7 +80,7 @@ public:
 	// Accessors
 	/** Returns the unique frame id. */
 
-	inline int id() const { return data.id; }
+	inline int id() const { return _id; }
 
 	#define DATA_LEVEL_READER( _rtype, _name ) \
 		inline _rtype _name( int level = 0 ) const \
@@ -108,7 +108,7 @@ public:
 	DATA_LEVEL_CAMERA_READER( float, cyi )
 
 	/** Returns the frame's recording timestamp. */
-	inline double timestamp() const { return data.timestamp; }
+	inline double timestamp() const { return _timestamp; }
 
 	inline float* image(int level = 0);
 	inline const Eigen::Vector4f* gradients(int level = 0);
@@ -220,12 +220,15 @@ private:
 
 	std::shared_ptr<KeyFrame> _trackingParent;
 
+	int _id;
+	double _timestamp;
+
 	FrameData data;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
 
-	void initialize(double timestamp);
+//	void initialize(double timestamp);
 	void setDepth_Allocate();
 
 	void buildImage(int level);
@@ -286,7 +289,7 @@ inline const float* Frame::idepth(int level)
 {
 	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame " << data.id << "; idepth(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " <<id() << "; idepth(): idepth has not been set yet!";
 		return nullptr;
 	}
 	if (! data.idepthValid[level])
@@ -319,7 +322,7 @@ inline const float* Frame::idepthVar(int level)
 {
 	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame " << data.id << "; idepthVar(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " << id() << "; idepthVar(): idepth has not been set yet!";
 		return nullptr;
 	}
 	if (! data.idepthVarValid[level])
