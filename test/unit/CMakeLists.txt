@@ -8,7 +8,6 @@ gtest_begin( lsdslam )
   fips_include_directories(../testdata)
 
     fips_files(
-      test_test.cpp
       test_FrameData.cpp
       test_Frame.cpp
       ../testdata/test_testimages.cpp
