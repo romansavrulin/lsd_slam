@@ -9,7 +9,7 @@ namespace lsd_slam {
     : _refFrame(0)
   {
     _frames.push_back( std::make_shared<Frame>(id, cam, img.size(), 0.0, img.data ) );
-    _se3FromFirst.push_back( Sophus::SE3() );
+    _se3FromFirst.push_back( SE3() );
     _frameId = id;
   }
 

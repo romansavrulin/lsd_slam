@@ -30,84 +30,32 @@
 #include "util/settings.h"
 #include "util/Configuration.h"
 
+#include "FrameData.h"
+
 namespace lsd_slam
 {
 
 using libvideoio::Camera;
 using libvideoio::ImageSize;
 
+class KeyFrame;
 class DepthMapPixelHypothesis;
-class TrackingReference;
+class DepthMap;
+
+template< int __LEVELS > class _TrackingRef;
+typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
+
+
 /**
  */
 
 class Frame
 {
-private:
-	//!!! Had strange alignement issues if this was at the end of the class.  Something to
-	// do with Eigen alignment?
-	struct Data
-	{
-		// Explicitly delete default and copy constructors
-		Data() = delete;
-		Data( const Data & ) = delete;
-
-		Data( int id, double timestamp, const Camera &camera, const ImageSize &slamImageSize );
-
-		int id;
-
-		int width[PYRAMID_LEVELS], height[PYRAMID_LEVELS];
-
-		Camera camera[PYRAMID_LEVELS];
-
-		// Eigen::Matrix3f K[PYRAMID_LEVELS], KInv[PYRAMID_LEVELS];
-		// float fx[PYRAMID_LEVELS], fy[PYRAMID_LEVELS], cx[PYRAMID_LEVELS], cy[PYRAMID_LEVELS];
-		// float fxInv[PYRAMID_LEVELS], fyInv[PYRAMID_LEVELS], cxInv[PYRAMID_LEVELS], cyInv[PYRAMID_LEVELS];
-
-		double timestamp;
-
-		float* image[PYRAMID_LEVELS];
-		bool imageValid[PYRAMID_LEVELS];
-
-		Eigen::Vector4f* gradients[PYRAMID_LEVELS];
-		bool gradientsValid[PYRAMID_LEVELS];
-
-		float* maxGradients[PYRAMID_LEVELS];
-		bool maxGradientsValid[PYRAMID_LEVELS];
-
-
-		bool hasIDepthBeenSet;
-
-		// negative depthvalues are actually allowed, so setting this to -1 does NOT invalidate the pixel's depth.
-		// a pixel is valid iff idepthVar[i] > 0.
-		float* idepth[PYRAMID_LEVELS];
-		bool idepthValid[PYRAMID_LEVELS];
-
-		// MUST contain -1 for invalid pixel (that dont have depth)!!
-		float* idepthVar[PYRAMID_LEVELS];
-		bool idepthVarValid[PYRAMID_LEVELS];
-
-		// data needed for re-activating the frame. theoretically, this is all data the
-		// frame contains.
-		unsigned char* validity_reAct;
-		float* idepth_reAct;
-		float* idepthVar_reAct;
-		bool reActivationDataValid;
-
-
-		// data from initial tracking, indicating which pixels in the reference frame ware good or not.
-		// deleted as soon as frame is used for mapping.
-		bool* refPixelWasGood;
-	} data;
-
-
-
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class FrameMemory;
 
 	typedef std::shared_ptr<Frame> SharedPtr;
-
 
 	// Explicitly delete default and copy constructors
 	Frame() = delete;
@@ -119,7 +67,7 @@ public:
 	~Frame();
 
 	/** Sets or updates idepth and idepthVar on level zero. Invalidates higher levels. */
-	void setDepth(const DepthMapPixelHypothesis* newDepth);
+	void setDepth(const std::shared_ptr<DepthMap> &depthMap ); //PixelHypothesis* newDepth);
 
 	/** Calculates mean information for statistical purposes. */
 	void calculateMeanInformation();
@@ -136,7 +84,7 @@ public:
 	// Accessors
 	/** Returns the unique frame id. */
 
-	inline int id() const { return data.id; }
+	inline int id() const { return _id; }
 
 	#define DATA_LEVEL_READER( _rtype, _name ) \
 		inline _rtype _name( int level = 0 ) const \
@@ -146,11 +94,13 @@ public:
 		inline _rtype _name( int level = 0 ) const \
 			{ return data.camera[level]._name; }
 
-	DATA_LEVEL_READER( int, width )
-	DATA_LEVEL_READER( int, height )
-	DATA_LEVEL_READER( const Camera &, camera )
+	inline const ImageSize &imgSize( int i=0 ) const 	{ return data.imgSize[i]; }
+	inline int width( int i=0 ) const	 								{ return data.imgSize[i].width; }
+	inline int height( int i=0 ) const 								{ return data.imgSize[i].height; }
+	inline int area( int i=0 ) const 	 								{ return data.imgSize[i].area(); }
 
-	inline int area( int level = 0 ) { return width(level) * height(level); }
+
+	DATA_LEVEL_READER( const Camera &, camera )
 
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, K )
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, Kinv )
@@ -164,7 +114,7 @@ public:
 	DATA_LEVEL_CAMERA_READER( float, cyi )
 
 	/** Returns the frame's recording timestamp. */
-	inline double timestamp() const { return data.timestamp; }
+	inline double timestamp() const { return _timestamp; }
 
 	inline float* image(int level = 0);
 	inline const Eigen::Vector4f* gradients(int level = 0);
@@ -198,8 +148,8 @@ public:
   // For SLAM-like features, KeyFrames can own their own TrackingReference
 	// this is copied into the keyframe when the keyframe is finalized
 	// This used for loop closure and re-localization
-	void setPermaRef( const std::unique_ptr<TrackingReference> &reference);
-	void takeReActivationData(DepthMapPixelHypothesis* depthMap);
+	// void setPermaRef( const std::unique_ptr<TrackingReference> &reference);
+	// void takeReActivationData(DepthMapPixelHypothesis* depthMap);
 
 
 	// shared_lock this as long as any minimizable arrays are being used.
@@ -219,35 +169,31 @@ public:
 	 * generally, everything is stored relative to the frame
 	 */
 	FramePoseStruct::SharedPtr pose;
-	Sim3 getCamToWorld(int num=0)  { return pose->getCamToWorld(); }
+	Sim3 getCamToWorld()  { return pose->getCamToWorld(); }
 
 
 	// parent, the frame originally tracked on. never changes.
-	SharedPtr &setTrackingParent( const SharedPtr &newParent  ) { return _trackingParent = newParent; }
-	bool      hasTrackingParent() const     { return (bool)_trackingParent; }
-	const SharedPtr &trackingParent() const       { return _trackingParent; }
+	void setTrackingParent( const std::shared_ptr<KeyFrame> &newParent  ) { _trackingParent = newParent; }
+	bool      hasTrackingParent() const     															{ return (bool)_trackingParent; }
+	const std::shared_ptr<KeyFrame> &trackingParent() const       				{ return _trackingParent; }
 
-	bool isTrackingParent( const SharedPtr &other ) const;
+	bool isTrackingParent( const std::shared_ptr<Frame> &other ) const;
+	bool isTrackingParent( const std::shared_ptr<KeyFrame> &other ) const;
+	bool isTrackingParent( int id ) const;
+
 
 	Sim3 lastConstraintTrackedCamToWorld;
 
-	/** Pointers to all adjacent Frames in graph. empty for non-keyframes.*/
-	std::unordered_set< Frame::SharedPtr > neighbors;
-
-	/** Multi-Map indicating for which other keyframes with which initialization tracking failed.*/
-	std::unordered_multimap< Frame::SharedPtr, Sim3 > trackingFailed;
-
-
 	// flag set when depth is updated.
-	bool depthHasBeenUpdatedFlag;
+	//bool depthHasBeenUpdatedFlag;
 
 
 	// Tracking Reference for quick test. Always available, never taken out of memory.
 	// this is used for re-localization and re-Keyframe positioning.
-	boost::mutex permaRef_mutex;
-	Eigen::Vector3f* permaRef_posData;	// (x,y,z)
-	Eigen::Vector2f* permaRef_colorAndVarData;	// (I, Var)
-	int permaRefNumPts;
+	// boost::mutex permaRef_mutex;
+	// Eigen::Vector3f* permaRef_posData;	// (x,y,z)
+	// Eigen::Vector2f* permaRef_colorAndVarData;	// (I, Var)
+	// int permaRefNumPts;
 
 
 
@@ -269,9 +215,6 @@ public:
 
 	// statistics
 	float initialTrackedResidual;
-	int numFramesTrackedOnThis;
-	int numMappedOnThis;
-	int numMappedOnThisTotal;
 	float meanIdepth;
 	int numPoints;
 	int idxInKeyframes;
@@ -281,12 +224,17 @@ public:
 
 private:
 
-	SharedPtr _trackingParent;
+	std::shared_ptr<KeyFrame> _trackingParent;
+
+	int _id;
+	double _timestamp;
+
+	FrameData<PYRAMID_LEVELS> data;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
 
-	void initialize(double timestamp);
+//	void initialize(double timestamp);
 	void setDepth_Allocate();
 
 	void buildImage(int level);
@@ -347,7 +295,7 @@ inline const float* Frame::idepth(int level)
 {
 	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame " << data.id << "; idepth(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " <<id() << "; idepth(): idepth has not been set yet!";
 		return nullptr;
 	}
 	if (! data.idepthValid[level])
@@ -380,11 +328,10 @@ inline const float* Frame::idepthVar(int level)
 {
 	if (! hasIDepthBeenSet())
 	{
-		LOG(WARNING) << "Frame " << data.id << "; idepthVar(): idepth has not been set yet!";
+		LOG(WARNING) << "Frame " << id() << "; idepthVar(): idepth has not been set yet!";
 		return nullptr;
 	}
-	if (! data.idepthVarValid[level])
-		require(IDEPTH_VAR, level);
+	if (! data.idepthVarValid[level]) require(IDEPTH_VAR, level);
 	return data.idepthVar[level];
 }
 
@@ -397,8 +344,8 @@ inline bool* Frame::refPixelWasGood()
 
 		if(data.refPixelWasGood == 0)
 		{
-			int width = data.width[SE3TRACKING_MIN_LEVEL];
-			int height = data.height[SE3TRACKING_MIN_LEVEL];
+			const int width = data.imgSize[SE3TRACKING_MIN_LEVEL].width;
+			const int height = data.imgSize[SE3TRACKING_MIN_LEVEL].height;
 			data.refPixelWasGood = (bool*)FrameMemory::getInstance().getBuffer(sizeof(bool) * width * height);
 
 			memset(data.refPixelWasGood, 0xFFFFFFFF, sizeof(bool) * (width * height));

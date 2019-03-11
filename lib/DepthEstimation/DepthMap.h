@@ -38,6 +38,7 @@ namespace lsd_slam
 class DepthMapPixelHypothesis;
 class KeyFrameGraph;
 
+class KeyFrame;
 
 /**
  * Keeps a detailed depth map (consisting of DepthMapPixelHypothesis) and does
@@ -47,52 +48,63 @@ class DepthMap
 {
 public:
 
+	typedef std::shared_ptr<DepthMap> SharedPtr;
+
 	// Delete default constructors
 	DepthMap(const DepthMap&) = delete;
 	DepthMap& operator=(const DepthMap&) = delete;
 
-	DepthMap();
+	DepthMap( const std::shared_ptr<Frame> &parent );
+
+	// //== Propagation constructor for subsequent keyframes
+	// DepthMap( const DepthMap::SharedPtr &other, const Frame::SharedPtr &frame );
+
 	~DepthMap();
 
 	/** Resets everything. */
 	void reset();
 
-	/**
-	 * does obervation and regularization only.
-	 **/
-	void updateKeyframe(std::deque< Frame::SharedPtr > referenceFrames);
-
-	/**
-	 * does propagation and whole-filling-regularization (no observation, for that need to call updateKeyframe()!)
-	 **/
-	void createKeyFrame( const Frame::SharedPtr &new_keyframe );
+	// /**
+	//  * does obervation and regularization only.
+	//  **/
+	// void updateKeyframe(std::deque< Frame::SharedPtr > referenceFrames);
+	//
+	// /**
+	//  * does propagation and whole-filling-regularization (no observation, for that need to call updateKeyframe()!)
+	//  **/
+	// void createKeyFrame( const Frame::SharedPtr &new_keyframe );
 
 	/**
 	 * does one fill holes iteration
 	 */
-	void finalizeKeyFrame();
+	// void finalizeKeyFrame();
 
-	void invalidate();
-	inline bool isValid() {return (bool)activeKeyFrame;};
+	// void invalidate();
+	// inline bool isValid() {return (bool)activeKeyFrame;};
 
 	//int debugPlotDepthMap();
-	void debugPlotDepthMap( const char *buf1, const char *buf2 );
 	const DepthMapDebugImages &debugImages() const { return _debugImages; }
 
-	// ONLY for debugging, their memory is managed (created & deleted) by this object.
-	// cv::Mat debugImageHypothesisHandling;
-	// cv::Mat debugImageHypothesisPropagation;
-	// cv::Mat debugImageStereoLines;
-	// cv::Mat debugImageDepth;
+	// This is the only debug plot which is triggered externally..
+	void plotDepthMap( const char *buf1, const char *buf2 );
 
-	void initializeFromGTDepth( const std::shared_ptr<Frame> &new_frame);
-        void initializefromStereo( const std::shared_ptr<ImageSet> &set);
-	void initializeRandomly( const std::shared_ptr<Frame> &new_frame);
 
-	void activateExistingKF(const Frame::SharedPtr &kf);
+	//== Initializers, required only when propagating from a previous keyframe
+	void initializeFromFrame();
+	void initializeFromGTDepth();
+	void initializeRandomly();
+	// void initializefromStereo( const std::shared_ptr<ImageSet> &set);
+
+	void propagateFrom( const DepthMap::SharedPtr &new_keyframe, float &rescaleFactor );
+
+	void finalize();
+
+	// void activateExistingKF(const Frame::SharedPtr &kf);
 
 	void logPerformanceData();
 
+	//==
+	bool updateDepthFrom( const Frame::SharedPtr &frame );
 
 	struct PerformanceData {
 		PerformanceData( void ) {;}
@@ -102,11 +114,19 @@ public:
 
 	PerformanceData perf() const { return _perf; }
 
-	Frame::SharedPtr &currentKeyFrame() { return activeKeyFrame; }
+	// Convenience accessors
+	std::shared_ptr<Frame> &frame() { return _frame; }
 
-	IndexThreadReduce threadReducer;
+	//
+	DepthMapPixelHypothesis *hypothesisAt( const int x, const int y )
+		{ return currentDepthMap + x + y*Conf().slamImageSize.width; }
+
+
+
 
 private:
+
+	IndexThreadReduce threadReducer;
 
  	PerformanceData _perf;
 	DepthMapDebugImages _debugImages;
@@ -114,17 +134,15 @@ private:
 	// ============= parameter copies for convenience ===========================
 	// these are just copies of the pointers given to this function, for convenience.
 	// these are NOT managed by this object!
-	Frame::SharedPtr activeKeyFrame;
-	boost::shared_lock<boost::shared_mutex> activeKeyFramelock;
+	std::shared_ptr<Frame> _frame;
 
-	const float* activeKeyFrameImageData() { return activeKeyFrame->image(0); };
+	const float* activeKeyFrameImageData()    { return frame()->image(0); }
 	bool activeKeyFrameIsReactivated;
 
-
-	Frame::SharedPtr oldest_referenceFrame;
-	Frame::SharedPtr newest_referenceFrame;
-	std::vector< Frame::SharedPtr > referenceFrameByID;
-	int referenceFrameByID_offset;
+	// Frame::SharedPtr oldest_referenceFrame;
+	// Frame::SharedPtr newest_referenceFrame;
+	// std::vector< Frame::SharedPtr > referenceFrameByID;
+	// int referenceFrameByID_offset;
 
 	// ============= internally used buffers for intermediate calculations etc. =============
 	// for internal depth tracking, their memory is managed (created & deleted) by this object.
@@ -145,10 +163,12 @@ private:
 			RunningStats* const stats);
 
 	// Reset currentDepthMap by re-projecting is from activeKeyFrame to new_keyframe
-	void propagateDepth( const Frame::SharedPtr &new_keyframe);
+	void propagateDepthFrom(const DepthMap::SharedPtr &new_keyframe, float &rescaleFactor );
 
 
-	void observeDepth();
+	// This is a local state variable used to share data between the observeDepth* functions.  Sucks, I know
+	Frame::SharedPtr _observeFrame;
+	void observeDepth( const Frame::SharedPtr &updateFrame );
 	void observeDepthRow(int yMin, int yMax, RunningStats* stats);
 	bool observeDepthCreate(const int &x, const int &y, const int &idx, RunningStats* const &stats);
 	bool observeDepthUpdate(const int &x, const int &y, const int &idx, const float* keyFrameMaxGradBuf, RunningStats* const &stats);

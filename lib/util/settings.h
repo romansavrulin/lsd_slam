@@ -112,9 +112,8 @@ namespace lsd_slam
 
 #define QUICK_KF_CHECK_LVL 4
 
-#define PYRAMID_LEVELS (SE3TRACKING_MAX_LEVEL > SIM3TRACKING_MAX_LEVEL ? SE3TRACKING_MAX_LEVEL : SIM3TRACKING_MAX_LEVEL)
-
-#define PYRAMID_DIVISOR (0x1<<PYRAMID_LEVELS)
+const int PYRAMID_LEVELS = (SE3TRACKING_MAX_LEVEL > SIM3TRACKING_MAX_LEVEL ? SE3TRACKING_MAX_LEVEL : SIM3TRACKING_MAX_LEVEL);
+const int PYRAMID_DIVISOR=(0x1<<PYRAMID_LEVELS);
 
 
 
@@ -348,7 +347,7 @@ public:
 	}
 };
 
-
+template <int __LEVELS>
 class DenseDepthTrackerSettings
 {
 public:
@@ -365,7 +364,7 @@ public:
 		const int maxIterations[6] = {5, 20, 50, 100, 100, 100};
 
 
-		for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+		for (int level = 0; level < __LEVELS; ++ level)
 		{
 			lambdaInitial[level] = 0;
 			stepSizeMin[level] = stepSizeMinc[level];
@@ -384,10 +383,10 @@ public:
 
 	float lambdaSuccessFac;
 	float lambdaFailFac;
-	float lambdaInitial[PYRAMID_LEVELS];
-	float stepSizeMin[PYRAMID_LEVELS];
-	float convergenceEps[PYRAMID_LEVELS];
-	int maxItsPerLvl[PYRAMID_LEVELS];
+	float lambdaInitial[__LEVELS];
+	float stepSizeMin[__LEVELS];
+	float convergenceEps[__LEVELS];
+	int maxItsPerLvl[__LEVELS];
 
 	float lambdaInitialTestTrack;
 	float stepSizeMinTestTrack;

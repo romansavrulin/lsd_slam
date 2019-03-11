@@ -21,13 +21,14 @@
 
 #include <DataStructures/FramePoseStruct.h>
 #include "DataStructures/Frame.h"
+#include "DataStructures/KeyFrame.h"
 
 namespace lsd_slam
 {
 
 int FramePoseStruct::cacheValidCounter = 0;
 
-int privateFramePoseStructAllocCount = 0;
+//int privateFramePoseStructAllocCount = 0;
 
 FramePoseStruct::FramePoseStruct( Frame &f )
 	:frame( f ),
@@ -39,16 +40,31 @@ FramePoseStruct::FramePoseStruct( Frame &f )
 	isRegisteredToGraph = false;
 	hasUnmergedPose = false;
 	isInGraph = false;
-	
-	privateFramePoseStructAllocCount++;
-	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+
+	// privateFramePoseStructAllocCount++;
+	// LOG_IF(INFO, Conf().print.memoryDebugInfo) << "ALLOCATED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
 
 FramePoseStruct::~FramePoseStruct()
 {
-	privateFramePoseStructAllocCount--;
-	LOG_IF(INFO, Conf().print.memoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
+	// privateFramePoseStructAllocCount--;
+	// LOG_IF(INFO, Conf().print.memoryDebugInfo) << "DELETED pose for frame " << frame.id() << ", " << privateFramePoseStructAllocCount << " poses still allocated";
 }
+
+Sim3 FramePoseStruct::setThisToParent( const Sim3 &val )
+{
+	thisToParent_raw = val;
+	invalidateCache();
+	return thisToParent_raw;
+}
+
+FramePoseStruct &FramePoseStruct::operator=( const FramePoseStruct &other )
+{
+	thisToParent_raw = other.thisToParent_raw;
+	invalidateCache();
+	return *this;
+}
+
 
 void FramePoseStruct::setPoseGraphOptResult(Sim3 camToWorld)
 {
@@ -69,6 +85,7 @@ void FramePoseStruct::applyPoseGraphOptResult()
 	hasUnmergedPose = false;
 	cacheValidCounter++;
 }
+
 void FramePoseStruct::invalidateCache()
 {
 	cacheValidFor = -1;
@@ -88,10 +105,13 @@ Sim3 FramePoseStruct::getCamToWorld(int recursionDepth)
 
 	// return identity if there is no parent (very first frame)
 	if( frame.hasTrackingParent() ) {
+			LOG(DEBUG) << "Frame " << frame.id() << ": Calculating pose from tracked parent...";
 			// abs. pose is computed from the parent's abs. pose, and cached.
 			cacheValidFor = cacheValidCounter;
-			return camToWorld = frame.trackingParent()->getCamToWorld(recursionDepth+1) * thisToParent_raw;
+			return camToWorld = frame.trackingParent()->frame()->pose->getCamToWorld(recursionDepth+1) * thisToParent_raw;
 	} else {
+		LOG(DEBUG) << "Frame " << frame.id() << ": No parent, returning identity pose";
+
 		return camToWorld = Sim3();
 	}
 }

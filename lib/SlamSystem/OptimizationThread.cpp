@@ -11,14 +11,14 @@
 
 namespace lsd_slam {
 
-	using active_object::ActiveIdle;
+using active_object::ActiveIdle;
 
-	const auto optimizationDt = std::chrono::milliseconds(2000);
+const auto optimizationDt = std::chrono::milliseconds(2000);
 
 OptimizationThread::OptimizationThread( SlamSystem &system, bool threaded )
 	: //_haveUnmergedOptimizationOffset( false ),
 		_system( system ),
-		_thread( threaded ? ActiveIdle::createActiveIdle( std::bind( &OptimizationThread::callbackIdle, this ), optimizationDt ) : NULL  )
+		_thread( threaded ? ActiveIdle::createActiveIdle( std::bind( &OptimizationThread::idleImpl, this ), optimizationDt ) : NULL  )
 {
 	LOG(INFO) << "Started optimization thread";
 }
@@ -30,31 +30,33 @@ OptimizationThread::~OptimizationThread()
 }
 
 
-
-
-
 //===== Callbacks for ActiveObject ======
 
-void OptimizationThread::callbackIdle( void )
+void OptimizationThread::idleImpl( void )
 {
 	LOG(DEBUG) << "Running short optimization";
-	while(optimizationIteration(5, 0.02)) { _system.mapThread->mergeOptimizationUpdate(); }
+
+	//!!TODO.  Why does this happen in mapThread?
+	while(optimizationIteration(5, 0.02)) { ; } //_system.mapThread()->doMergeOptimizationUpdate(); }
 }
 
-void OptimizationThread::callbackNewConstraint( void )
+void OptimizationThread::newConstraintImpl( void )
 {
 	LOG(DEBUG) << "Running short optimization";
 
 	_system.keyFrameGraph()->addElementsFromBuffer();
 
-	while(optimizationIteration(5, 0.02)) { _system.mapThread->mergeOptimizationUpdate(); }
+	//!!TODO.  Why does this happen in mapThread?
+	while(optimizationIteration(5, 0.02)) { ; } //_system._mapThread->doMergeOptimizationUpdate(); }
 }
 
-void OptimizationThread::callbackFinalOptimization( void )
+void OptimizationThread::finalOptimizationImpl( void )
 {
 	LOG(INFO) << "Running final optimization!";
 	optimizationIteration(50, 0.001);
-	_system.mapThread->mergeOptimizationUpdate();
+
+	//!!TODO.  Why does this happen in mapThread?
+	_system.mapThread()->doMergeOptimizationUpdate();
 	finalOptimizationComplete.notify();
 }
 
@@ -83,16 +85,16 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange)
 	for(size_t i=0;i<_system.keyFrameGraph()->keyframesAll.size(); i++)
 	{
 		// set edge error sum to zero
-		_system.keyFrameGraph()->keyframesAll[i]->edgeErrorSum = 0;
-		_system.keyFrameGraph()->keyframesAll[i]->edgesNum = 0;
+		_system.keyFrameGraph()->keyframesAll[i]->frame()->edgeErrorSum = 0;
+		_system.keyFrameGraph()->keyframesAll[i]->frame()->edgesNum = 0;
 
-		if(!_system.keyFrameGraph()->keyframesAll[i]->pose->isInGraph) continue;
+		if(!_system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph) continue;
 
 
 
 		// get change from last optimization
-		Sim3 a = _system.keyFrameGraph()->keyframesAll[i]->pose->graphVertex->estimate();
-		Sim3 b = _system.keyFrameGraph()->keyframesAll[i]->getCamToWorld();
+		Sim3 a = _system.keyFrameGraph()->keyframesAll[i]->frame()->pose->graphVertex->estimate();
+		Sim3 b = _system.keyFrameGraph()->keyframesAll[i]->frame()->getCamToWorld();
 		Sophus::Vector7f diff = (a*b.inverse()).log().cast<float>();
 
 
@@ -105,14 +107,14 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange)
 		sum +=7;
 
 		// set change
-		_system.keyFrameGraph()->keyframesAll[i]->pose->setPoseGraphOptResult(
-				_system.keyFrameGraph()->keyframesAll[i]->pose->graphVertex->estimate());
+		_system.keyFrameGraph()->keyframesAll[i]->frame()->pose->setPoseGraphOptResult(
+				_system.keyFrameGraph()->keyframesAll[i]->frame()->pose->graphVertex->estimate());
 
 		// add error
-		for(auto edge : _system.keyFrameGraph()->keyframesAll[i]->pose->graphVertex->edges())
+		for(auto edge : _system.keyFrameGraph()->keyframesAll[i]->frame()->pose->graphVertex->edges())
 		{
-			_system.keyFrameGraph()->keyframesAll[i]->edgeErrorSum += ((EdgeSim3*)(edge))->chi2();
-			_system.keyFrameGraph()->keyframesAll[i]->edgesNum++;
+			_system.keyFrameGraph()->keyframesAll[i]->frame()->edgeErrorSum += ((EdgeSim3*)(edge))->chi2();
+			_system.keyFrameGraph()->keyframesAll[i]->frame()->edgesNum++;
 		}
 	}
 

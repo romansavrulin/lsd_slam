@@ -10,6 +10,7 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/ImageSet.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FrameMemory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/KeyFrame.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapDebugImages.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DepthEstimation/DepthMapPixelHypothesis.cpp
@@ -23,8 +24,6 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/SE3Tracker.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/SE3Tracker_SSE.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/SE3Tracker_NEON.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/Tracking/TrackingReference.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/IOWrapper/Timestamp.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/GlobalMapping/FabMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/GlobalMapping/KeyFrameGraph.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/GlobalMapping/g2oTypeSim3Sophus.cpp

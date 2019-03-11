@@ -23,6 +23,7 @@ namespace lsd_slam {
 
   Configuration &Conf();
 
+
 // Slow migration from the global settings.[h,cpp] model to a Configuration
 // object.
 class Configuration {
@@ -55,7 +56,9 @@ public:
  bool dumpMap;
  bool doFullReConstraintTrack;
 
- struct {
+ struct PrintConfiguration {
+   PrintConfiguration();
+
    bool propagationStatistics;
    bool fillHolesStatistics;
    bool observeStatistics;
@@ -78,7 +81,6 @@ public:
    bool mappingTiming;
    bool overallTiming;
  } print;
-
 
 private:
   Configuration();

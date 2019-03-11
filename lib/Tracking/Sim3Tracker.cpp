@@ -43,9 +43,10 @@ namespace lsd_slam
 
 
 Sim3Tracker::Sim3Tracker( const ImageSize &sz )
-	: _imgSize( sz )
+	: settings(),
+		_imgSize( sz ),
+		_debugImages( sz )
 {
-	settings = DenseDepthTrackerSettings();
 
 	int area = _imgSize.area();
 
@@ -70,22 +71,6 @@ Sim3Tracker::Sim3Tracker( const ImageSize &sz )
 
 	buf_warped_size = 0;
 
-	debugImageWeights = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageResiduals = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageSecondFrame = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageOldImageWarped = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageOldImageSource = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageExternalWeights = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageDepthResiduals = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageScaleEstimation = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-
-	debugImageHuberWeight = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageWeightD = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageWeightP = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageWeightedResP = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-	debugImageWeightedResD = cv::Mat(_imgSize.cvSize(),CV_8UC3);
-
-
 	lastResidual = 0;
 	iterationNumber = 0;
 	lastDepthResidual = lastPhotometricResidual = lastDepthResidualUnweighted = lastPhotometricResidualUnweighted = lastResidualUnweighted = 0;
@@ -95,21 +80,6 @@ Sim3Tracker::Sim3Tracker( const ImageSize &sz )
 
 Sim3Tracker::~Sim3Tracker()
 {
-	debugImageResiduals.release();
-	debugImageWeights.release();
-	debugImageSecondFrame.release();
-	debugImageOldImageSource.release();
-	debugImageOldImageWarped.release();
-	debugImageExternalWeights.release();
-	debugImageDepthResiduals.release();
-	debugImageScaleEstimation.release();
-
-	debugImageHuberWeight.release();
-	debugImageWeightD.release();
-	debugImageWeightP.release();
-	debugImageWeightedResP.release();
-	debugImageWeightedResD.release();
-
 
 	delete[] buf_warped_residual;
 	delete[] buf_warped_weights;
@@ -396,19 +366,19 @@ void Sim3Tracker::calcSim3Buffers(
 	if(plotSim3TrackingIterationInfo)
 	{
 		cv::Vec3b col = cv::Vec3b(255,170,168);
-		fillCvMat(&debugImageResiduals,col);
-		fillCvMat(&debugImageOldImageSource,col);
-		fillCvMat(&debugImageOldImageWarped,col);
-		fillCvMat(&debugImageDepthResiduals,col);
+		fillCvMat(&_debugImages.debugImageResiduals,col);
+		fillCvMat(&_debugImages.debugImageOldImageSource,col);
+		fillCvMat(&_debugImages.debugImageOldImageWarped,col);
+		fillCvMat(&_debugImages.debugImageDepthResiduals,col);
 	}
 	if(plotWeights && plotSim3TrackingIterationInfo)
 	{
 		cv::Vec3b col = cv::Vec3b(255,170,168);
-		fillCvMat(&debugImageHuberWeight,col);
-		fillCvMat(&debugImageWeightD,col);
-		fillCvMat(&debugImageWeightP,col);
-		fillCvMat(&debugImageWeightedResP,col);
-		fillCvMat(&debugImageWeightedResD,col);
+		fillCvMat(&_debugImages.debugImageHuberWeight,col);
+		fillCvMat(&_debugImages.debugImageWeightD,col);
+		fillCvMat(&_debugImages.debugImageWeightP,col);
+		fillCvMat(&_debugImages.debugImageWeightedResP,col);
+		fillCvMat(&_debugImages.debugImageWeightedResD,col);
 	}
 
 	// get static values
@@ -527,27 +497,27 @@ void Sim3Tracker::calcSim3Buffers(
 			int x = point[0] / point[2] + 0.5f;
 			int y = point[1] / point[2] + 0.5f;
 
-			setPixelInCvMat(&debugImageOldImageSource,getGrayCvPixel((float)resInterp[2]),u_new+0.5,v_new+0.5,(width/w));
-			setPixelInCvMat(&debugImageOldImageWarped,getGrayCvPixel((float)resInterp[2]),x,y,(width/w));
-			setPixelInCvMat(&debugImageResiduals,getGrayCvPixel(residual_p+128),x,y,(width/w));
+			setPixelInCvMat(&_debugImages.debugImageOldImageSource,getGrayCvPixel((float)resInterp[2]),u_new+0.5,v_new+0.5,(width/w));
+			setPixelInCvMat(&_debugImages.debugImageOldImageWarped,getGrayCvPixel((float)resInterp[2]),x,y,(width/w));
+			setPixelInCvMat(&_debugImages.debugImageResiduals,getGrayCvPixel(residual_p+128),x,y,(width/w));
 
 			if(*(buf_warped_idepthVar+idx) >= 0)
 			{
-				setPixelInCvMat(&debugImageDepthResiduals,getGrayCvPixel(128 + 800 * *(buf_residual_d+idx)),x,y,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageDepthResiduals,getGrayCvPixel(128 + 800 * *(buf_residual_d+idx)),x,y,(width/w));
 
 				if(plotWeights)
 				{
-					setPixelInCvMat(&debugImageWeightD,getGrayCvPixel(255 * (1/60.0f) * sqrtf(*(buf_weight_VarD+idx))),x,y,(width/w));
-					setPixelInCvMat(&debugImageWeightedResD,getGrayCvPixel(128 + (128/5.0f) * sqrtf(*(buf_weight_VarD+idx)) * *(buf_residual_d+idx)),x,y,(width/w));
+					setPixelInCvMat(&_debugImages.debugImageWeightD,getGrayCvPixel(255 * (1/60.0f) * sqrtf(*(buf_weight_VarD+idx))),x,y,(width/w));
+					setPixelInCvMat(&_debugImages.debugImageWeightedResD,getGrayCvPixel(128 + (128/5.0f) * sqrtf(*(buf_weight_VarD+idx)) * *(buf_residual_d+idx)),x,y,(width/w));
 				}
 			}
 
 
 			if(plotWeights)
 			{
-				setPixelInCvMat(&debugImageWeightP,getGrayCvPixel(255 * 4 * sqrtf(*(buf_weight_VarP+idx))),x,y,(width/w));
-				setPixelInCvMat(&debugImageHuberWeight,getGrayCvPixel(255 * *(buf_weight_Huber+idx)),x,y,(width/w));
-				setPixelInCvMat(&debugImageWeightedResP,getGrayCvPixel(128 + (128/5.0f) * sqrtf(*(buf_weight_VarP+idx)) * *(buf_warped_residual+idx)),x,y,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageWeightP,getGrayCvPixel(255 * 4 * sqrtf(*(buf_weight_VarP+idx))),x,y,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageHuberWeight,getGrayCvPixel(255 * *(buf_weight_Huber+idx)),x,y,(width/w));
+				setPixelInCvMat(&_debugImages.debugImageWeightedResP,getGrayCvPixel(128 + (128/5.0f) * sqrtf(*(buf_weight_VarP+idx)) * *(buf_warped_residual+idx)),x,y,(width/w));
 			}
 		}
 
@@ -568,16 +538,16 @@ void Sim3Tracker::calcSim3Buffers(
 
 	if(plotSim3TrackingIterationInfo)
 	{
-		Util::displayImage( "P Residuals", debugImageResiduals );
-		Util::displayImage( "D Residuals", debugImageDepthResiduals );
+		Util::displayImage( "P Residuals", _debugImages.debugImageResiduals );
+		Util::displayImage( "D Residuals", _debugImages.debugImageDepthResiduals );
 
 		if(plotWeights)
 		{
-			Util::displayImage( "Huber Weights", debugImageHuberWeight );
-			Util::displayImage( "DV Weights", debugImageWeightD );
-			Util::displayImage( "IV Weights", debugImageWeightP );
-			Util::displayImage( "WP Res", debugImageWeightedResP );
-			Util::displayImage( "WD Res", debugImageWeightedResD );
+			Util::displayImage( "Huber Weights", _debugImages.debugImageHuberWeight );
+			Util::displayImage( "DV Weights", _debugImages.debugImageWeightD );
+			Util::displayImage( "IV Weights", _debugImages.debugImageWeightP );
+			Util::displayImage( "WP Res", _debugImages.debugImageWeightedResP );
+			Util::displayImage( "WD Res", _debugImages.debugImageWeightedResD );
 		}
 	}
 
@@ -1028,13 +998,13 @@ void Sim3Tracker::calcResidualAndBuffers_debugStart()
 	if(plotTrackingIterationInfo || saveAllTrackingStagesInternal)
 	{
 		int other = saveAllTrackingStagesInternal ? 255 : 0;
-		fillCvMat(&debugImageResiduals,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageExternalWeights,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageWeights,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageOldImageSource,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageOldImageWarped,cv::Vec3b(other,other,255));
-		fillCvMat(&debugImageScaleEstimation,cv::Vec3b(255,other,other));
-		fillCvMat(&debugImageDepthResiduals,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageResiduals,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageExternalWeights,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageWeights,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageOldImageSource,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageOldImageWarped,cv::Vec3b(other,other,255));
+		fillCvMat(&_debugImages.debugImageScaleEstimation,cv::Vec3b(255,other,other));
+		fillCvMat(&_debugImages.debugImageDepthResiduals,cv::Vec3b(other,other,255));
 	}
 }
 
@@ -1042,13 +1012,13 @@ void Sim3Tracker::calcResidualAndBuffers_debugFinish(int w)
 {
 	if(plotTrackingIterationInfo)
 	{
-		Util::displayImage( "Weights", debugImageWeights );
-		Util::displayImage( "second_frame", debugImageSecondFrame );
-		Util::displayImage( "Intensities of second_frame at transformed positions", debugImageOldImageSource );
-		Util::displayImage( "Intensities of second_frame at pointcloud in first_frame", debugImageOldImageWarped );
-		Util::displayImage( "Residuals", debugImageResiduals );
-		Util::displayImage( "DepthVar Weights", debugImageExternalWeights );
-		Util::displayImage( "Depth Residuals", debugImageDepthResiduals );
+		Util::displayImage( "Weights", _debugImages.debugImageWeights );
+		Util::displayImage( "second_frame", _debugImages.debugImageSecondFrame );
+		Util::displayImage( "Intensities of second_frame at transformed positions", _debugImages.debugImageOldImageSource );
+		Util::displayImage( "Intensities of second_frame at pointcloud in first_frame", _debugImages.debugImageOldImageWarped );
+		Util::displayImage( "Residuals", _debugImages.debugImageResiduals );
+		Util::displayImage( "DepthVar Weights", _debugImages.debugImageExternalWeights );
+		Util::displayImage( "Depth Residuals", _debugImages.debugImageDepthResiduals );
 
 		// AMM: Disable this functionality for now.
 		// wait for key and handle it
@@ -1077,15 +1047,37 @@ void Sim3Tracker::calcResidualAndBuffers_debugFinish(int w)
 		char charbuf[500];
 
 		snprintf(charbuf,500,"save/%sresidual-%d-%d.png",packagePath.c_str(),w,iterationNumber);
-		cv::imwrite(charbuf,debugImageResiduals);
+		cv::imwrite(charbuf,_debugImages.debugImageResiduals);
 
 		snprintf(charbuf,500,"save/%swarped-%d-%d.png",packagePath.c_str(),w,iterationNumber);
-		cv::imwrite(charbuf,debugImageOldImageWarped);
+		cv::imwrite(charbuf,_debugImages.debugImageOldImageWarped);
 
 		snprintf(charbuf,500,"save/%sweights-%d-%d.png",packagePath.c_str(),w,iterationNumber);
-		cv::imwrite(charbuf,debugImageWeights);
+		cv::imwrite(charbuf,_debugImages.debugImageWeights);
 
 		printf("saved three images for lvl %d, iteration %d\n",w,iterationNumber);
 	}
 }
+
+//=== Sim3TrackerDebugImages ==
+
+Sim3TrackerDebugImages::Sim3TrackerDebugImages( const ImageSize &imgSize )
+	: debugImageWeights(imgSize.cvSize(),CV_8UC3),
+		debugImageResiduals(imgSize.cvSize(),CV_8UC3),
+		debugImageSecondFrame(imgSize.cvSize(),CV_8UC3),
+		debugImageOldImageWarped(imgSize.cvSize(),CV_8UC3),
+		debugImageOldImageSource(imgSize.cvSize(),CV_8UC3),
+		debugImageExternalWeights(imgSize.cvSize(),CV_8UC3),
+		debugImageDepthResiduals(imgSize.cvSize(),CV_8UC3),
+		debugImageScaleEstimation(imgSize.cvSize(),CV_8UC3),
+		debugImageHuberWeight(imgSize.cvSize(),CV_8UC3),
+		debugImageWeightD(imgSize.cvSize(),CV_8UC3),
+		debugImageWeightP(imgSize.cvSize(),CV_8UC3),
+		debugImageWeightedResP(imgSize.cvSize(),CV_8UC3),
+		debugImageWeightedResD(imgSize.cvSize(),CV_8UC3)
+{
+
+}
+
+
 }

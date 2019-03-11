@@ -23,6 +23,7 @@
 
 #include "active_object/active.h"
 
+#include "DataStructures/KeyFrame.h"
 #include "DataStructures/ImageSet.h"
 #include "Tracking/Relocalizer.h"
 #include "util/MovingAverage.h"
@@ -31,8 +32,6 @@ namespace lsd_slam
 {
 
 class SlamSystem;
-class TrackingReference;
-// class KeyFrameGraph;
 class SE3Tracker;
 
 
@@ -42,36 +41,39 @@ class TrackingThread {
 friend class IntegrationTest;
 public:
 
-	TrackingThread( SlamSystem &system, bool threaded );
-
+	// Delete these
 	TrackingThread( const TrackingThread&) = delete;
 	TrackingThread& operator=(const TrackingThread&) = delete;
+
+	TrackingThread( SlamSystem &system, bool threaded );
+
 	~TrackingThread();
 
-	// tracks a frame.
-	// first frame will return Identity = camToWord.
-	// returns camToWord transformation of the tracked frame.
-	// frameID needs to be monotonically increasing.
-	//void trackFrame(const std::shared_ptr<Frame> &newFrame );
-
-  //void trackSet(const std::shared_ptr<ImageSet> &set );
-  void trackSet( const std::shared_ptr<ImageSet> &set ) {
+	//== Calls into the thread ==
+  void doTrackSet( const std::shared_ptr<ImageSet> &set ) {
 		if( _thread ) {
-			_thread->send( std::bind( &TrackingThread::doTrackSet, this, set ));
+			_thread->send( std::bind( &TrackingThread::trackSetImpl, this, set ));
 		} else {
-			doTrackSet( set );
+			trackSetImpl( set );
 		}
 	}
 
-	/** Sets the visualization where point clouds and camera poses will be sent to. */
+	void doUseNewKeyFrame( const std::shared_ptr<KeyFrame> &kf ) {
+		if( _thread ) {
+			_thread->send( std::bind( &TrackingThread::useNewKeyFrameImpl, this, kf ));
+		} else {
+			useNewKeyFrameImpl( kf );
+		}
+	}
 
+
+	KeyFrame::SharedPtr &currentKeyFrame(void) { return _currentKeyFrame; }
 
 	int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent=true, bool useFABMAP=true, float closeCandidatesTH=1.0);
 
 	//void changeKeyframe(std::shared_ptr<Frame> candidate, bool noCreate, bool force, float maxScore);
 
 	void takeRelocalizeResult( const RelocalizerResult &result );
-        void takeRelocalizeResult( const RelocalizerResult &result, const ImageSet::SharedPtr &set );
 
  	float lastTrackingClosenessScore;
 
@@ -93,15 +95,21 @@ private:
 	std::unique_ptr<SE3Tracker> _tracker;
 
 	// Thread Callbacks
-	void doTrackSet( const std::shared_ptr<ImageSet> &set );
+	void trackSetImpl( const std::shared_ptr<ImageSet> &set );
+
+	void useNewKeyFrameImpl( const std::shared_ptr<KeyFrame> &kf );
 
 	// ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
 
-	std::shared_ptr<TrackingReference> _trackingReference; // tracking reference for current keyframe. only used by tracking.
-	Frame::SharedPtr _trackingReferenceFrameSharedPT;	// only used in odometry-mode, to keep a keyframe alive until it is deleted. ONLY accessed whithin currentKeyFrameMutex lock.
+	// std::shared_ptr<TrackingReference> _trackingReference; // tracking reference for current keyframe. only used by tracking.
+	// Frame::SharedPtr _trackingReferenceFrameSharedPT;	// only used in odometry-mode, to keep a keyframe alive until it is deleted. ONLY accessed whithin currentKeyFrameMutex lock.
 
 	bool _trackingIsGood;
+	bool _newKeyFramePending;
 
+	KeyFrame::SharedPtr _currentKeyFrame;
+
+	Sim3 _latestGoodPoseCamToWorld;
 
 
 	//

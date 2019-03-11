@@ -18,23 +18,18 @@
 * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Tracking/TrackingReference.h"
 #include "DataStructures/Frame.h"
-#include "DepthEstimation/DepthMapPixelHypothesis.h"
-#include "GlobalMapping/KeyFrameGraph.h"
 #include "util/globalFuncs.h"
-#include "IOWrapper/ImageDisplay.h"
 
 namespace lsd_slam
 {
-
-
-TrackingReference::TrackingReference()
-	: keyframe( nullptr )
+template< int __LEVELS >
+_TrackingRef< __LEVELS >::_TrackingRef( const Frame::SharedPtr &frame )
+	: frame( frame ),
+		_accessMutex()
 {
-	frameID=-1;
 	wh_allocated = 0;
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	for (int level = 0; level < __LEVELS; ++ level)
 	{
 		posData[level] = nullptr;
 		gradData[level] = nullptr;
@@ -43,9 +38,13 @@ TrackingReference::TrackingReference()
 		numData[level] = 0;
 	}
 }
-void TrackingReference::releaseAll()
+
+template< int __LEVELS >
+_TrackingRef<__LEVELS>::~_TrackingRef()
 {
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	std::lock_guard<std::mutex> lock(_accessMutex);
+
+	for (int level = 0; level < __LEVELS; ++ level)
 	{
 		if(posData[level] != nullptr) delete[] posData[level];
 		if(gradData[level] != nullptr) delete[] gradData[level];
@@ -55,66 +54,35 @@ void TrackingReference::releaseAll()
 	}
 	wh_allocated = 0;
 }
-void TrackingReference::clearAll()
+
+template< int __LEVELS >
+void _TrackingRef< __LEVELS >::clearAll()
 {
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	for (int level = 0; level < __LEVELS; ++level)
 		numData[level] = 0;
 }
-TrackingReference::~TrackingReference()
+
+
+template< int __LEVELS >
+void _TrackingRef< __LEVELS >::makePointCloud(int level)
 {
-	boost::unique_lock<boost::mutex> lock(accessMutex);
-	invalidate();
-	releaseAll();
-}
+	CHECK( (bool)frame ) << "frame pointer is NULL when it shouldn't be.";
+	std::lock_guard<std::mutex> lock(_accessMutex);
 
-void TrackingReference::importFrame(const Frame::SharedPtr &sourceKF)
-{
-	boost::unique_lock<boost::mutex> lock(accessMutex);
+	if(numData[level] > 0) return;	// already exists.
 
-	keyframeLock = sourceKF->getActiveLock();
+	const int w = frame->width(level);
+	const int h = frame->height(level);
 
-	keyframe = sourceKF;
-	frameID = keyframe->id();
+	const float fxInvLevel = frame->fxi(level);
+	const float fyInvLevel = frame->fyi(level);
+	const float cxInvLevel = frame->cxi(level);
+	const float cyInvLevel = frame->cyi(level);
 
-
-	// reset allocation if dimensions differ (shouldnt happen usually)
-	if(sourceKF->width(0) * sourceKF->height(0) != wh_allocated)
-	{
-		releaseAll();
-		wh_allocated = sourceKF->width(0) * sourceKF->height(0);
-	}
-
-	clearAll();
-	lock.unlock();
-}
-
-void TrackingReference::invalidate()
-{
-	if( (bool)keyframe ) keyframeLock.unlock();
-
-	keyframe.reset();
-}
-
-void TrackingReference::makePointCloud(int level)
-{
-	assert(keyframe != 0);
-	boost::unique_lock<boost::mutex> lock(accessMutex);
-
-	if(numData[level] > 0)
-		return;	// already exists.
-
-	int w = keyframe->width(level);
-	int h = keyframe->height(level);
-
-	float fxInvLevel = keyframe->fxi(level);
-	float fyInvLevel = keyframe->fyi(level);
-	float cxInvLevel = keyframe->cxi(level);
-	float cyInvLevel = keyframe->cyi(level);
-
-	const float* pyrIdepthSource = keyframe->idepth(level);
-	const float* pyrIdepthVarSource = keyframe->idepthVar(level);
-	const float* pyrColorSource = keyframe->image(level);
-	const Eigen::Vector4f* pyrGradSource = keyframe->gradients(level);
+	const float* pyrIdepthSource = frame->idepth(level);
+	const float* pyrIdepthVarSource = frame->idepthVar(level);
+	const float* pyrColorSource = frame->image(level);
+	const Eigen::Vector4f* pyrGradSource = frame->gradients(level);
 
 	if(posData[level] == nullptr)          posData[level] = new Eigen::Vector3f[w*h];
 	if(pointPosInXYGrid[level] == nullptr) pointPosInXYGrid[level] = new int[w*h];
@@ -145,7 +113,7 @@ void TrackingReference::makePointCloud(int level)
 	}
 
 	numData[level] = posDataPT - posData[level];
-	LOG(INFO) << "Keyframe " << frameID << " has " << numData[level] << " tracked points at level " << level;
+	LOG(INFO) << "frame " << frameID() << " has " << numData[level] << " tracked points at level " << level;
 }
 
 

@@ -30,17 +30,18 @@
 namespace lsd_slam
 {
 
-class TrackingReference;
+template< int __LEVELS > class _TrackingRef;
+typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
+
 class Frame;
+class KeyFrame;
 
 
-class SE3Tracker
-{
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+struct SE3TrackerDebugImages {
+	SE3TrackerDebugImages() = delete;
+	SE3TrackerDebugImages( const SE3TrackerDebugImages & ) = delete;
 
-	DenseDepthTrackerSettings settings;
-
+	SE3TrackerDebugImages( const ImageSize &imgSize );
 
 	// debug images
 	cv::Mat debugImageResiduals;
@@ -49,28 +50,38 @@ public:
 	cv::Mat debugImageOldImageSource;
 	cv::Mat debugImageOldImageWarped;
 
+};
 
-	SE3Tracker( const ImageSize &sz );
+class SE3Tracker
+{
+public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	DenseDepthTrackerSettings<PYRAMID_LEVELS> settings;
+
 	SE3Tracker(const SE3Tracker&) = delete;
 	SE3Tracker& operator=(const SE3Tracker&) = delete;
+
+	SE3Tracker( const ImageSize &sz );
 	~SE3Tracker();
 
-	// TODO:  Migrate away from Frame * to Frame::SharedPtr
+	// Trackes _frame_ onto _keyframe_.  Modifies _frame_
 	SE3 trackFrame(
-			const std::shared_ptr<TrackingReference> &reference,
+			const std::shared_ptr<KeyFrame> &keyframe,
 			const std::shared_ptr<Frame> &frame,
 			const SE3& frameToReference_initialEstimate);
 
-			// TODO:  Migrate away from Frame * to Frame::SharedPtr
+	// This version does not recurse through levels of the pyramid,
+	// It only checks QUICK_KF_CHECK_LVL
 	SE3 trackFrameOnPermaref(
-			const std::shared_ptr<Frame> &reference,
+			const std::shared_ptr<KeyFrame> &reference,
 			const std::shared_ptr<Frame> &frame,
-			SE3 referenceToFrame);
+			SE3 referenceToFrame );
 
-			// TODO:  Migrate away from Frame * to Frame::SharedPtr
+	// Calculates the percentage overlap between the two keyframes
 	float checkPermaRefOverlap(
-				const std::shared_ptr<Frame> &reference,
-				SE3 referenceToFrame);
+				const std::shared_ptr<KeyFrame> &reference,
+				SE3 referenceToFrame );
 
 
 	float pointUsage;
@@ -95,7 +106,6 @@ private:
 
 	const ImageSize &_imgSize;
 
-
 	float* buf_warped_residual;
 	float* buf_warped_dx;
 	float* buf_warped_dy;
@@ -109,6 +119,7 @@ private:
 
 	int buf_warped_size;
 
+	SE3TrackerDebugImages _debugImages;
 
 
 	void calculateWarpUpdate(LGS6 &ls);

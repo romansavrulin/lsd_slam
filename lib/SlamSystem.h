@@ -28,13 +28,13 @@
 #include <chrono>
 
 #include "util/settings.h"
-#include "IOWrapper/Timestamp.h"
 #include "opencv2/core/core.hpp"
 
-#include "IOWrapper/Output3DWrapper.h"
+#include "IOWrapper/OutputIOWrapper.h"
 
 #include "DataStructures/Frame.h"
 #include "DataStructures/ImageSet.h"
+#include "DataStructures/KeyFrame.h"
 
 #include "DepthEstimation/DepthMap.h"
 
@@ -43,6 +43,8 @@
 #include "util/Configuration.h"
 #include "util/Timer.h"
 #include "util/ThreadMutexObject.h"
+
+#include "SlamSystem/TrackingThread.h"
 
 #include "Tracking/Relocalizer.h"
 
@@ -77,67 +79,45 @@ public:
 	// Creates a new SlamSystem, and passes over relevant configuration info
 	SlamSystem *fullReset();
 
-	// OLD API: tracks a frame.
-	// first frame will return Identity = camToWord.
-	// returns camToWord transformation of the tracked frame.
-	// frameID needs to be monotonically increasing.
-	//void trackFrame( Frame *newFrame ); //, bool blockUntilMapped );
-
 	void nextImage( unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam );
 	void nextImageSet( const std::shared_ptr<ImageSet> &set );
-
 
 	// finalizes the system, i.e. blocks and does all remaining loop-closures etc.
 	void finalize();
 	ThreadSynchronizer &finalized() { return _finalized; }
 
-	/** Returns the current pose estimate. */
-	Sophus::SE3d getCurrentPoseEstimate();
-
-	Sophus::Sim3d getCurrentPoseEstimateScale();
-
 	//==== KeyFrame maintenance functions ====
-        Frame::SharedPtr &currentKeyFrame() { return depthMap()->currentKeyFrame(); }
-
-	void changeKeyframe( const Frame::SharedPtr &frame, bool noCreate, bool force, float maxScore);
-	void loadNewCurrentKeyframe( const Frame::SharedPtr &keyframeToLoad );
-	void createNewCurrentKeyframe( const Frame::SharedPtr &newKeyframeCandidate );
-
-	// void requestDepthMapScreenshot(const std::string& filename);
+  std::shared_ptr<KeyFrame> &currentKeyFrame() { return trackingThread()->currentKeyFrame(); }
 
 	// int findConstraintsForNewKeyFrames(Frame* newKeyFrame, bool forceParent=true, bool useFABMAP=true, float closeCandidatesTH=1.0);
 
 	std::vector<FramePoseStruct::SharedPtr> getAllPoses();
 
 	//=== Debugging output functions =====
-	const shared_ptr<Output3DWrapper> &outputWrapper( void )       { return _outputWrapper; }
-	void set3DOutputWrapper( Output3DWrapper* outputWrapper )      {	_outputWrapper.reset(outputWrapper); }
-	void set3DOutputWrapper( const shared_ptr<Output3DWrapper> &outputWrapper) {	_outputWrapper = outputWrapper; }
+	void addOutputWrapper( const shared_ptr<OutputIOWrapper> &outputWrapper) {	_outputWrappers.push_back( outputWrapper ); }
 
-	void publishPose(const Sophus::Sim3f &pose ) 	                 { if( _outputWrapper ) _outputWrapper->publishPose(pose);}
-	void publishTrackedFrame( const Frame::SharedPtr &frame )      { if( _outputWrapper ) _outputWrapper->publishTrackedFrame( frame ); }
-	void publishKeyframeGraph( void )                              { if( _outputWrapper ) _outputWrapper->publishKeyframeGraph( keyFrameGraph() ); }
+	void publishPose(const Sophus::Sim3f &pose );
+	void publishTrackedFrame( const Frame::SharedPtr &frame );
+	void publishKeyframeGraph( void );
 	void publishKeyframe(  const Frame::SharedPtr &frame );
 	void publishCurrentKeyframe();
-	void publishPointCloud();
-	void publishDepthImage( unsigned char* data  )                 { if( _outputWrapper ) _outputWrapper->updateDepthImage( data ); }
+	void publishDepthImage( unsigned char* data  );
 
 	void updateDisplayDepthMap();
-
-	unique_ptr<TrackingThread> trackingThread;
-	unique_ptr<OptimizationThread> optThread;
-	unique_ptr<MappingThread> mapThread;
-	unique_ptr<ConstraintSearchThread> constraintThread;
 
 	// mutex to lock frame pose consistency. within a shared lock of this, *->getCamToWorld() is
 	// GUARANTEED to give the same result each call, and to be compatible to each other.
 	// locked exclusively during the pose-update by Mapping.
 	boost::shared_mutex poseConsistencyMutex;
 
-	const shared_ptr<KeyFrameGraph> &keyFrameGraph() { return _keyFrameGraph; };	  // has own locks
+	const shared_ptr<KeyFrameGraph> &keyFrameGraph() 				{ return _keyFrameGraph; };	  // has own locks
 	shared_ptr<TrackableKeyFrameSearch> &trackableKeyFrameSearch() { return _trackableKeyFrameSearch; }
 
-	unique_ptr<DepthMap> &depthMap() { return _depthMap; }
+	unique_ptr<MappingThread> &mapThread()       						{ return _mapThread; }
+	unique_ptr<TrackingThread> &trackingThread() 						{ return _trackingThread; }
+	unique_ptr<OptimizationThread> &optThread()  						{ return _optThread; }
+	unique_ptr<ConstraintSearchThread> &constraintThread()  { return _constraintThread; }
+
 
 
 private:
@@ -148,24 +128,24 @@ private:
 
 	Timer timeLastUpdate;
 
-	std::shared_ptr<Output3DWrapper> _outputWrapper;	// no lock required
+	std::list<std::shared_ptr<OutputIOWrapper> > _outputWrappers;
 
-	ThreadSynchronizer _finalized;
 	bool _initialized;
+	ThreadSynchronizer _finalized;
 
 	// ======= Functions =====
 
-	void initialize( const std::shared_ptr<ImageSet> &set );
 	void logPerformanceData();
 
+	//== Component threads
+	unique_ptr<TrackingThread>         _trackingThread;
+	unique_ptr<OptimizationThread>     _optThread;
+	unique_ptr<MappingThread>          _mapThread;
+	unique_ptr<ConstraintSearchThread> _constraintThread;
+
 	// == Shared "global" data structures ==
-
 	std::shared_ptr<KeyFrameGraph> _keyFrameGraph;	  // has own locks
-	//Frame::SharedPtr  _currentKeyFrame;
-
 	std::shared_ptr<TrackableKeyFrameSearch> _trackableKeyFrameSearch;
-
-	std::unique_ptr<DepthMap> _depthMap;
 
 };
 
