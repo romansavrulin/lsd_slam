@@ -5,6 +5,8 @@
 #include <string>
 #include <array>
 
+#include "libvideoio/ImageSize.h"
+
 typedef unsigned char BYTE;
 
 const int NUM_TEST_IMAGES=3;
@@ -18,5 +20,6 @@ extern const std::array< ImageSnippet, NUM_TEST_IMAGES > ImageSnippets;
 
 const size_t TestImageWidth = 640;
 const size_t TestImageHeight = 480;
+const libvideoio::ImageSize TestImageSize( TestImageWidth, TestImageHeight );
 
 std::vector<BYTE> TestImage( int i );
