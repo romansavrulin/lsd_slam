@@ -18,22 +18,18 @@
 * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Tracking/TrackingReference.h"
 #include "DataStructures/Frame.h"
-#include "DepthEstimation/DepthMapPixelHypothesis.h"
-#include "GlobalMapping/KeyFrameGraph.h"
 #include "util/globalFuncs.h"
-#include "IOWrapper/ImageDisplay.h"
 
 namespace lsd_slam
 {
-
-TrackingReference::TrackingReference( const Frame::SharedPtr &frame )
+template< int __LEVELS >
+_TrackingRef< __LEVELS >::_TrackingRef( const Frame::SharedPtr &frame )
 	: frame( frame ),
 		_accessMutex()
 {
 	wh_allocated = 0;
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	for (int level = 0; level < __LEVELS; ++ level)
 	{
 		posData[level] = nullptr;
 		gradData[level] = nullptr;
@@ -43,11 +39,12 @@ TrackingReference::TrackingReference( const Frame::SharedPtr &frame )
 	}
 }
 
-TrackingReference::~TrackingReference()
+template< int __LEVELS >
+_TrackingRef<__LEVELS>::~_TrackingRef()
 {
 	std::lock_guard<std::mutex> lock(_accessMutex);
 
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	for (int level = 0; level < __LEVELS; ++ level)
 	{
 		if(posData[level] != nullptr) delete[] posData[level];
 		if(gradData[level] != nullptr) delete[] gradData[level];
@@ -58,15 +55,16 @@ TrackingReference::~TrackingReference()
 	wh_allocated = 0;
 }
 
-void TrackingReference::clearAll()
+template< int __LEVELS >
+void _TrackingRef< __LEVELS >::clearAll()
 {
-	for (int level = 0; level < PYRAMID_LEVELS; ++level)
+	for (int level = 0; level < __LEVELS; ++level)
 		numData[level] = 0;
 }
 
 
-
-void TrackingReference::makePointCloud(int level)
+template< int __LEVELS >
+void _TrackingRef< __LEVELS >::makePointCloud(int level)
 {
 	CHECK( (bool)frame ) << "frame pointer is NULL when it shouldn't be.";
 	std::lock_guard<std::mutex> lock(_accessMutex);

@@ -40,8 +40,12 @@ using libvideoio::ImageSize;
 
 class KeyFrame;
 class DepthMapPixelHypothesis;
-class TrackingReference;
 class DepthMap;
+
+template< int __LEVELS > class _TrackingRef;
+typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
+
+
 /**
  */
 
@@ -223,7 +227,7 @@ private:
 	int _id;
 	double _timestamp;
 
-	FrameData data;
+	FrameData<PYRAMID_LEVELS> data;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);

@@ -6,15 +6,17 @@
 
 #include "DataStructures/FrameData.h"
 
+const int TestFrameDataPyramidLevels = lsd_slam::PYRAMID_LEVELS;
+
 TEST( FrameData, constructor )
 {
   const libvideoio::Camera cam(1000,1000,320,240);
   const libvideoio::ImageSize sz(640,480);
 
-  lsd_slam::FrameData data( cam, sz );
+  lsd_slam::FrameData<TestFrameDataPyramidLevels> data( cam, sz );
 
 
-  for( int i = 0; i < PYRAMID_LEVELS; ++i ) {
+  for( int i = 0; i < data.Levels; ++i ) {
     float scalar=1.0/pow(2,i);
 
     ASSERT_FLOAT_EQ( data.camera[i].fx,  cam.fx*scalar );
@@ -35,13 +37,13 @@ TEST( FrameDataDeathTest, NotDivisibleBy16 ) {
   ASSERT_DEATH({
     const int width = 248;
     const int height = 256;
-    lsd_slam::FrameData data( cam, libvideoio::ImageSize( width, height) );
+    lsd_slam::FrameData<TestFrameDataPyramidLevels> data( cam, libvideoio::ImageSize( width, height) );
   }, "std::exception");  //"Image width \\d* isn't divisible by \\d*" );
 
   ASSERT_DEATH({
     const int width = 256;
     const int height = 2248;
-    lsd_slam::FrameData data( cam, libvideoio::ImageSize( width, height) );
+    lsd_slam::FrameData<TestFrameDataPyramidLevels> data( cam, libvideoio::ImageSize( width, height) );
   }, "std::exception" ); //"Image height \\d* isn't divisible by \\d*" );
 
 }

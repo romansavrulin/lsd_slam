@@ -48,18 +48,19 @@ class KeyFrameGraph;
  */
 
  // TODO.  Oh my gawd.
-class TrackingReference
+template< int __LEVELS >
+class _TrackingRef
 {
 public:
 
-	typedef std::shared_ptr<TrackingReference> SharedPtr;
+	typedef std::shared_ptr<_TrackingRef> SharedPtr;
 
-	TrackingReference() = delete;
-	TrackingReference( const TrackingReference & ) = delete;
+	_TrackingRef() = delete;
+	_TrackingRef( const _TrackingRef & ) = delete;
 
-	TrackingReference( const Frame::SharedPtr &frame );
+	_TrackingRef( const Frame::SharedPtr &frame );
 
-	~TrackingReference();
+	~_TrackingRef();
 
 	int frameID()    { return ((bool)frame) ? frame->id() : -1; }
 
@@ -68,14 +69,19 @@ public:
 	void makePointCloud(int level);
 	void clearAll();
 
-	Eigen::Vector3f* posData[PYRAMID_LEVELS];	// (x,y,z)
-	Eigen::Vector2f* gradData[PYRAMID_LEVELS];	// (dx, dy)
-	Eigen::Vector2f* colorAndVarData[PYRAMID_LEVELS];	// (I, Var)
-	int* pointPosInXYGrid[PYRAMID_LEVELS];	// x + y*width
-	int numData[PYRAMID_LEVELS];
+	Eigen::Vector3f* posData[__LEVELS];	// (x,y,z)
+	Eigen::Vector2f* gradData[__LEVELS];	// (dx, dy)
+	Eigen::Vector2f* colorAndVarData[__LEVELS];	// (I, Var)
+	int* pointPosInXYGrid[__LEVELS];	// x + y*width
+	int numData[__LEVELS];
 
 private:
 	int wh_allocated;
 	std::mutex _accessMutex;
 };
+
+typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
+
 }
+
+#include "TrackingReference_impl.h"

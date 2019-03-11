@@ -30,7 +30,9 @@
 namespace lsd_slam
 {
 
-class TrackingReference;
+template< int __LEVELS > class _TrackingRef;
+typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
+
 class Frame;
 
 
@@ -54,23 +56,12 @@ struct Sim3ResidualStruct
 	}
 };
 
+struct Sim3TrackerDebugImages {
 
-class Sim3Tracker
-{
-public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+	Sim3TrackerDebugImages() = delete;
+	Sim3TrackerDebugImages( const Sim3TrackerDebugImages & ) = delete;
 
-	// int width, height;
-
-	// camera matrix
-	// Eigen::Matrix3f K, KInv;
-	// float fx,fy,cx,cy;
-	// float fxi,fyi,cxi,cyi;
-
-	Matrix7x7 lastSim3Hessian;
-
-	DenseDepthTrackerSettings settings;
-
+	Sim3TrackerDebugImages( const ImageSize &imgSize );
 
 	// debug images
 	cv::Mat debugImageResiduals;
@@ -87,6 +78,26 @@ public:
 	cv::Mat debugImageWeightP;
 	cv::Mat debugImageWeightedResP;
 	cv::Mat debugImageWeightedResD;
+
+};
+
+
+class Sim3Tracker
+{
+public:
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+	// int width, height;
+
+	// camera matrix
+	// Eigen::Matrix3f K, KInv;
+	// float fx,fy,cx,cy;
+	// float fxi,fyi,cxi,cyi;
+
+	Matrix7x7 lastSim3Hessian;
+
+	DenseDepthTrackerSettings<PYRAMID_LEVELS> settings;
+
 
 
 	float* buf_warped_residual;
@@ -138,6 +149,8 @@ public:
 private:
 
 	const ImageSize &_imgSize;
+
+	Sim3TrackerDebugImages _debugImages;
 
 	void calcSim3Buffers(
 			const std::shared_ptr<TrackingReference> &reference,

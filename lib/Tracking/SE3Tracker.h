@@ -30,7 +30,9 @@
 namespace lsd_slam
 {
 
-class TrackingReference;
+template< int __LEVELS > class _TrackingRef;
+typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
+
 class Frame;
 class KeyFrame;
 
@@ -55,7 +57,7 @@ class SE3Tracker
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	DenseDepthTrackerSettings settings;
+	DenseDepthTrackerSettings<PYRAMID_LEVELS> settings;
 
 	SE3Tracker(const SE3Tracker&) = delete;
 	SE3Tracker& operator=(const SE3Tracker&) = delete;

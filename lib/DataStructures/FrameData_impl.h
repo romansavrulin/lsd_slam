@@ -1,18 +1,17 @@
 
-#include "FrameData.h"
-
 #include "DataStructures/FrameMemory.h"
 
 namespace lsd_slam {
 
-FrameData::FrameData( const Camera &cam, const ImageSize &slamImageSize )
+template< int __LEVELS >
+FrameData<__LEVELS>::FrameData( const Camera &cam, const ImageSize &slamImageSize )
 	:	hasIDepthBeenSet( false )
 {
 
 	camera[0] = cam;
 
 
-	for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+	for (int level = 0; level < __LEVELS; ++ level)
 	{
 		width[level] = slamImageSize.width >> level;
 		height[level] = slamImageSize.height >> level;
@@ -49,9 +48,10 @@ FrameData::FrameData( const Camera &cam, const ImageSize &slamImageSize )
   CHECK( (height[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image height " << height[0] << " isn't divisible by " << PYRAMID_DIVISOR;
 }
 
-FrameData::~FrameData() {
+template< int __LEVELS >
+FrameData<__LEVELS>::~FrameData() {
 
-  for (int level = 0; level < PYRAMID_LEVELS; ++ level)
+  for (int level = 0; level < __LEVELS; ++ level)
   {
     FrameMemory::getInstance().returnBuffer(image[level]);
     FrameMemory::getInstance().returnBuffer(reinterpret_cast<float*>(gradients[level]));
@@ -65,8 +65,8 @@ FrameData::~FrameData() {
   FrameMemory::getInstance().returnBuffer(idepthVar_reAct);
 }
 
-
-void FrameData::setImage( const unsigned char *img ) {
+template< int __LEVELS >
+void FrameData<__LEVELS>::setImage( const unsigned char *img ) {
   image[0] = FrameMemory::getInstance().getFloatBuffer(width[0]*height[0]);
 
 	float *pt = image[0];
@@ -77,8 +77,8 @@ void FrameData::setImage( const unsigned char *img ) {
 	imageValid[0] = true;
 }
 
-
-void FrameData::setImage( const float *img ) {
+template< int __LEVELS >
+void FrameData<__LEVELS>::setImage( const float *img ) {
   image[0] = FrameMemory::getInstance().getFloatBuffer(width[0]*height[0]);
 	memcpy(image[0], img, width[0]*height[0] * sizeof(float));
 	imageValid[0] = true;

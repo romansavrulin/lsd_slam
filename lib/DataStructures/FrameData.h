@@ -32,8 +32,11 @@ namespace lsd_slam {
   using libvideoio::Camera;
   using libvideoio::ImageSize;
 
+  template< int __LEVELS >
 	struct FrameData
 	{
+    const int Levels = __LEVELS;
+
 		// Explicitly delete default and copy constructors
 		FrameData() = delete;
 		FrameData( const FrameData & ) = delete;
@@ -44,34 +47,34 @@ namespace lsd_slam {
     void setImage( const unsigned char *img );
     void setImage( const float *img );
 
-		int width[PYRAMID_LEVELS], height[PYRAMID_LEVELS];
+		int width[__LEVELS], height[__LEVELS];
 
-		Camera camera[PYRAMID_LEVELS];
+		Camera camera[__LEVELS];
 
-		// Eigen::Matrix3f K[PYRAMID_LEVELS], KInv[PYRAMID_LEVELS];
-		// float fx[PYRAMID_LEVELS], fy[PYRAMID_LEVELS], cx[PYRAMID_LEVELS], cy[PYRAMID_LEVELS];
-		// float fxInv[PYRAMID_LEVELS], fyInv[PYRAMID_LEVELS], cxInv[PYRAMID_LEVELS], cyInv[PYRAMID_LEVELS];
+		// Eigen::Matrix3f K[__LEVELS], KInv[__LEVELS];
+		// float fx[__LEVELS], fy[__LEVELS], cx[__LEVELS], cy[__LEVELS];
+		// float fxInv[__LEVELS], fyInv[__LEVELS], cxInv[__LEVELS], cyInv[__LEVELS];
 
-		float* image[PYRAMID_LEVELS];
-		bool imageValid[PYRAMID_LEVELS];
+		float* image[__LEVELS];
+		bool imageValid[__LEVELS];
 
-		Eigen::Vector4f* gradients[PYRAMID_LEVELS];
-		bool gradientsValid[PYRAMID_LEVELS];
+		Eigen::Vector4f* gradients[__LEVELS];
+		bool gradientsValid[__LEVELS];
 
-		float* maxGradients[PYRAMID_LEVELS];
-		bool maxGradientsValid[PYRAMID_LEVELS];
+		float* maxGradients[__LEVELS];
+		bool maxGradientsValid[__LEVELS];
 
 
 		bool hasIDepthBeenSet;
 
 		// negative depthvalues are actually allowed, so setting this to -1 does NOT invalidate the pixel's depth.
 		// a pixel is valid iff idepthVar[i] > 0.
-		float* idepth[PYRAMID_LEVELS];
-		bool idepthValid[PYRAMID_LEVELS];
+		float* idepth[__LEVELS];
+		bool idepthValid[__LEVELS];
 
 		// MUST contain -1 for invalid pixel (that dont have depth)!!
-		float* idepthVar[PYRAMID_LEVELS];
-		bool idepthVarValid[PYRAMID_LEVELS];
+		float* idepthVar[__LEVELS];
+		bool idepthVarValid[__LEVELS];
 
 		// data needed for re-activating the frame. theoretically, this is all data the
 		// frame contains.
@@ -87,3 +90,5 @@ namespace lsd_slam {
 	};
 
 }
+
+#include "FrameData_impl.h"

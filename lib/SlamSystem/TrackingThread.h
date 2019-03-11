@@ -32,7 +32,6 @@ namespace lsd_slam
 {
 
 class SlamSystem;
-class TrackingReference;
 class SE3Tracker;
 
 
