@@ -1,34 +1,34 @@
 /**
- * This file is part of LSD-SLAM.
- *
- * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical
- * University of Munich) For more information see
- * <http://vision.in.tum.de/lsdslam>
- *
- * LSD-SLAM is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * LSD-SLAM is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
- */
+* This file is part of LSD-SLAM.
+*
+* Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
+* For more information see <http://vision.in.tum.de/lsdslam>
+*
+* LSD-SLAM is free software: you can redistribute it and/or modify
+* it under the terms of the GNU General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* LSD-SLAM is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with LSD-SLAM. If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #pragma once
-#include "DataStructures/FrameMemory.h"
-#include "DataStructures/FramePoseStruct.h"
-#include "unordered_set"
-#include "util/Configuration.h"
+#include <mutex>
 #include "util/SophusUtil.h"
 #include "util/settings.h"
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/shared_mutex.hpp>
-#include <mutex>
+#include "DataStructures/FramePoseStruct.h"
+#include "DataStructures/FrameMemory.h"
+#include "unordered_set"
+#include "util/settings.h"
+#include "util/Configuration.h"
 
 #include "FrameData.h"
 
@@ -51,6 +51,11 @@ typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
 
 class Frame
 {
+private:
+	// Again, having wierd FrameData alignment issues where it's of different
+	// lengths in different subunits unless it's at the top...
+	FrameData<PYRAMID_LEVELS> data;
+
 public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 	friend class FrameMemory;
@@ -223,12 +228,11 @@ public:
 	float meanInformation;
 
 private:
+
 	std::shared_ptr<KeyFrame> _trackingParent;
 
 	int _id;
 	double _timestamp;
-
-	FrameData<PYRAMID_LEVELS> data;
 
 	void require(int dataFlags, int level = 0);
 	void release(int dataFlags, bool pyramidsOnly, bool invalidateOnly);
@@ -236,53 +240,58 @@ private:
 //	void initialize(double timestamp);
 	void setDepth_Allocate();
 
-  void buildImage(int level);
-  void releaseImage(int level);
+	void buildImage(int level);
+	void releaseImage(int level);
 
-  void buildGradients(int level);
-  void releaseGradients(int level);
+	void buildGradients(int level);
+	void releaseGradients(int level);
 
-  void buildMaxGradients(int level);
-  void releaseMaxGradients(int level);
+	void buildMaxGradients(int level);
+	void releaseMaxGradients(int level);
 
-  void buildIDepthAndIDepthVar(int level);
-  void releaseIDepth(int level);
-  void releaseIDepthVar(int level);
+	void buildIDepthAndIDepthVar(int level);
+	void releaseIDepth(int level);
+	void releaseIDepthVar(int level);
 
-  // used internally. locked while something is being built, such that no
-  // two threads build anything simultaneously. not locked on require() if
-  // nothing is changed.
-  boost::mutex buildMutex;
+	// used internally. locked while something is being built, such that no
+	// two threads build anything simultaneously. not locked on require() if nothing is changed.
+	boost::mutex buildMutex;
 
-  boost::shared_mutex activeMutex;
-  bool isActive;
+	boost::shared_mutex activeMutex;
+	bool isActive;
 
-  /** Releases everything which can be recalculated, but keeps the minimal
-   * representation in memory. Use release(Frame::ALL, false) to store on disk
-   * instead. ONLY CALL THIS, if an exclusive lock on activeMutex is owned! */
-  bool minimizeInMemory();
+	/** Releases everything which can be recalculated, but keeps the minimal
+	  * representation in memory. Use release(Frame::ALL, false) to store on disk instead.
+	  * ONLY CALL THIS, if an exclusive lock on activeMutex is owned! */
+	bool minimizeInMemory();
+
 };
 
-inline float *Frame::image(int level) {
-  if (!data.imageValid[level])
-    require(IMAGE, level);
-  return data.image[level];
+
+inline float* Frame::image(int level)
+{
+	if (! data.imageValid[level])
+		require(IMAGE, level);
+	return data.image[level];
 }
 
-inline const Eigen::Vector4f *Frame::gradients(int level) {
-  if (!data.gradientsValid[level])
-    require(GRADIENTS, level);
-  return data.gradients[level];
+inline const Eigen::Vector4f* Frame::gradients(int level)
+{
+	if (! data.gradientsValid[level])
+		require(GRADIENTS, level);
+	return data.gradients[level];
 }
 
-inline const float *Frame::maxGradients(int level) {
-  if (!data.maxGradientsValid[level])
-    require(MAX_GRADIENTS, level);
-  return data.maxGradients[level];
+inline const float* Frame::maxGradients(int level)
+{
+	if (! data.maxGradientsValid[level])
+		require(MAX_GRADIENTS, level);
+	return data.maxGradients[level];
 }
 
-inline bool Frame::hasIDepthBeenSet() const {
-	return data.hasIDepthBeenSet;	
+inline bool Frame::hasIDepthBeenSet() const
+{
+	return data.hasIDepthBeenSet;
 }
 
 inline const float* Frame::idepth(int level)
@@ -297,22 +306,25 @@ inline const float* Frame::idepth(int level)
 	return data.idepth[level];
 }
 
-inline const unsigned char *Frame::validity_reAct() {
-  if (!data.reActivationDataValid)
-    return 0;
-  return data.validity_reAct;
+inline const unsigned char* Frame::validity_reAct()
+{
+	if( !data.reActivationDataValid)
+		return 0;
+	return data.validity_reAct;
 }
 
-inline const float *Frame::idepth_reAct() {
-  if (!data.reActivationDataValid)
-    return 0;
-  return data.idepth_reAct;
+inline const float* Frame::idepth_reAct()
+{
+	if( !data.reActivationDataValid)
+		return 0;
+	return data.idepth_reAct;
 }
 
-inline const float *Frame::idepthVar_reAct() {
-  if (!data.reActivationDataValid)
-    return 0;
-  return data.idepthVar_reAct;
+inline const float* Frame::idepthVar_reAct()
+{
+	if( !data.reActivationDataValid)
+		return 0;
+	return data.idepthVar_reAct;
 }
 
 inline const float* Frame::idepthVar(int level)
@@ -326,6 +338,7 @@ inline const float* Frame::idepthVar(int level)
 	return data.idepthVar[level];
 }
 
+
 inline bool* Frame::refPixelWasGood()
 {
 	if( data.refPixelWasGood == 0)
@@ -338,19 +351,23 @@ inline bool* Frame::refPixelWasGood()
 			const int height = data.imgSize[SE3TRACKING_MIN_LEVEL].height;
 			data.refPixelWasGood = (bool*)FrameMemory::getInstance().getBuffer(sizeof(bool) * width * height);
 
-      memset(data.refPixelWasGood, 0xFFFFFFFF, sizeof(bool) * (width * height));
-    }
-  }
-  return data.refPixelWasGood;
+			memset(data.refPixelWasGood, 0xFFFFFFFF, sizeof(bool) * (width * height));
+		}
+	}
+	return data.refPixelWasGood;
 }
 
-inline bool *Frame::refPixelWasGoodNoCreate()
-{ return data.refPixelWasGood; }
 
-inline void Frame::clear_refPixelWasGood() {
-  FrameMemory::getInstance().returnBuffer(
-      reinterpret_cast<float *>(data.refPixelWasGood));
-  data.refPixelWasGood = 0;
+inline bool* Frame::refPixelWasGoodNoCreate()
+{
+	return data.refPixelWasGood;
 }
 
-} // namespace lsd_slam
+inline void Frame::clear_refPixelWasGood()
+{
+	FrameMemory::getInstance().returnBuffer(reinterpret_cast<float*>(data.refPixelWasGood));
+	data.refPixelWasGood=0;
+}
+
+
+}
