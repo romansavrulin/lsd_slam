@@ -32,7 +32,7 @@
 #include "util/MovingAverage.h"
 #include "util/settings.h"
 
-#include "DataStructures/Frame.h"
+#include "DataStructures/KeyFrame.h"
 
 
 namespace lsd_slam
@@ -45,7 +45,7 @@ class SE3Tracker;
 
 struct TrackableKFStruct
 {
-	Frame::SharedPtr frame;
+	KeyFrame::SharedPtr keyframe;
 	SE3 refToFrame;
 	float dist;
 	float angle;
@@ -67,8 +67,8 @@ public:
 	 * Finds candidates for trackable frames.
 	 * Returns the most likely candidates first.
 	 */
-	std::unordered_set<Frame::SharedPtr> findCandidates(const Frame::SharedPtr &keyframe, Frame::SharedPtr &fabMapResult_out, bool includeFABMAP=true, bool closenessTH=1.0);
-	Frame::SharedPtr findRePositionCandidate( const Frame::SharedPtr &frame, float maxScore=1);
+	std::unordered_set<KeyFrame::SharedPtr> findCandidates(const KeyFrame::SharedPtr &keyframe, KeyFrame::SharedPtr &fabMapResult_out, bool includeFABMAP=true, bool closenessTH=1.0);
+	KeyFrame::SharedPtr findRePositionCandidate( const KeyFrame::SharedPtr &frame, float maxScore=1);
 
 
 	inline float getRefFrameScore(float distanceSquared, float usage)
@@ -85,11 +85,11 @@ private:
 	 * Returns a possible loop closure for the keyframe or nullptr if none is found.
 	 * Uses FabMap internally.
 	 */
-	Frame::SharedPtr findAppearanceBasedCandidate(const Frame::SharedPtr &keyframe);
-	std::vector<TrackableKFStruct> findEuclideanOverlapFrames(const Frame::SharedPtr &frame, float distanceTH, float angleTH, bool checkBothScales = false);
+	KeyFrame::SharedPtr findAppearanceBasedCandidate(const KeyFrame::SharedPtr &keyframe);
+	std::vector<TrackableKFStruct> findEuclideanOverlapFrames(const KeyFrame::SharedPtr &frame, float distanceTH, float angleTH, bool checkBothScales = false);
 
 #ifdef HAVE_FABMAP
-	std::unordered_map<int, Frame::SharedPtr> fabmapIDToKeyframe;
+	std::unordered_map<int, KeyFrame::SharedPtr> fabmapIDToKeyframe;
 	FabMap fabMap;
 #endif
 	std::shared_ptr<KeyFrameGraph> graph;

@@ -23,6 +23,7 @@ namespace lsd_slam {
 
   Configuration &Conf();
 
+
 // Slow migration from the global settings.[h,cpp] model to a Configuration
 // object.
 class Configuration {
@@ -36,6 +37,7 @@ public:
 
   enum { NO_STEREO = 0, STEREO_ZED } doDepth;
 
+  // If false, system will block while each new image is tracked and mapped
   bool runRealTime;
 
   bool stopOnFailedRead;
@@ -54,7 +56,9 @@ public:
  bool dumpMap;
  bool doFullReConstraintTrack;
 
- struct {
+ struct PrintConfiguration {
+   PrintConfiguration();
+
    bool propagationStatistics;
    bool fillHolesStatistics;
    bool observeStatistics;
@@ -77,7 +81,6 @@ public:
    bool mappingTiming;
    bool overallTiming;
  } print;
-
 
 private:
   Configuration();

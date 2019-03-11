@@ -20,6 +20,7 @@
 
 #include "Relocalizer.h"
 #include "DataStructures/Frame.h"
+#include "DataStructures/KeyFrame.h"
 #include "Tracking/SE3Tracker.h"
 #include "IOWrapper/ImageDisplay.h"
 
@@ -72,7 +73,7 @@ void Relocalizer::stop()
 
 void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 {
-	boost::unique_lock<boost::mutex> lock(exMutex);
+	std::lock_guard<std::mutex> lock(exMutex);
 
 	if(hasResult) return;
 
@@ -80,7 +81,6 @@ void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 //	int doneLast = KFForReloc.size() - (maxRelocIDX-nextRelocIDX);
 	maxRelocIDX = nextRelocIDX + KFForReloc.size();
 	newCurrentFrameSignal.notify_all();
-	lock.unlock();
 
 //	f("tried last on %d. set new current frame %d. trying %d to %d!\n",
 //			doneLast,
@@ -95,20 +95,17 @@ void Relocalizer::updateCurrentFrame(std::shared_ptr<Frame> currentFrame)
 	// handleKey(pressedKey);
 }
 
-void Relocalizer::start(std::vector<Frame::SharedPtr> &allKeyframesList)
+void Relocalizer::start(std::vector<KeyFrame::SharedPtr> &allKeyframesList)
 {
 	// make KFForReloc List
 	KFForReloc.clear();
 	for(unsigned int k=0;k < allKeyframesList.size(); k++)
 	{
 		// insert
-		KFForReloc.push_back(allKeyframesList[k]);
-
-		// swap with a random element
-		int ridx = rand()%(KFForReloc.size());
-		Frame::SharedPtr tmp( KFForReloc.back() );
-		KFForReloc.back() = KFForReloc[ridx];
-		KFForReloc[ridx] = tmp;
+		const int ridx = rand()%(KFForReloc.size());
+		auto itr = KFForReloc.begin();
+		for( int i = 0; i < ridx; ++i ) { ++itr; }
+		KFForReloc.insert(itr, allKeyframesList[k]);
 	}
 	nextRelocIDX=0;
 	maxRelocIDX=KFForReloc.size();
@@ -127,31 +124,24 @@ void Relocalizer::start(std::vector<Frame::SharedPtr> &allKeyframesList)
 
 bool Relocalizer::waitResult(int milliseconds)
 {
-	boost::unique_lock<boost::mutex> lock(exMutex);
+	std::lock_guard<std::mutex> lock(exMutex);
 	if(hasResult) return true;
-	resultReadySignal.timed_wait(lock, boost::posix_time::milliseconds(milliseconds));
+
+	// !!TODO.  Change to C++11 condition variable
+	//resultReadySignal.timed_wait(lock, boost::posix_time::milliseconds(milliseconds));
 	return hasResult;
 }
 
 RelocalizerResult Relocalizer::getResult( void ) //Frame* &out_keyframe, std::shared_ptr<Frame> &frame, int &out_successfulFrameID, SE3 &out_frameToKeyframe)
 {
-	boost::unique_lock<boost::mutex> lock(exMutex);
+	std::lock_guard<std::mutex> lock(exMutex);
 	if(hasResult)
 	{
 		return RelocalizerResult( resultKF, resultRelocFrame, resultFrameID, resultFrameToKeyframe );
-		// out_keyframe = resultKF;
-		// out_successfulFrameID = resultFrameID;
-		// out_frameToKeyframe = resultFrameToKeyframe;
-		// frame = resultRelocFrame;
 	}
 	else
 	{
-		std::shared_ptr< Frame > empty( NULL );
-		return RelocalizerResult( Frame::SharedPtr(nullptr), empty, -1, SE3() );
-		// out_keyframe = 0;
-		// out_successfulFrameID = -1;
-		// out_frameToKeyframe = SE3();
-		// frame.reset();
+		return RelocalizerResult();
 	}
 }
 
@@ -162,19 +152,20 @@ void Relocalizer::threadLoop(int idx)
 
 	SE3Tracker* tracker = new SE3Tracker(Conf().slamImageSize );
 
-	boost::unique_lock<boost::mutex> lock(exMutex);
+//	std::lock_guard<std::mutex> lock(exMutex);
+	exMutex.lock();
 	while(continueRunning)
 	{
 		// if got something: do it (unlock in the meantime)
 		if(nextRelocIDX < maxRelocIDX && CurrentRelocFrame)
 		{
-			Frame::SharedPtr todo( KFForReloc[nextRelocIDX%KFForReloc.size()] );
+			KeyFrame::SharedPtr todo( KFForReloc[nextRelocIDX%KFForReloc.size()] );
 			nextRelocIDX++;
 			if(todo->neighbors.size() <= 2) continue;
 
 			std::shared_ptr<Frame> myRelocFrame = CurrentRelocFrame;
 
-			lock.unlock();
+			exMutex.unlock();
 
 			// initial Alignment
 			SE3 todoToFrame = tracker->trackFrameOnPermaref(todo, myRelocFrame, SE3());
@@ -188,11 +179,11 @@ void Relocalizer::threadLoop(int idx)
 
 				float bestNeightbourGoodVal = todoGoodVal;
 				float bestNeighbourUsage = tracker->pointUsage;
-				Frame::SharedPtr bestKF(todo);
+				KeyFrame::SharedPtr bestKF(todo);
 				SE3 bestKFToFrame = todoToFrame;
 				for(auto nkf : todo->neighbors)
 				{
-					SE3 nkfToFrame_init = se3FromSim3((nkf->getCamToWorld().inverse() * todo->getCamToWorld() * sim3FromSE3(todoToFrame.inverse(), 1))).inverse();
+					SE3 nkfToFrame_init = se3FromSim3((nkf->frame()->getCamToWorld().inverse() * todo->frame()->getCamToWorld() * sim3FromSE3(todoToFrame.inverse(), 1))).inverse();
 					SE3 nkfToFrame = tracker->trackFrameOnPermaref(nkf, myRelocFrame, nkfToFrame_init);
 
 					float goodVal = tracker->pointUsage * tracker->lastGoodCount() / (tracker->lastGoodCount()+tracker->lastBadCount());
@@ -220,14 +211,14 @@ void Relocalizer::threadLoop(int idx)
 
 					// set everything to stop!
 					continueRunning = false;
-					lock.lock();
+					exMutex.lock();
 					resultRelocFrame = myRelocFrame;
 					resultFrameID = myRelocFrame->id();
 					resultKF = bestKF;
 					resultFrameToKeyframe = bestKFToFrame.inverse();
 					resultReadySignal.notify_all();
 					hasResult = true;
-					lock.unlock();
+					exMutex.unlock();
 				}
 				else
 				{
@@ -239,14 +230,17 @@ void Relocalizer::threadLoop(int idx)
 				}
 			}
 
-			lock.lock();
+			exMutex.lock();
 		}
 		else
 		{
-			newCurrentFrameSignal.wait(lock);
+			// !!TODO.  Make this wok in C++11
+			//newCurrentFrameSignal.wait(lock);
 		}
 	}
+	exMutex.unlock();
 
 	delete tracker;
 }
+
 }

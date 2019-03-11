@@ -20,17 +20,16 @@ public:
 
 	// TODO.  Don't like passing reference to Mutex.  Another way to do it?
 
-	OptimizationThread( SlamSystem &system,
-											bool idle );
+	OptimizationThread( SlamSystem &system, bool threaded );
 	~OptimizationThread();
 
 	// == Public interfaces to kick off events ==
 	void doNewConstraint( void )
-	{ if( _thread ) _thread->send( std::bind(&OptimizationThread::callbackNewConstraint, this) ); }
+	{ if( _thread ) _thread->send( std::bind(&OptimizationThread::newConstraintImpl, this) ); }
 
 	void doFinalOptimization( void )
 	{ finalOptimizationComplete.reset();
-		if( _thread ) _thread->send( std::bind(&OptimizationThread::callbackFinalOptimization, this) ); }
+		if( _thread ) _thread->send( std::bind(&OptimizationThread::finalOptimizationImpl, this) ); }
 
 
 	ThreadSynchronizer finalOptimizationComplete;
@@ -49,9 +48,9 @@ private:
 	std::mutex optimizationThreadMutex;
 
 
-	void callbackIdle( void );
-	void callbackNewConstraint( void );
-	void callbackFinalOptimization( void );
+	void idleImpl( void );
+	void newConstraintImpl( void );
+	void finalOptimizationImpl( void );
 	// void callbackClearUnmergedOptimizationOffset( void ) { _haveUnmergedOptimizationOffset = false; }
 
 

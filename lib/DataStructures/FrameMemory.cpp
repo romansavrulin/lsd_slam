@@ -116,7 +116,7 @@ void FrameMemory::returnBuffer(void* buffer)
 void* FrameMemory::allocateBuffer(unsigned int size)
 {
 	void* buffer = (void*)(new char[size]);
-	LOG(DEBUG) << "Alloc " << size << " at " << std::ios::hex << buffer;
+	LOG_IF(DEBUG, Conf().print.memoryDebugInfo) << "Alloc " << size << " at " << std::ios::hex << buffer;
 	bufferSizes.insert(std::make_pair(buffer, size));
 	return buffer;
 }

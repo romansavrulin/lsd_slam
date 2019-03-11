@@ -39,11 +39,9 @@ public:
            const unsigned int ref);
   ~ImageSet();
 
-  Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
+  Frame::SharedPtr &refFrame()                            { return _frames[_refFrame]; }
 
-  Frame::SharedPtr &getFrame(const unsigned int frameNum) {
-    return _frames[frameNum];
-  }
+  Frame::SharedPtr &getFrame(const unsigned int frameNum) { return _frames[frameNum]; }
 
   void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam);
   Sim3 getRefTransformation() { return _frames[_refFrame]->getCamToWorld(); }
