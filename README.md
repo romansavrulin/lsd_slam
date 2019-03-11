@@ -40,11 +40,12 @@ or Thomas's branches in structure (I refactored as a way of learning the code),
 but not significantly in terms of functionality (except for all the ways in which
 I've broken it in the refactoring).
 
-**master**  is my working / stable-ish branch.   **aaron_dev** is my **really unstable** branch.   **Please note: BOTH BRANCHES ARE MOVING TARGETS.**  it's just that **aaron_dev** is, uh, moving faster.
+**master**  is my working / stable-ish branch.   **unstable** is my **really unstable** branch.   **Please note: BOTH BRANCHES ARE MOVING TARGETS.**  it's just that **unstable** is, uh, moving faster.
 
 # Quickstart
 
-My targeted environments are Ubuntu 16.04, the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.3](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.12 with [Homebrew](http://brew.sh/).
+My targeted environments are Ubuntu 18.04/16.04,
+the [Jetson TX1](http://www.nvidia.com/object/jetson-tx1-module.html) using [NVidia Jetpack 2.3](https://developer.nvidia.com/embedded/jetpack) , and OS X 10.12 with [Homebrew](http://brew.sh/).
 
 __If you want a GUI, start with to [lsd-slam-pangolin-gui](https://github.com/amarburg/lsd-slam-pangolin-gui)__
 
@@ -55,7 +56,7 @@ Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed
     ./fips gen
     ./fips build
 
-Both configurations (release, debug) and platform are controlled through
+Both configuration (Release vs. Debug) and platform are controlled through
 fips settings, so on a linux machine, either
 
     ./fips gen linux-make-release
@@ -67,10 +68,9 @@ or
     ./fips gen
     ./fips build
 
-will build release binaries.  `linux-make-debug` will build debug binaries and `linux-make-unittests` will build debug binaries and the unit tests.
+will build release binaries.  `linux-make-debug` will build debug binaries and the unit tests.
 
-See also [doc/CommonProblems.md](doc/CommonProblems.md)
-
+======
 # Running
 
 Supports directories or sets of raw images. For example, you can download
@@ -80,7 +80,6 @@ any dataset from [here](http://vision.in.tum.de/lsdslam), and run:
 
 I've started to document my performance testing in [doc/Performance.md](doc/Performance.md)
 
-# Related Papers
 =======
 # Docker
 
