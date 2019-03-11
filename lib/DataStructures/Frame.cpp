@@ -46,7 +46,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 
   LOG(INFO) << "Image width " << data.width[0] << " x " << data.height[0];
 
-  // memcpy( data.image[0], image, data.width[0]*data.height[0] );
+  // memcpy(data.image[0], image, data.width[0] * data.height[0]);
   for (float *pt = data.image[0]; pt < maxPt; pt++) {
     *pt = *image;
     image++;
@@ -198,6 +198,10 @@ void Frame::takeReActivationData(DepthMapPixelHypothesis *depthMap) {
   }
 
   data.reActivationDataValid = true;
+}
+
+cv::Mat Frame::getImage() {
+  return cv::Mat(data.width[0], data.height[0], CV_8U, &data.image[0]);
 }
 
 void Frame::setPermaRef(const std::unique_ptr<TrackingReference> &reference) {

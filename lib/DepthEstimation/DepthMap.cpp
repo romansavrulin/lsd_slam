@@ -353,8 +353,11 @@ void DepthMap::activateExistingKF(const Frame::SharedPtr &kf) {
 
 void DepthMap::initializefromStereo(const std::shared_ptr<ImageSet> &set) {
   // TODO Initalzie from stereo images
+  // cv::Mat imgL = set->getFrame(0)->getImage();
+  // cv::Mat imgR = set->getFrame(1)->getImage();
 
   initializeRandomly(set->refFrame());
+  initializeFromGTDepth(set->getFrame(1));
 }
 
 void DepthMap::initializeRandomly(const Frame::SharedPtr &new_frame) {
@@ -392,6 +395,7 @@ void DepthMap::initializeFromGTDepth(const Frame::SharedPtr &new_frame) {
   activeKeyFrameIsReactivated = false;
 
   const float *idepth = new_frame->idepth();
+  /* Does this do anything...?
 
   float averageGTIDepthSum = 0;
   int averageGTIDepthNum = 0;
@@ -404,6 +408,7 @@ void DepthMap::initializeFromGTDepth(const Frame::SharedPtr &new_frame) {
       }
     }
   }
+  */
 
   for (int y = 0; y < Conf().slamImageSize.height; y++) {
     for (int x = 0; x < Conf().slamImageSize.width; x++) {
@@ -1249,9 +1254,10 @@ void DepthMap::logPerformanceData() {
 // 	if(activeKeyFrame == 0) return 1;
 //
 // 	cv::Mat keyFrameImage(activeKeyFrame->height(), activeKeyFrame->width(),
-// CV_32F, const_cast<float*>(activeKeyFrameImageData())); 	cv::Mat keyFrameGray(
-// keyFrameImage.size(), CV_8UC1 ); 	keyFrameImage.convertTo(keyFrameGray,
-// CV_8UC1); 	cv::cvtColor(keyFrameGray, debugImageDepth, CV_GRAY2RGB);
+// CV_32F, const_cast<float*>(activeKeyFrameImageData())); 	cv::Mat
+// keyFrameGray( keyFrameImage.size(), CV_8UC1 );
+// keyFrameImage.convertTo(keyFrameGray, CV_8UC1);
+// cv::cvtColor(keyFrameGray, debugImageDepth, CV_GRAY2RGB);
 //
 // 	// debug plot & publish sparse version?
 // 	int refID = referenceFrameByID_offset;
@@ -1263,8 +1269,8 @@ void DepthMap::logPerformanceData() {
 // 			int idx = x + y*Conf().slamImageSize.width;
 //
 // 			if(currentDepthMap[idx].blacklisted < MIN_BLACKLIST &&
-// Conf().debugDisplay == 2) 				debugImageDepth.at<cv::Vec3b>(y,x) =
-// cv::Vec3b(0,0,255);
+// Conf().debugDisplay == 2)
+// debugImageDepth.at<cv::Vec3b>(y,x) = cv::Vec3b(0,0,255);
 //
 // 			if(!currentDepthMap[idx].isValid) continue;
 //
@@ -1783,7 +1789,7 @@ inline float DepthMap::doLineStereo(
     if (rand() % 5 == 0) {
       // if(rand()%500 == 0)
       //	printf("geo: %f, photo: %f, alpha: %f\n", sqrt(geoDispError),
-      //sqrt(photoDispError), alpha, sqrt(result_var));
+      // sqrt(photoDispError), alpha, sqrt(result_var));
 
       // int idDiff = (keyFrame->pyramidID - referenceFrame->id);
       // cv::Scalar color = cv::Scalar(0,0, 2*idDiff);// bw
@@ -1792,14 +1798,14 @@ inline float DepthMap::doLineStereo(
       // 255-sqrt(result_var)*2000, 0);// bw
 
       //			float eplLengthF =
-      //std::min((float)MIN_EPL_LENGTH_CROP,(float)eplLength); 			eplLengthF =
-      //std::max((float)MAX_EPL_LENGTH_CROP,(float)eplLengthF);
+      // std::min((float)MIN_EPL_LENGTH_CROP,(float)eplLength);
+      // eplLengthF = std::max((float)MAX_EPL_LENGTH_CROP,(float)eplLengthF);
       //
       //			float pixelDistFound =
-      //sqrtf((float)((pReal[0]/pReal[2] - best_match_x)*(pReal[0]/pReal[2] -
-      //best_match_x)
+      // sqrtf((float)((pReal[0]/pReal[2] - best_match_x)*(pReal[0]/pReal[2] -
+      // best_match_x)
       //					+ (pReal[1]/pReal[2] -
-      //best_match_y)*(pReal[1]/pReal[2] - best_match_y)));
+      // best_match_y)*(pReal[1]/pReal[2] - best_match_y)));
       //
       float fac = best_match_err /
                   ((float)MAX_ERROR_STEREO + sqrtf(gradAlongLine) * 20);

@@ -113,10 +113,11 @@ void SlamSystem::initialize(const std::shared_ptr<ImageSet> &set) {
   if (set->refFrame()->hasIDepthBeenSet()) {
     LOG(INFO) << "Using initial Depth estimate in first frame.";
     depthMap()->initializeFromGTDepth(set->refFrame());
+    depthMap()->initializeFromGTDepth(set->getFrame(1));
   } else {
     LOG(INFO) << "Doing Stereo initialization!";
-    depthMap()->initializeRandomly(set->refFrame());
-    // depthMap()->initializefromStereo(set);
+    // depthMap()->initializeRandomly(set->refFrame());
+    depthMap()->initializefromStereo(set);
   }
   updateDisplayDepthMap();
 
@@ -132,8 +133,8 @@ void SlamSystem::initialize(const std::shared_ptr<ImageSet> &set) {
 
 void SlamSystem::nextImage(unsigned int id, const cv::Mat &img,
                            const libvideoio::Camera &cam) {
-  cv::imshow("img", img);
-  cv::waitKey(1);
+  // cv::imshow("img", img);
+  // cv::waitKey(1);
   nextImageSet(std::make_shared<ImageSet>(id, img, cam));
 }
 
