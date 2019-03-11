@@ -41,7 +41,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 	: _trackingParent( nullptr ),
 		_id( frameId ),
 		_timestamp( timestamp ),
-		data( cam, sz ),
+		data( cam, sz, image ),
 		pose( new FramePoseStruct(*this) ),
 		referenceID ( -1 ),
 		referenceLevel( -1 ),
@@ -54,8 +54,6 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 		lastConstraintTrackedCamToWorld( Sim3() ),
 		isActive( false )
 {
-	data.setImage( image );
-
 	privateFrameAllocCount++;
 
 	LOG_IF(INFO, Conf().print.memoryDebugInfo )
@@ -68,7 +66,7 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 	: _trackingParent( nullptr ),
 		_id( frameId ),
 		_timestamp( timestamp ),
-		data( cam, sz ),
+		data( cam, sz, image ),
 		pose( new FramePoseStruct(*this) ),
 		referenceID ( -1 ),
 		referenceLevel( -1 ),
@@ -81,8 +79,6 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 		lastConstraintTrackedCamToWorld( Sim3() ),
 		isActive( false )
 {
-	data.setImage( image );
-
 	privateFrameAllocCount++;
 
 	LOG_IF(INFO, Conf().print.memoryDebugInfo )
@@ -130,7 +126,7 @@ void Frame::calculateMeanInformation()
 		maxGradients(0);
 
 	const float* idv = idepthVar(0);
-	const float* idv_max = idv + width(0)*height(0);
+	const float* idv_max = idv + area(0);
 	float sum = 0; int goodpx = 0;
 	for(const float* pt=idv; pt < idv_max; pt++)
 	{
@@ -152,13 +148,13 @@ void Frame::setDepth(const DepthMap::SharedPtr &depthMap )  //PixelHypothesis* n
 	boost::unique_lock<boost::mutex> lock2(buildMutex);
 
 	if(data.idepth[0] == 0)
-		data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+		data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(area(0));
 	if(data.idepthVar[0] == 0)
-		data.idepthVar[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+		data.idepthVar[0] = FrameMemory::getInstance().getFloatBuffer(area(0));
 
 	float* pyrIDepth = data.idepth[0];
 	float* pyrIDepthVar = data.idepthVar[0];
-	float* pyrIDepthMax = pyrIDepth + (data.width[0]*data.height[0]);
+	float* pyrIDepthMax = pyrIDepth + (area(0));
 
 	DepthMapPixelHypothesis *newDepth = depthMap->hypothesisAt(0,0);
 
@@ -205,15 +201,15 @@ void Frame::setDepthFromGroundTruth(const float* depth, float cov_scale)
 
 	boost::unique_lock<boost::mutex> lock2(buildMutex);
 	if(data.idepth[0] == 0)
-		data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+		data.idepth[0] = FrameMemory::getInstance().getFloatBuffer(area(0));
 	if(data.idepthVar[0] == 0)
-		data.idepthVar[0] = FrameMemory::getInstance().getFloatBuffer(data.width[0]*data.height[0]);
+		data.idepthVar[0] = FrameMemory::getInstance().getFloatBuffer(area(0));
 
 	float* pyrIDepth = data.idepth[0];
 	float* pyrIDepthVar = data.idepthVar[0];
 
-	int width0 = data.width[0];
-	int height0 = data.height[0];
+	const int width0 = width(0);
+	const int height0 = height(0);
 
 	for(int y=0;y<height0;y++)
 	{
@@ -365,14 +361,14 @@ void Frame::buildImage(int level)
 
 	if(data.imageValid[level]) return;
 
-	int width = data.width[level - 1];
-	int height = data.height[level - 1];
+	const int width = imgSize(level-1).width;
+	const int height = imgSize(level-1).height;
 	const float* source = data.image[level - 1];
 
 	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE Image lvl %d for frame %d,  %f x %f", level, id(), width/2.0, height/2.0);
 
 	if (data.image[level] == 0)
-		data.image[level] = FrameMemory::getInstance().getFloatBuffer(data.width[level] * data.height[level]);
+		data.image[level] = FrameMemory::getInstance().getFloatBuffer(area(level));
 	float* dest = data.image[level];
 
 #if defined(FOOBAR)
@@ -518,8 +514,8 @@ void Frame::buildGradients(int level)
 
 	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE Gradients lvl %d for frame %d", level, id());
 
-	int width = data.width[level];
-	int height = data.height[level];
+	const int width = imgSize(level).width;
+	const int height = imgSize(level).height;
 	if(data.gradients[level] == 0)
 		data.gradients[level] = (Eigen::Vector4f*)FrameMemory::getInstance().getBuffer(sizeof(Eigen::Vector4f) * width * height);
 	const float* img_pt = data.image[level] + width;
@@ -563,8 +559,8 @@ void Frame::buildMaxGradients(int level)
 
 	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE AbsGrad lvl %d for frame %d", level, id());
 
-	int width = data.width[level];
-	int height = data.height[level];
+	const int width = imgSize(level).width;
+	const int height = imgSize(level).height;
 	if (data.maxGradients[level] == 0)
 		data.maxGradients[level] = FrameMemory::getInstance().getFloatBuffer(width * height);
 
@@ -659,15 +655,15 @@ void Frame::buildIDepthAndIDepthVar(int level)
 
 	LOGF_IF(DEBUG, Conf().print.frameBuildDebugInfo,"CREATE IDepth lvl %d for frame %d", level, id());
 
-	int width = data.width[level];
-	int height = data.height[level];
+	const int width = imgSize(level).width;
+	const int height = imgSize(level).height;
 
 	if (data.idepth[level] == 0)
 		data.idepth[level] = FrameMemory::getInstance().getFloatBuffer(width * height);
 	if (data.idepthVar[level] == 0)
 		data.idepthVar[level] = FrameMemory::getInstance().getFloatBuffer(width * height);
 
-	int sw = data.width[level - 1];
+	int sw = imgSize(level - 1).width;
 
 	const float* idepthSource = data.idepth[level - 1];
 	const float* idepthVarSource = data.idepthVar[level - 1];

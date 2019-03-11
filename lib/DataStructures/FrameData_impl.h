@@ -3,18 +3,55 @@
 
 namespace lsd_slam {
 
+	template< int __LEVELS >
+	FrameData<__LEVELS>::FrameData( const Camera &cam, const ImageSize &slamImageSize, const unsigned char *img )
+		:	hasIDepthBeenSet( false ),
+		validity_reAct( 0 ),
+		idepthVar_reAct( 0 ),
+		idepth_reAct( 0 ),
+		refPixelWasGood( 0 )
+	{
+		commonInitialization( cam, slamImageSize );
+
+		CHECK( (imgSize[0].width & (PYRAMID_DIVISOR-1)) == 0 ) << "Image width " << imgSize[0].width << " isn't divisible by " << PYRAMID_DIVISOR;
+	  CHECK( (imgSize[0].height & (PYRAMID_DIVISOR-1)) == 0 ) << "Image height " << imgSize[0].width << " isn't divisible by " << PYRAMID_DIVISOR;
+
+		image[0] = FrameMemory::getInstance().getFloatBuffer(imgSize[0].area());
+
+		float *pt = image[0];
+		for(unsigned int i = 0; i < imgSize[0].area(); ++i, ++pt ) {
+					 *pt = img[i];
+		}
+		imageValid[0] = true;
+	}
+
+
 template< int __LEVELS >
-FrameData<__LEVELS>::FrameData( const Camera &cam, const ImageSize &slamImageSize )
-	:	hasIDepthBeenSet( false )
+FrameData<__LEVELS>::FrameData( const Camera &cam, const ImageSize &slamImageSize, const float *img )
+	:	hasIDepthBeenSet( false ),
+	validity_reAct( 0 ),
+	idepthVar_reAct( 0 ),
+	idepth_reAct( 0 ),
+	refPixelWasGood( 0 )
 {
+	commonInitialization( cam, slamImageSize );
 
+  CHECK( (imgSize[0].width & (PYRAMID_DIVISOR-1)) == 0 ) << "Image width " << imgSize[0].width << " isn't divisible by " << PYRAMID_DIVISOR;
+  CHECK( (imgSize[0].height & (PYRAMID_DIVISOR-1)) == 0 ) << "Image height " << imgSize[0].width << " isn't divisible by " << PYRAMID_DIVISOR;
+
+	image[0] = FrameMemory::getInstance().getFloatBuffer( imgSize[0].area() );
+	memcpy(image[0], img, imgSize[0].area() * sizeof(float));
+	imageValid[0] = true;
+}
+
+template< int __LEVELS >
+void FrameData<__LEVELS>::commonInitialization( const Camera &cam, const ImageSize &slamImageSize )
+{
 	camera[0] = cam;
-
 
 	for (int level = 0; level < __LEVELS; ++ level)
 	{
-		width[level] = slamImageSize.width >> level;
-		height[level] = slamImageSize.height >> level;
+		imgSize[level] = ImageSize( slamImageSize.width >> level, slamImageSize.height >> level );
 
 		imageValid[level] = false;
 		gradientsValid[level] = false;
@@ -31,22 +68,10 @@ FrameData<__LEVELS>::FrameData( const Camera &cam, const ImageSize &slamImageSiz
 
 // 		refIDValid[level] = false;
 
-		if (level > 0)
-		{
-			camera[level] = camera[0].scale( 1.0f / (int)(1<<level) );
-		}
+		if (level > 0) camera[level] = camera[0].scale( 1.0f / (int)(1<<level) );
 	}
-
-	validity_reAct = 0;
-	idepthVar_reAct = 0;
-	idepth_reAct = 0;
-
-	refPixelWasGood = 0;
-
-
-  CHECK( (width[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image width " << width[0] << " isn't divisible by " << PYRAMID_DIVISOR;
-  CHECK( (height[0] & (PYRAMID_DIVISOR-1)) == 0 ) << "Image height " << height[0] << " isn't divisible by " << PYRAMID_DIVISOR;
 }
+
 
 template< int __LEVELS >
 FrameData<__LEVELS>::~FrameData() {
@@ -63,25 +88,6 @@ FrameData<__LEVELS>::~FrameData() {
   FrameMemory::getInstance().returnBuffer((float*)validity_reAct);
   FrameMemory::getInstance().returnBuffer(idepth_reAct);
   FrameMemory::getInstance().returnBuffer(idepthVar_reAct);
-}
-
-template< int __LEVELS >
-void FrameData<__LEVELS>::setImage( const unsigned char *img ) {
-  image[0] = FrameMemory::getInstance().getFloatBuffer(width[0]*height[0]);
-
-	float *pt = image[0];
-	for(unsigned int i = 0; i < width[0]*height[0]; ++i, ++pt ) {
-	       *pt = img[i];
-	}
-
-	imageValid[0] = true;
-}
-
-template< int __LEVELS >
-void FrameData<__LEVELS>::setImage( const float *img ) {
-  image[0] = FrameMemory::getInstance().getFloatBuffer(width[0]*height[0]);
-	memcpy(image[0], img, width[0]*height[0] * sizeof(float));
-	imageValid[0] = true;
 }
 
 }

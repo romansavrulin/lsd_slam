@@ -94,11 +94,13 @@ public:
 		inline _rtype _name( int level = 0 ) const \
 			{ return data.camera[level]._name; }
 
-	DATA_LEVEL_READER( int, width )
-	DATA_LEVEL_READER( int, height )
-	DATA_LEVEL_READER( const Camera &, camera )
+	inline const ImageSize &imgSize( int i=0 ) const 	{ return data.imgSize[i]; }
+	inline int width( int i=0 ) const	 								{ return data.imgSize[i].width; }
+	inline int height( int i=0 ) const 								{ return data.imgSize[i].height; }
+	inline int area( int i=0 ) const 	 								{ return data.imgSize[i].area(); }
 
-	inline int area( int level = 0 ) { return width(level) * height(level); }
+
+	DATA_LEVEL_READER( const Camera &, camera )
 
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, K )
 	DATA_LEVEL_CAMERA_READER( const Eigen::Matrix3f&, Kinv )
@@ -329,8 +331,7 @@ inline const float* Frame::idepthVar(int level)
 		LOG(WARNING) << "Frame " << id() << "; idepthVar(): idepth has not been set yet!";
 		return nullptr;
 	}
-	if (! data.idepthVarValid[level])
-		require(IDEPTH_VAR, level);
+	if (! data.idepthVarValid[level]) require(IDEPTH_VAR, level);
 	return data.idepthVar[level];
 }
 
@@ -343,8 +344,8 @@ inline bool* Frame::refPixelWasGood()
 
 		if(data.refPixelWasGood == 0)
 		{
-			int width = data.width[SE3TRACKING_MIN_LEVEL];
-			int height = data.height[SE3TRACKING_MIN_LEVEL];
+			const int width = data.imgSize[SE3TRACKING_MIN_LEVEL].width;
+			const int height = data.imgSize[SE3TRACKING_MIN_LEVEL].height;
 			data.refPixelWasGood = (bool*)FrameMemory::getInstance().getBuffer(sizeof(bool) * width * height);
 
 			memset(data.refPixelWasGood, 0xFFFFFFFF, sizeof(bool) * (width * height));

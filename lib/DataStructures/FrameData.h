@@ -41,14 +41,13 @@ namespace lsd_slam {
 		FrameData() = delete;
 		FrameData( const FrameData & ) = delete;
 
-		FrameData( const Camera &camera, const ImageSize &slamImageSize );
+		FrameData( const Camera &camera, const ImageSize &slamImageSize, const unsigned char *data );
+    FrameData( const Camera &camera, const ImageSize &slamImageSize, const float *data );
+
     ~FrameData();
 
-    void setImage( const unsigned char *img );
-    void setImage( const float *img );
-
-		int width[__LEVELS], height[__LEVELS];
-
+		//int width[__LEVELS], height[__LEVELS];
+    ImageSize imgSize[__LEVELS];
 		Camera camera[__LEVELS];
 
 		// Eigen::Matrix3f K[__LEVELS], KInv[__LEVELS];
@@ -87,6 +86,11 @@ namespace lsd_slam {
 		// data from initial tracking, indicating which pixels in the reference frame ware good or not.
 		// deleted as soon as frame is used for mapping.
 		bool* refPixelWasGood;
+
+
+  protected:
+
+    void commonInitialization( const Camera &cam, const ImageSize &slamImageSize );
 	};
 
 }
