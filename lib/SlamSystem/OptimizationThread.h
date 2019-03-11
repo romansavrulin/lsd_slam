@@ -20,8 +20,7 @@ public:
 
 	// TODO.  Don't like passing reference to Mutex.  Another way to do it?
 
-	OptimizationThread( SlamSystem &system,
-											bool idle );
+	OptimizationThread( SlamSystem &system, bool threaded );
 	~OptimizationThread();
 
 	// == Public interfaces to kick off events ==

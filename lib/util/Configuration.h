@@ -36,6 +36,7 @@ public:
 
   enum { NO_STEREO = 0, STEREO_ZED } doDepth;
 
+  // If false, system will block while each new image is tracked and mapped
   bool runRealTime;
 
   bool stopOnFailedRead;

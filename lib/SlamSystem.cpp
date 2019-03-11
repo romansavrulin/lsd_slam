@@ -60,10 +60,11 @@ SlamSystem::SlamSystem( )
 
 	// Because some of these rely on Conf(), need to explicitly call after
  	// static initialization.  Is this true?
-	optThread.reset( new OptimizationThread( *this, Conf().SLAMEnabled ) );
-	mapThread.reset( new MappingThread( *this ) );
-	constraintThread.reset( new ConstraintSearchThread( *this, Conf().SLAMEnabled ) );
-	trackingThread.reset( new TrackingThread( *this ) );
+	const bool threaded = Conf().SLAMEnabled && Conf().runRealTime;
+	optThread.reset( new OptimizationThread( *this, threaded ) );
+	mapThread.reset( new MappingThread( *this, threaded ) );
+	constraintThread.reset( new ConstraintSearchThread( *this, threaded ) );
+	trackingThread.reset( new TrackingThread( *this, threaded ) );
 
 	timeLastUpdate.start();
 }

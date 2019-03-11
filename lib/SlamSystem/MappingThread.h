@@ -26,14 +26,18 @@ namespace lsd_slam {
 class MappingThread {
 public:
 
-	MappingThread( SlamSystem &system );
+	MappingThread( SlamSystem &system, bool threaded );
 	~MappingThread();
 
 	//=== Callbacks into the thread ===
 	void pushDoIteration()
 	{
-                //if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
-                if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIterationSet, this ));
+	  //if( _thread ) _thread->send( std::bind( &MappingThread::doMappingIteration, this ));
+	  if( _thread ) {
+			_thread->send( std::bind( &MappingThread::doMappingIterationSet, this ));
+		} else {
+			doMappingIterationSet();
+		}
 	}
         /* REDUNDANT
 	void pushUnmappedTrackedFrame( const Frame::SharedPtr &frame )
@@ -47,17 +51,18 @@ public:
 	}
         */
 
-        void pushUnmappedTrackedSet (const ImageSet::SharedPtr &set)
-        {
-            {
-                std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
-                unmappedTrackedSets.push_back( set );
-            }
+	void pushUnmappedTrackedSet (const ImageSet::SharedPtr &set)
+	{
+	    {
+	        std::lock_guard<std::mutex> lock(unmappedTrackedFramesMutex );
+	        unmappedTrackedSets.push_back( set );
+	    }
 
-            if( _thread ) _thread->send( std::bind( &MappingThread::callbackUnmappedTrackedSet, this ));
-
-
-        }
+	    if( _thread )
+				_thread->send( std::bind( &MappingThread::callbackUnmappedTrackedSet, this ));
+			else
+				callbackUnmappedTrackedSet();
+	}
 
 	void mergeOptimizationUpdate( void )
 	{
@@ -82,26 +87,26 @@ public:
 	}
         */
 
-        void createNewImageSet( const ImageSet::SharedPtr &set )
-        {
-                if( newImageSetPending() )
-                {
-                    LOG(WARNING) << "Asked to make " << set->id() << " a keyframe when " << _newImageSet()->id() << " is already pending";
-                }
-                _newImageSet = set;
+	void createNewImageSet( const ImageSet::SharedPtr &set )
+	{
+	        if( newImageSetPending() )
+	        {
+	            LOG(WARNING) << "Asked to make " << set->id() << " a keyframe when " << _newImageSet()->id() << " is already pending";
+	        }
+	        _newImageSet = set;
 
-        }
+	}
 
-        bool newImageSetPending( void )
-        {
-                        return (bool)(_newImageSet.get());
-        }
+	bool newImageSetPending( void )
+	{
+	                return (bool)(_newImageSet.get());
+	}
 
 	// SET & READ EVERYWHERE
 	// std::mutex currentKeyFrameMutex;
 
 	std::deque< Frame::SharedPtr > unmappedTrackedFrames;
-        std::deque< ImageSet::SharedPtr > unmappedTrackedSets;
+  std::deque< ImageSet::SharedPtr > unmappedTrackedSets;
 
 	std::mutex unmappedTrackedFramesMutex;
 	ThreadSynchronizer trackedFramesMapped;
@@ -117,25 +122,25 @@ private:
 
 	SlamSystem &_system;
 
-        MutexObject< ImageSet::SharedPtr > _newImageSet;
+  MutexObject< ImageSet::SharedPtr > _newImageSet;
 	MutexObject< Frame::SharedPtr > _newKeyFrame;
 
 	// == Thread callbacks ==
-        //REDUNDANT void callbackUnmappedTrackedFrames( void );
-        void callbackUnmappedTrackedSet ( void );
+  //REDUNDANT void callbackUnmappedTrackedFrames( void );
+  void callbackUnmappedTrackedSet ( void );
 	//void callbackCreateNewKeyFrame( std::shared_ptr<Frame> frame );
 
 	// == Local functions ==
 
-        //REDUNDANT bool doMappingIteration();
-        bool doMappingIterationSet();
+  //REDUNDANT bool doMappingIteration();
+  bool doMappingIterationSet();
 
 	void callbackMergeOptimizationOffset();
 
 	// == Local functions ==
 
-        //REDUNDANT bool updateKeyframe();
-        bool updateImageSet();
+	//REDUNDANT bool updateKeyframe();
+	bool updateImageSet();
 
 	void addTimingSamples();
 
