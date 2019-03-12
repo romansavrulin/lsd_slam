@@ -50,13 +50,7 @@ namespace lsd_slam
 #endif
 
 
-#if defined(NDEBUG)
-	#define enablePrintDebugInfo false
-#else
-	#define enablePrintDebugInfo true
-#endif
-
-/** ============== constants for validity handeling ======================= */
+/** ============== constants for validity handling ======================= */
 
 // validity can take values between 0 and X, where X depends on the abs. gradient at that location:
 // it is calculated as VALIDITY_COUNTER_MAX + (absGrad/255)*VALIDITY_COUNTER_MAX_VARIABLE
@@ -77,7 +71,7 @@ namespace lsd_slam
 
 
 
-/** ============== Depth Variance Handeling ======================= */
+/** ============== Depth Variance Handling ======================= */
 #define SUCC_VAR_INC_FAC (1.01f) // before an ekf-update, the variance is increased by this factor.
 #define FAIL_VAR_INC_FAC 1.1f // after a failed stereo observation, the variance is increased by this factor.
 #define MAX_VAR (0.5f*0.5f) // initial variance on creation - if variance becomes larter than this, hypothesis is removed.
@@ -217,12 +211,6 @@ extern bool useSubpixelStereo;
 extern bool multiThreading;
 extern bool useAffineLightningEstimation;
 
-extern float freeDebugParam1;
-extern float freeDebugParam2;
-extern float freeDebugParam3;
-extern float freeDebugParam4;
-extern float freeDebugParam5;
-
 
 extern float KFDistWeight;
 extern float KFUsageWeight;
@@ -347,55 +335,6 @@ public:
 	}
 };
 
-template <int __LEVELS>
-class DenseDepthTrackerSettings
-{
-public:
-	inline DenseDepthTrackerSettings()
-	{
-		// Set default settings
-		if (PYRAMID_LEVELS > 6)
-			printf("WARNING: Sim3Tracker(): default settings are intended for a maximum of 6 levels!");
-
-		lambdaSuccessFac = 0.5f;
-		lambdaFailFac = 2.0f;
-
-		const float stepSizeMinc[6] = {1e-8, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8};
-		const int maxIterations[6] = {5, 20, 50, 100, 100, 100};
-
-
-		for (int level = 0; level < __LEVELS; ++ level)
-		{
-			lambdaInitial[level] = 0;
-			stepSizeMin[level] = stepSizeMinc[level];
-			convergenceEps[level] = 0.999f;
-			maxItsPerLvl[level] = maxIterations[level];
-		}
-
-		lambdaInitialTestTrack = 0;
-		stepSizeMinTestTrack = 1e-3;
-		convergenceEpsTestTrack = 0.98;
-		maxItsTestTrack = 5;
-
-		var_weight = 1.0;
-		huber_d = 3;
-	}
-
-	float lambdaSuccessFac;
-	float lambdaFailFac;
-	float lambdaInitial[__LEVELS];
-	float stepSizeMin[__LEVELS];
-	float convergenceEps[__LEVELS];
-	int maxItsPerLvl[__LEVELS];
-
-	float lambdaInitialTestTrack;
-	float stepSizeMinTestTrack;
-	float convergenceEpsTestTrack;
-	float maxItsTestTrack;
-
-	float huber_d;
-	float var_weight;
-};
 
 extern RunningStats runningStats;
 

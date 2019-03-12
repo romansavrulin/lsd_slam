@@ -57,13 +57,6 @@ bool plotSim3TrackingIterationInfo = false;
 bool plotStereoImages = false;
 bool plotTracking = false;
 
-
-float freeDebugParam1 = 1;
-float freeDebugParam2 = 1;
-float freeDebugParam3 = 1;
-float freeDebugParam4 = 1;
-float freeDebugParam5 = 1;
-
 float KFUsageWeight = 4;
 float KFDistWeight = 3;
 
