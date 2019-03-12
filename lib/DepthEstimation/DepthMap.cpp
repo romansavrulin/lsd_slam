@@ -1756,7 +1756,7 @@ inline float DepthMap::doLineStereo(
 			best_match_x -= d*incx;
 			best_match_y -= d*incy;
 			best_match_err = best_match_err - 2*d*gradPre_this - (gradPre_pre - gradPre_this)*d*d;
-			if(enablePrintDebugInfo) stats->num_stereo_interpPre++;
+			stats->num_stereo_interpPre++;
 			didSubpixel = true;
 
 		}
@@ -1771,7 +1771,7 @@ inline float DepthMap::doLineStereo(
 		}
 		else
 		{
-			if(enablePrintDebugInfo) stats->num_stereo_interpNone++;
+			stats->num_stereo_interpNone++;
 		}
 	}
 
