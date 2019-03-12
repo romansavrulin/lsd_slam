@@ -21,6 +21,7 @@ namespace lsd_slam {
 
   class Configuration;
 
+  // Accessor for the global instance of Configuration...
   Configuration &Conf();
 
 
@@ -48,8 +49,6 @@ public:
 
   // settings variables
   // controlled via keystrokes
- bool autoRun;
- bool autoRunWithinFrame;
  int  debugDisplay;
  bool displayDepthMap;
  bool onSceenInfoDisplay;
@@ -83,6 +82,7 @@ public:
  } print;
 
 private:
+  // Private constructor.  User shouldn't make their own copy of Configuration
   Configuration();
 
 

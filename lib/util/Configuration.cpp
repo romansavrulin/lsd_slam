@@ -19,9 +19,6 @@ namespace lsd_slam {
       doMapping( true ),
       continuousPCOutput( true ),
 
-      autoRun( true ),
-      autoRunWithinFrame( true ),
-
       debugDisplay( 0 ),
 
       onSceenInfoDisplay( true ),
