@@ -120,18 +120,16 @@ void SlamSystem::nextImage( unsigned int id, const cv::Mat &img, const libvideoi
 	nextImageSet( std::make_shared<ImageSet>(id, img, cam) );
 }
 
+void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
+  if (!_initialized) {
+    _mapThread->createFirstKeyFrame(set->refFrame());
+    _initialized = true;
+    return;
+  }
 
-void SlamSystem::nextImageSet( const std::shared_ptr<ImageSet> &set )
-{
-	 if( !_initialized ) {
-		_mapThread->createFirstKeyFrame( set->refFrame() );
-		_initialized = true;
-	 	return;
-	}
+  _trackingThread->doTrackSet(set);
 
-	_trackingThread->doTrackSet( set );
-
-	logPerformanceData();
+  logPerformanceData();
 }
 
 //=== Keyframe maintenance functions ====
