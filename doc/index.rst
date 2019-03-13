@@ -12,7 +12,7 @@ Jakob Engel's `repo <https://github.com/tum-vision/lsd_slam>`_ based on
 his `PhD research <https://vision.in.tum.de/research/vslam/lsdslam>`_.
 As such, this codebase still contains a large portion of Jakob's original
 code, particularly for the core depth mapping and tracking, but has been
-re-architected significantly for readability and performance.
+re-engineered significantly for readability and performance.
 
 
 
@@ -21,6 +21,7 @@ re-architected significantly for readability and performance.
    :maxdepth: 2
    :caption: Contents:
 
+   self
    architecture
    api/lsdlsam_root
 
