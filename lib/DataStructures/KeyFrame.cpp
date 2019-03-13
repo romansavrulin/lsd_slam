@@ -3,6 +3,9 @@
 #include "KeyFrame.h"
 #include "Frame.h"
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 namespace lsd_slam {
 
 //== Static functions for creation
@@ -17,8 +20,8 @@ KeyFrame::SharedPtr KeyFrame::Create(const Frame::SharedPtr &frame) {
 
 KeyFrame::SharedPtr KeyFrame::Create(const ImageSet::SharedPtr &set) {
   KeyFrame::SharedPtr kf(new KeyFrame(set));
-
-  kf->depthMap()->initializeFromFrame();
+  LOG(INFO) << "Creating New Key Frame";
+  kf->depthMap()->initializeFromSet();
   kf->syncDepthMapToFrame();
 
   return kf;
@@ -27,6 +30,7 @@ KeyFrame::SharedPtr KeyFrame::Create(const ImageSet::SharedPtr &set) {
 KeyFrame::SharedPtr
 KeyFrame::PropagateAndCreate(const KeyFrame::SharedPtr &other,
                              const Frame::SharedPtr &frame) {
+  LOG(INFO) << "Propagate Key Frame";
   KeyFrame::SharedPtr kf(new KeyFrame(frame));
 
   float rescaleFactor = 1.0;

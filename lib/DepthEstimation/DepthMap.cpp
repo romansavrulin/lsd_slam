@@ -23,7 +23,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+
 #include <stdio.h>
 
 #include <g3log/g3log.hpp>
@@ -52,8 +54,8 @@ DepthMap::DepthMap(const Frame::SharedPtr &frame)
 }
 
 DepthMap::DepthMap(const ImageSet::SharedPtr &set)
-    : _perf(), _debugImages(Conf().slamImageSize), _set(set), _frame(nullptr),
-      activeKeyFrameIsReactivated(false) {
+    : _perf(), _debugImages(Conf().slamImageSize), _set(set),
+      _frame(set->refFrame()), activeKeyFrameIsReactivated(false) {
   const size_t imgArea(Conf().slamImageSize.area());
 
   otherDepthMap = new DepthMapPixelHypothesis[imgArea];
@@ -123,17 +125,10 @@ void DepthMap::initializeFromFrame() {
   }
 }
 
-void DepthMap::initializeFromSet(const ImageSet::SharedPtr &set) {
-
-  if (set->refFrame()->hasIDepthBeenSet()) {
-    LOG(INFO) << "Using initial Depth estimate in first frame.";
-    initializeFromGTDepth();
-  } else {
-    LOG(INFO) << "Doing Stereo initialization!";
-    initializeRandomly();
-    // depthMap()->initializefromStereo(set);
-  }
-}
+void DepthMap::initializeFromSet() {
+  CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
+  initializeFromStereo();
+} // namespace lsd_slam
 
 void DepthMap::initializeRandomly() {
   // activeKeyFramelock = new_frame->getActiveLock();
@@ -157,6 +152,19 @@ void DepthMap::initializeRandomly() {
       }
     }
   }
+}
+
+void DepthMap::initializeFromStereo() {
+  // TODO Initialize from stereo images
+  cv::Mat imgL = _set->getFrame(0)->getCvImage();
+  cv::Mat imgR = _set->getFrame(1)->getCvImage();
+
+  // cv::imshow("img", imgR);
+  // cv::waitKey(0);
+
+  initializeRandomly();
+  // TODO.  Need to fix.
+  // initializeFromGTDepth(set->getFrame(1));
 }
 
 void DepthMap::initializeFromGTDepth() {
@@ -218,17 +226,6 @@ void DepthMap::initializeFromGTDepth() {
   //
   //
   // activeKeyFrame->setDepth(currentDepthMap);
-}
-
-void DepthMap::initializeFromStereo() { // const std::shared_ptr<ImageSet> &set)
-                                        // {
-  // TODO Initialize from stereo images
-  // cv::Mat imgL = set->getFrame(0)->getImage();
-  // cv::Mat imgR = set->getFrame(1)->getImage();
-  CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
-  initializeRandomly();
-  // TODO.  Need to fix.
-  // initializeFromGTDepth(set->getFrame(1));
 }
 
 //=== "Public interface" functions ==

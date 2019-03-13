@@ -33,6 +33,8 @@
 #include "DataStructures/ImageSet.h"
 #include "DepthMapDebugImages.h"
 
+#include <opencv2/calib3d.hpp>
+
 namespace lsd_slam {
 
 class DepthMapPixelHypothesis;
@@ -91,7 +93,7 @@ public:
 
   //== Initializers, required only when propagating from a previous keyframe
   void initializeFromFrame();
-  void initializeFromSet(const ImageSet::SharedPtr &set);
+  void initializeFromSet();
   void initializeFromGTDepth();
   void initializeFromStereo();
   void initializeRandomly();
