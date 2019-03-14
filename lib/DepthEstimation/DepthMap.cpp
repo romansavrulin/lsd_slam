@@ -159,8 +159,8 @@ void DepthMap::initializeFromStereo() {
   cv::Mat imgL = _set->getFrame(0)->getCvImage();
   cv::Mat imgR = _set->getFrame(1)->getCvImage();
 
-  // cv::imshow("img", imgR);
-  // cv::waitKey(0);
+  cv::imshow("img", imgR);
+  cv::waitKey(1);
 
   initializeRandomly();
   // TODO.  Need to fix.
