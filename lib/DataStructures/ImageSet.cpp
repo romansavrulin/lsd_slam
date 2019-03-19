@@ -33,5 +33,12 @@ void ImageSet::pushbackFrame(const cv::Mat &img,
   _frames.push_back(
       std::make_shared<Frame>(_frameId, cam, img.size(), 0.0, img.data));
 }
+void ImageSet::setDisparityMap(const unsigned char *disparityMap,
+                               float disparityMapSize) {
+  float *pt = _disparityMap;
+  for (unsigned int i = 0; i < disparityMapSize; ++i, ++pt) {
+    *pt = disparityMap[i];
+  }
+}
 
 } // namespace lsd_slam
