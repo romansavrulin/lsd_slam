@@ -126,9 +126,51 @@ void DepthMap::initializeFromFrame() {
 }
 
 void DepthMap::initializeFromSet() {
+
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
-  initializeFromStereo();
-} // namespace lsd_slam
+  // initializeFromStereo();
+  initializeRandomly();
+}
+
+void DepthMap::initializeFromStereo() {
+  // TODO Initialize from stereo images
+  boost::shared_lock_guard<boost::shared_mutex> set_lock(_set->setMutex);
+  int iDepthSize;
+
+  iDepthSize = _set->disparity.iDepthSize;
+  std::cout << iDepthSize << std::endl;
+  if (iDepthSize == Conf().slamImageSize.height * Conf().slamImageSize.width) {
+
+    float *iDepth = _set->disparity.iDepth;
+    uint8_t *iDepthValid = _set->disparity.iDepthValid;
+
+    // float *pt = iDepth;
+
+    activeKeyFrameIsReactivated = false;
+
+    const float *maxGradients = frame()->maxGradients();
+
+    for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) {
+      for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
+        ++iDepth;
+        ++iDepthValid;
+        int idx = x + y * Conf().slamImageSize.width;
+        if (iDepthValid) {
+          // float idepth = *iDepth;
+          float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
+          currentDepthMap[idx] = DepthMapPixelHypothesis(
+              idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
+              20, Conf().debugDisplay);
+        } else {
+          currentDepthMap[idx].isValid = false;
+          currentDepthMap[idx].blacklisted = 0;
+        }
+      }
+    }
+  } else {
+    // initializeRandomly();
+  }
+}
 
 void DepthMap::initializeRandomly() {
   // activeKeyFramelock = new_frame->getActiveLock();
@@ -152,22 +194,6 @@ void DepthMap::initializeRandomly() {
       }
     }
   }
-}
-
-void DepthMap::initializeFromStereo() {
-  // TODO Initialize from stereo images
-  /*
-  cv::Mat imgL = _set->getFrame(0)->getCvImage();
-  cv::Mat imgR = _set->getFrame(1)->getCvImage();
-
-  cv::imshow("img", imgR);
-  cv::waitKey(1);
-  */
-  unsigned char *depthMapData = _set->_disparityMap->data;
-
-  initializeRandomly();
-  // TODO.  Need to fix.
-  // initializeFromGTDepth(set->getFrame(1));
 }
 
 void DepthMap::initializeFromGTDepth() {

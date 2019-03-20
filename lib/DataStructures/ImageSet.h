@@ -30,18 +30,16 @@ namespace lsd_slam {
 // Relies on the lazy-initialize nature of Frame to be efficient
 class ImageSet {
 public:
-  struct disparityMap {
-    unsigned char *data;
-    float f;
-    float T;
-    unsigned int width;
-    unsigned int height;
-    disparityMap(unsigned char *_data, float _f, float _T, unsigned int _width,
-                 unsigned int _height)
-        : data(_data), f(_f), T(_T), width(_width), height(_height) {}
+  struct Disparity {
+    float *iDepth;
+    uint8_t *iDepthValid;
+    int iDepthSize = 0;
+    // Disparity(float *_iDepth, bool _iDepthValid, int _iDepthSize)
+    //    : iDepth(_iDepth), iDepthValid(_iDepthValid), iDepthSize(_iDepthSize)
+    //    {}
   };
-
   ImageSet() = delete;
+
   ImageSet(const ImageSet &) = delete;
 
   ImageSet(unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam);
@@ -57,13 +55,14 @@ public:
   }
 
   void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam);
-  void setDisparityMap(unsigned char *data, float f, float T, int width,
-                       int height);
+  void setDisparityMap(float *_iDepth, uint8_t *_iDepthValid, int _size);
   Sim3 getRefTransformation() { return _frames[_refFrame]->getCamToWorld(); }
   void setReferenceFrame(const unsigned int &frameNum) { _refFrame = frameNum; }
   unsigned int id() { return _frameId; }
 
-  disparityMap *_disparityMap;
+  Disparity disparity;
+
+  boost::shared_mutex setMutex;
 
   typedef std::shared_ptr<ImageSet> SharedPtr;
 
