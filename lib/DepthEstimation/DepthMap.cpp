@@ -163,6 +163,8 @@ void DepthMap::initializeFromStereo() {
   cv::imshow("img", imgR);
   cv::waitKey(1);
   */
+  unsigned char *depthMapData = _set->_disparityMap->data;
+
   initializeRandomly();
   // TODO.  Need to fix.
   // initializeFromGTDepth(set->getFrame(1));
