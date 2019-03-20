@@ -46,8 +46,7 @@ public:
   }
 
   void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam);
-  void setDisparityMap(const unsigned char *disparityMap,
-                       float disparityMapSize);
+  void setDisparityMap(unsigned char *data, float f, float T);
   Sim3 getRefTransformation() { return _frames[_refFrame]->getCamToWorld(); }
   void setReferenceFrame(const unsigned int &frameNum) { _refFrame = frameNum; }
   unsigned int id() { return _frameId; }
@@ -55,11 +54,19 @@ public:
   typedef std::shared_ptr<ImageSet> SharedPtr;
 
 private:
+  struct disparityMap {
+    unsigned char *data;
+    float f;
+    float T;
+    disparityMap(unsigned char *_data, float _f, float _T)
+        : data(_data), f(_f), T(_T) {}
+  };
+
   unsigned int _refFrame;
   unsigned int _frameId;
   std::vector<Frame::SharedPtr> _frames;
   std::vector<Sophus::SE3d> _se3FromFirst;
-  float *_disparityMap;
+  // float *_disparityMap;
 };
 
 } // namespace lsd_slam
