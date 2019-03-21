@@ -128,8 +128,8 @@ void DepthMap::initializeFromFrame() {
 void DepthMap::initializeFromSet() {
 
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
-  // initializeFromStereo();
-  initializeRandomly();
+  initializeFromStereo();
+  // initializeRandomly();
 }
 
 void DepthMap::initializeFromStereo() {
@@ -138,26 +138,23 @@ void DepthMap::initializeFromStereo() {
   int iDepthSize;
 
   iDepthSize = _set->disparity.iDepthSize;
-  std::cout << iDepthSize << std::endl;
   if (iDepthSize == Conf().slamImageSize.height * Conf().slamImageSize.width) {
 
     float *iDepth = _set->disparity.iDepth;
     uint8_t *iDepthValid = _set->disparity.iDepthValid;
 
-    // float *pt = iDepth;
-
     activeKeyFrameIsReactivated = false;
 
     const float *maxGradients = frame()->maxGradients();
-
+    std::vector<float> idepth_vector;
     for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) {
       for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
         ++iDepth;
         ++iDepthValid;
+        bool valid = *iDepthValid;
         int idx = x + y * Conf().slamImageSize.width;
-        if (iDepthValid) {
-          // float idepth = *iDepth;
-          float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
+        if (valid) {
+          float idepth = *iDepth;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
               idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
               20, Conf().debugDisplay);
@@ -167,15 +164,15 @@ void DepthMap::initializeFromStereo() {
         }
       }
     }
-  } else {
-    // initializeRandomly();
+  }
+
+  else {
+    LOG(WARNING) << "No disparity map found in time, initalizing randomly";
+    initializeRandomly();
   }
 }
 
 void DepthMap::initializeRandomly() {
-  // activeKeyFramelock = new_frame->getActiveLock();
-  // activeKeyFrame = new_frame;
-  // activeKeyFrameImageData = activeKeyFrame->image(0);
   activeKeyFrameIsReactivated = false;
 
   const float *maxGradients = frame()->maxGradients();
@@ -980,8 +977,14 @@ void DepthMap::propagateDepthFrom(const DepthMap::SharedPtr &other,
               cxi = frame()->cxi(), cyi = frame()->cyi();
 
   // go through all pixels of OLD image, propagating forwards.
+  float *iDepth = _set->disparity.iDepth;
+  uint8_t *iDepthValid = _set->disparity.iDepthValid;
+
   for (int y = 0; y < Conf().slamImageSize.height; y++)
     for (int x = 0; x < Conf().slamImageSize.width; x++) {
+      ++iDepth;
+      ++iDepthValid;
+      float disparity_idepth = *iDepth;
       const DepthMapPixelHypothesis *source = other->hypothesisAt(x, y);
 
       if (!source->isValid) {
@@ -990,13 +993,20 @@ void DepthMap::propagateDepthFrom(const DepthMap::SharedPtr &other,
       }
 
       runningStats.num_prop_attempts++;
-
       Eigen::Vector3f pn =
           (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
               source->idepth_smoothed +
           trafoInv_t;
+      bool valid = *iDepthValid;
+      float new_idepth;
+      if (!valid) {
+        new_idepth = 1.0f / pn[2];
+      }
 
-      float new_idepth = 1.0f / pn[2];
+      else {
+        new_idepth = 1.0f / pn[2];
+        // new_idepth = disparity_idepth; // WHY DOES THIS CRASH??
+      }
 
       float u_new = pn[0] * new_idepth * fx + cx;
       float v_new = pn[1] * new_idepth * fy + cy;
@@ -1385,7 +1395,8 @@ void DepthMap::logPerformanceData() {
 // }
 
 void DepthMap::plotDepthMap(const char *buf1, const char *buf2) {
-  // TODO:  0 arg was referenceFrameByID_offset, but that doesn't exist anymore
+  // TODO:  0 arg was referenceFrameByID_offset, but that doesn't exist
+  // anymore
   _debugImages.debugPlotDepthMap(frame(), currentDepthMap, 0, buf1, buf2);
 }
 
@@ -1396,9 +1407,9 @@ void DepthMap::plotDepthMap(const char *buf1, const char *buf2) {
 // realVal: descriptor in OLD image.
 // returns: result_idepth : point depth in new camera's coordinate system
 // returns: result_u/v : point's coordinates in new camera's coordinate system
-// returns: idepth_var: (approximated) measurement variance of inverse depth of
-// result_point_NEW returns error if sucessful; -1 if out of bounds, -2 if not
-// found.
+// returns: idepth_var: (approximated) measurement variance of inverse depth
+// of result_point_NEW returns error if sucessful; -1 if out of bounds, -2 if
+// not found.
 inline float DepthMap::doLineStereo(
     const float u, const float v, const float epxn, const float epyn,
     const float min_idepth, const float prior_idepth, float max_idepth,
@@ -1564,8 +1575,8 @@ inline float DepthMap::doLineStereo(
   // - pInf: search start-point
   // - p0: search end-point
   // - incx, incy: search steps in pixel
-  // - eplLength, min_idepth, max_idepth: determines search-resolution, i.e. the
-  // result's variance.
+  // - eplLength, min_idepth, max_idepth: determines search-resolution, i.e.
+  // the result's variance.
 
   float cpx = pFar[0];
   float cpy = pFar[1];
@@ -1581,9 +1592,9 @@ inline float DepthMap::doLineStereo(
 
   /*
    * Subsequent exact minimum is found the following way:
-   * - assuming lin. interpolation, the gradient of Error at p1 (towards p2) is
-   * given by dE1 = -2sum(e1*e1 - e1*e2) where e1 and e2 are summed over, and
-   * are the residuals (not squared).
+   * - assuming lin. interpolation, the gradient of Error at p1 (towards p2)
+   * is given by dE1 = -2sum(e1*e1 - e1*e2) where e1 and e2 are summed over,
+   * and are the residuals (not squared).
    *
    * - the gradient at p2 (coming from p1) is given by
    * 	 dE2 = +2sum(e2*e2 - e1*e2)
@@ -1673,8 +1684,8 @@ inline float DepthMap::doLineStereo(
       best_match_y = cpy;
       bestWasLastLoop = true;
     }
-    // otherwise: the last might be the current winner, in which case i have to
-    // save these values.
+    // otherwise: the last might be the current winner, in which case i have
+    // to save these values.
     else {
       if (bestWasLastLoop) {
         best_match_errPost = ee;
@@ -1738,8 +1749,8 @@ inline float DepthMap::doLineStereo(
     } else if ((gradPost_this < 0) ^ (gradPre_this < 0)) {
       // - if zero-crossing occurs exactly in between (gradient Inconsistent),
 
-      // return exact pos, if both central gradients are small compared to their
-      // counterpart.
+      // return exact pos, if both central gradients are small compared to
+      // their counterpart.
       if ((gradPost_this * gradPost_this >
                0.1f * 0.1f * gradPost_post * gradPost_post ||
            gradPre_this * gradPre_this >
@@ -1762,8 +1773,8 @@ inline float DepthMap::doLineStereo(
     }
 
     // DO interpolation!
-    // minimum occurs at zero-crossing of gradient, which is a straight line =>
-    // easy to compute. the error at that point is also computed by just
+    // minimum occurs at zero-crossing of gradient, which is a straight line
+    // => easy to compute. the error at that point is also computed by just
     // integrating.
     if (interpPre) {
       float d = gradPre_this / (gradPre_this - gradPre_pre);
@@ -1917,7 +1928,8 @@ inline float DepthMap::doLineStereo(
       if(rescaleFactor > 1)
               color = cv::Scalar(500*(rescaleFactor-1),0,0);
       else
-              color = cv::Scalar(0,500*(1-rescaleFactor),500*(1-rescaleFactor));
+              color =
+      cv::Scalar(0,500*(1-rescaleFactor),500*(1-rescaleFactor));
       */
 
       _debugImages.addStereoLine(cv::Point2f(pClose[0], pClose[1]),
