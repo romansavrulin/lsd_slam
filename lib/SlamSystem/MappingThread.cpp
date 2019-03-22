@@ -70,6 +70,20 @@ void MappingThread::createNewKeyFrameImpl(
   _system.constraintThread()->doCheckNewKeyFrame(kf);
 }
 
+void MappingThread::createNewKeyFrameImplSet(
+    const KeyFrame::SharedPtr &currentKeyFrame,
+    const ImageSet::SharedPtr &set) {
+  LOG(WARNING) << "Making " << set->refFrame()->id() << " into new keyframe!";
+
+  CHECK(set->refFrame()->isTrackingParent(currentKeyFrame))
+      << "New keyframe does not track on current keyframe!";
+
+  KeyFrame::SharedPtr kf(KeyFrame::PropagateAndCreate(currentKeyFrame, set));
+  _system.keyFrameGraph()->addKeyFrame(kf);
+  _system.trackingThread()->doUseNewKeyFrame(kf);
+  _system.constraintThread()->doCheckNewKeyFrame(kf);
+}
+
 // TODO.  Not updated post-move_current_keyframe
 void MappingThread::mergeOptimizationOffsetImpl() {
   LOG(DEBUG) << "Merging optimization offset";

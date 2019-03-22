@@ -100,7 +100,7 @@ public:
   // void initializefromStereo( const std::shared_ptr<ImageSet> &set);
 
   void propagateFrom(const DepthMap::SharedPtr &new_keyframe,
-                     float &rescaleFactor);
+                     float &rescaleFactor, bool stereo_depth);
 
   void finalize();
 
@@ -172,6 +172,8 @@ private:
   // new_keyframe
   void propagateDepthFrom(const DepthMap::SharedPtr &new_keyframe,
                           float &rescaleFactor);
+  void propagateDepthFromSet(const DepthMap::SharedPtr &new_keyframe,
+                             float &rescaleFactor);
 
   // This is a local state variable used to share data between the observeDepth*
   // functions.  Sucks, I know

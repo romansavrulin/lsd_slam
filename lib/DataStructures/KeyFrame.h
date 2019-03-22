@@ -17,6 +17,8 @@ public:
   static KeyFrame::SharedPtr Create(const ImageSet::SharedPtr &set);
   static KeyFrame::SharedPtr PropagateAndCreate(const KeyFrame::SharedPtr &kf,
                                                 const Frame::SharedPtr &frame);
+  static KeyFrame::SharedPtr PropagateAndCreate(const KeyFrame::SharedPtr &kf,
+                                                const ImageSet::SharedPtr &set);
 
   KeyFrame() = delete;
   KeyFrame(const KeyFrame &) = delete;

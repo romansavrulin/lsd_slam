@@ -41,6 +41,7 @@ void ImageSet::setDisparityMap(float *_iDepth, uint8_t *_iDepthValid,
   disparity.iDepth = _iDepth;
   disparity.iDepthValid = _iDepthValid;
   disparity.iDepthSize = _size;
+  // std::cout << "Size: " << _size << std::endl;
 }
 
 } // namespace lsd_slam

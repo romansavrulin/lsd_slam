@@ -134,7 +134,7 @@ void DepthMap::initializeFromSet() {
 
 void DepthMap::initializeFromStereo() {
   // TODO Initialize from stereo images
-  boost::shared_lock_guard<boost::shared_mutex> set_lock(_set->setMutex);
+  // boost::shared_lock_guard<boost::shared_mutex> set_lock(_set->setMutex);
   int iDepthSize;
 
   iDepthSize = _set->disparity.iDepthSize;
@@ -358,7 +358,7 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
 // }
 
 void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
-                             float &rescaleFactor) {
+                             float &rescaleFactor, bool stereo_depth) {
   // assert(isValid());
   // assert(new_keyframe != nullptr);
   // assert(new_keyframe->hasTrackingParent());
@@ -382,7 +382,11 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   {
     Timer time;
-    propagateDepthFrom(other, rescaleFactor);
+    if (stereo_depth) {
+      propagateDepthFromSet(other, rescaleFactor);
+    } else {
+      propagateDepthFrom(other, rescaleFactor);
+    }
     _perf.propagate.update(time);
   }
 
@@ -929,6 +933,205 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
 
   return true;
 }
+void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
+                                     float &rescaleFactor) {
+  CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
+  LOG(WARNING) << "Entering Propagate Depth From Set";
+  runningStats.num_prop_removed_out_of_bounds = 0;
+  runningStats.num_prop_removed_colorDiff = 0;
+  runningStats.num_prop_removed_validity = 0;
+  runningStats.num_prop_grad_decreased = 0;
+  runningStats.num_prop_color_decreased = 0;
+  runningStats.num_prop_attempts = 0;
+  runningStats.num_prop_occluded = 0;
+  runningStats.num_prop_created = 0;
+  runningStats.num_prop_merged = 0;
+  runningStats.num_prop_source_invalid = 0;
+
+  // LOGF_IF(WARNING, ( !new_keyframe->isTrackingParent( activeKeyFrame) ),
+  // 		"propagating depth from current keyframe %d to new keyframe %d,
+  // which was tracked on a different frame (%d).  While this should work, it is
+  // not recommended.", 		activeKeyFrame->id(),
+  // new_keyframe->id(), 		new_keyframe->trackingParent()->id());
+
+  // wipe depthmap
+  for (DepthMapPixelHypothesis *pt =
+           currentDepthMap + Conf().slamImageSize.area() - 1;
+       pt >= currentDepthMap; pt--) {
+    pt->isValid = false;
+    pt->blacklisted = 0;
+  }
+
+  // re-usable values.
+  const SE3 oldToNew_SE3 =
+      se3FromSim3(frame()->pose->thisToParent_raw).inverse();
+  const Eigen::Vector3f trafoInv_t = oldToNew_SE3.translation().cast<float>();
+  const Eigen::Matrix3f trafoInv_R =
+      oldToNew_SE3.rotationMatrix().matrix().cast<float>();
+
+  const bool *trackingWasGood = (frame()->isTrackingParent(other->frame()->id())
+                                     ? frame()->refPixelWasGoodNoCreate()
+                                     : nullptr);
+
+  const float *activeKFImageData = other->frame()->image(0);
+  const float *newKFMaxGrad = frame()->maxGradients(0);
+  const float *newKFImageData = frame()->image(0);
+
+  const float fx = frame()->fx(), fy = frame()->fy(), cx = frame()->cx(),
+              cy = frame()->cy(), fxi = frame()->fxi(), fyi = frame()->fyi(),
+              cxi = frame()->cxi(), cyi = frame()->cyi();
+
+  // go through all pixels of OLD image, propagating forwards.
+  float *iDepth = _set->disparity.iDepth;
+  uint8_t *iDepthValid = _set->disparity.iDepthValid;
+  for (int y = 0; y < Conf().slamImageSize.height; y++)
+    for (int x = 0; x < Conf().slamImageSize.width; x++) {
+      ++iDepth;
+      ++iDepthValid;
+
+      const DepthMapPixelHypothesis *source = other->hypothesisAt(x, y);
+
+      if (!source->isValid) {
+        runningStats.num_prop_source_invalid++;
+        continue;
+      }
+
+      runningStats.num_prop_attempts++;
+      Eigen::Vector3f pn;
+      bool valid = *iDepthValid;
+      float new_idepth;
+      if (!valid) {
+        pn =
+            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
+                source->idepth_smoothed +
+            trafoInv_t;
+      } else {
+        float current_depth = 1 / (*iDepth);
+        Eigen::Vector3f pn1 =
+            (trafoInv_R *
+             Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, current_depth)) +
+            trafoInv_t;
+        Eigen::Vector3f pn2 =
+            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
+                source->idepth_smoothed +
+            trafoInv_t;
+        pn = (pn1 + pn2) / 2;
+      }
+
+      new_idepth = 1.0f / pn[2];
+      float u_new = pn[0] * new_idepth * fx + cx;
+      float v_new = pn[1] * new_idepth * fy + cy;
+
+      // check if still within image, if not: DROP.
+      if (!(u_new > 2.1f && v_new > 2.1f &&
+            u_new < Conf().slamImageSize.width - 3.1f &&
+            v_new < Conf().slamImageSize.height - 3.1f)) {
+        runningStats.num_prop_removed_out_of_bounds++;
+        continue;
+      }
+
+      int newIDX = (int)(u_new + 0.5f) +
+                   ((int)(v_new + 0.5f)) * Conf().slamImageSize.width;
+      float destAbsGrad = newKFMaxGrad[newIDX];
+
+      if (trackingWasGood) {
+        if (!trackingWasGood[(x >> SE3TRACKING_MIN_LEVEL) +
+                             (Conf().slamImageSize.width >>
+                              SE3TRACKING_MIN_LEVEL) *
+                                 (y >> SE3TRACKING_MIN_LEVEL)] ||
+            destAbsGrad < MIN_ABS_GRAD_DECREASE) {
+          runningStats.num_prop_removed_colorDiff++;
+          continue;
+        }
+      } else {
+        float sourceColor =
+            activeKFImageData[x + y * Conf().slamImageSize.width];
+        float destColor = getInterpolatedElement(newKFImageData, u_new, v_new,
+                                                 Conf().slamImageSize.width);
+
+        float residual = destColor - sourceColor;
+
+        if (residual * residual /
+                    (MAX_DIFF_CONSTANT +
+                     MAX_DIFF_GRAD_MULT * destAbsGrad * destAbsGrad) >
+                1.0f ||
+            destAbsGrad < MIN_ABS_GRAD_DECREASE) {
+          runningStats.num_prop_removed_colorDiff++;
+          continue;
+        }
+      }
+
+      DepthMapPixelHypothesis *targetBest = currentDepthMap + newIDX;
+
+      // large idepth = point is near = large increase in variance.
+      // small idepth = point is far = small increase in variance.
+      float idepth_ratio_4 = new_idepth / source->idepth_smoothed;
+      idepth_ratio_4 *= idepth_ratio_4;
+      idepth_ratio_4 *= idepth_ratio_4;
+
+      float new_var = idepth_ratio_4 * source->idepth_var;
+
+      // check for occlusion
+      if (targetBest->isValid) {
+        // if they occlude one another, one gets removed.
+        float diff = targetBest->idepth - new_idepth;
+        if (DIFF_FAC_PROP_MERGE * diff * diff >
+            new_var + targetBest->idepth_var) {
+          if (new_idepth < targetBest->idepth) {
+            runningStats.num_prop_occluded++;
+            continue;
+          } else {
+            runningStats.num_prop_occluded++;
+            targetBest->isValid = false;
+          }
+        }
+      }
+
+      if (!targetBest->isValid) {
+        runningStats.num_prop_created++;
+
+        *targetBest = DepthMapPixelHypothesis(
+            new_idepth, new_var, source->validity_counter, Conf().debugDisplay);
+
+      } else {
+        runningStats.num_prop_merged++;
+
+        // merge idepth ekf-style
+        float w = new_var / (targetBest->idepth_var + new_var);
+        float merged_new_idepth =
+            w * targetBest->idepth + (1.0f - w) * new_idepth;
+
+        // merge validity
+        int merged_validity =
+            source->validity_counter + targetBest->validity_counter;
+        if (merged_validity >
+            VALIDITY_COUNTER_MAX + (VALIDITY_COUNTER_MAX_VARIABLE))
+          merged_validity =
+              VALIDITY_COUNTER_MAX + (VALIDITY_COUNTER_MAX_VARIABLE);
+
+        *targetBest = DepthMapPixelHypothesis(
+            merged_new_idepth,
+            1.0f / (1.0f / targetBest->idepth_var + 1.0f / new_var),
+            merged_validity, Conf().debugDisplay);
+      }
+    }
+
+  // swap!
+  //	std::swap(currentDepthMap, otherDepthMap);
+
+  LOGF_IF(INFO, Conf().print.propagationStatistics,
+          "PROPAGATE: %d invalid, %d: %d drop (%d oob, %d color); %d created; "
+          "%d merged; %d occluded. %d col-dec, %d grad-dec.",
+          runningStats.num_prop_source_invalid, runningStats.num_prop_attempts,
+          runningStats.num_prop_removed_validity +
+              runningStats.num_prop_removed_out_of_bounds +
+              runningStats.num_prop_removed_colorDiff,
+          runningStats.num_prop_removed_out_of_bounds,
+          runningStats.num_prop_removed_colorDiff,
+          runningStats.num_prop_created, runningStats.num_prop_merged,
+          runningStats.num_prop_occluded, runningStats.num_prop_color_decreased,
+          runningStats.num_prop_grad_decreased);
+} // namespace lsd_slam
 
 void DepthMap::propagateDepthFrom(const DepthMap::SharedPtr &other,
                                   float &rescaleFactor) {
@@ -977,14 +1180,8 @@ void DepthMap::propagateDepthFrom(const DepthMap::SharedPtr &other,
               cxi = frame()->cxi(), cyi = frame()->cyi();
 
   // go through all pixels of OLD image, propagating forwards.
-  float *iDepth = _set->disparity.iDepth;
-  uint8_t *iDepthValid = _set->disparity.iDepthValid;
-
   for (int y = 0; y < Conf().slamImageSize.height; y++)
     for (int x = 0; x < Conf().slamImageSize.width; x++) {
-      ++iDepth;
-      ++iDepthValid;
-      float disparity_idepth = *iDepth;
       const DepthMapPixelHypothesis *source = other->hypothesisAt(x, y);
 
       if (!source->isValid) {
@@ -997,16 +1194,8 @@ void DepthMap::propagateDepthFrom(const DepthMap::SharedPtr &other,
           (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
               source->idepth_smoothed +
           trafoInv_t;
-      bool valid = *iDepthValid;
       float new_idepth;
-      if (!valid) {
-        new_idepth = 1.0f / pn[2];
-      }
-
-      else {
-        new_idepth = 1.0f / pn[2];
-        // new_idepth = disparity_idepth; // WHY DOES THIS CRASH??
-      }
+      new_idepth = 1.0f / pn[2];
 
       float u_new = pn[0] * new_idepth * fx + cx;
       float v_new = pn[1] * new_idepth * fy + cy;
@@ -1120,7 +1309,7 @@ void DepthMap::propagateDepthFrom(const DepthMap::SharedPtr &other,
           runningStats.num_prop_created, runningStats.num_prop_merged,
           runningStats.num_prop_occluded, runningStats.num_prop_color_decreased,
           runningStats.num_prop_grad_decreased);
-}
+} // namespace lsd_slam
 
 void DepthMap::regularizeDepthMapFillHoles() {
 
@@ -1634,8 +1823,8 @@ inline float DepthMap::doLineStereo(
     val_cp_p2 = getInterpolatedElement(referenceFrameImage, cpx + 2 * incx,
                                        cpy + 2 * incy, width);
 
-    // hacky but fast way to get error and differential error: switch buffer
-    // variables for last loop.
+    // hacky but fast way to get error and differential error: switch
+    // buffer variables for last loop.
     float ee = 0;
     if (loopCounter % 2 == 0) {
       // calc error and accumulate sums.
@@ -1684,8 +1873,8 @@ inline float DepthMap::doLineStereo(
       best_match_y = cpy;
       bestWasLastLoop = true;
     }
-    // otherwise: the last might be the current winner, in which case i have
-    // to save these values.
+    // otherwise: the last might be the current winner, in which case i
+    // have to save these values.
     else {
       if (bestWasLastLoop) {
         best_match_errPost = ee;
@@ -1747,7 +1936,8 @@ inline float DepthMap::doLineStereo(
     if (best_match_errPre < 0 || best_match_errPost < 0) {
       stats->num_stereo_invalid_atEnd++;
     } else if ((gradPost_this < 0) ^ (gradPre_this < 0)) {
-      // - if zero-crossing occurs exactly in between (gradient Inconsistent),
+      // - if zero-crossing occurs exactly in between (gradient
+      // Inconsistent),
 
       // return exact pos, if both central gradients are small compared to
       // their counterpart.
@@ -1773,9 +1963,10 @@ inline float DepthMap::doLineStereo(
     }
 
     // DO interpolation!
-    // minimum occurs at zero-crossing of gradient, which is a straight line
-    // => easy to compute. the error at that point is also computed by just
-    // integrating.
+    // minimum occurs at zero-crossing of gradient, which is a straight
+    // line
+    // => easy to compute. the error at that point is also computed by
+    // just integrating.
     if (interpPre) {
       float d = gradPre_this / (gradPre_this - gradPre_pre);
       best_match_x -= d * incx;
@@ -1800,7 +1991,8 @@ inline float DepthMap::doLineStereo(
     }
   }
 
-  // sampleDist is the distance in pixel at which the realVal's were sampled
+  // sampleDist is the distance in pixel at which the realVal's were
+  // sampled
   float sampleDist = GRADIENT_SAMPLE_DIST * rescaleFactor;
 
   float gradAlongLine = 0;
@@ -1815,8 +2007,8 @@ inline float DepthMap::doLineStereo(
 
   gradAlongLine /= sampleDist * sampleDist;
 
-  // check if interpolated error is OK. use evil hack to allow more error if
-  // there is a lot of gradient.
+  // check if interpolated error is OK. use evil hack to allow more error
+  // if there is a lot of gradient.
   if (best_match_err > (float)MAX_ERROR_STEREO + sqrtf(gradAlongLine) * 20) {
     stats->num_stereo_invalid_bigErr++;
     return -3;
@@ -1825,8 +2017,8 @@ inline float DepthMap::doLineStereo(
   // ================= calc depth (in KF) ====================
   // * KinvP = Kinv * (x,y,1); where x,y are pixel coordinates of point we
   // search for, in the KF.
-  // * best_match_x = x-coordinate of found correspondence in the reference
-  // frame.
+  // * best_match_x = x-coordinate of found correspondence in the
+  // reference frame.
 
   const float fxi = referenceFrame->fxi(), fyi = referenceFrame->fyi(),
               cxi = referenceFrame->cxi(), cyi = referenceFrame->cyi();
@@ -1879,7 +2071,8 @@ inline float DepthMap::doLineStereo(
   float trackingErrorFac =
       0.25f * (1.0f + referenceFrame->initialTrackedResidual);
 
-  // calculate error from geometric noise (wrong camera pose / calibration)
+  // calculate error from geometric noise (wrong camera pose /
+  // calibration)
   Eigen::Vector2f gradsInterp =
       getInterpolatedElement42(frame()->gradients(0), u, v, width);
   float geoDispError =
@@ -1889,7 +2082,8 @@ inline float DepthMap::doLineStereo(
       (gradsInterp[0] * gradsInterp[0] + gradsInterp[1] * gradsInterp[1]) /
       (geoDispError * geoDispError);
 
-  // geoDispError *= (0.5 + 0.5 *result_idepth) * (0.5 + 0.5 *result_idepth);
+  // geoDispError *= (0.5 + 0.5 *result_idepth) * (0.5 + 0.5
+  // *result_idepth);
 
   // final error consists of a small constant part (discretization error),
   // geometric and photometric error.
@@ -1911,11 +2105,12 @@ inline float DepthMap::doLineStereo(
 
       //			float eplLengthF =
       // std::min((float)MIN_EPL_LENGTH_CROP,(float)eplLength);
-      // eplLengthF = std::max((float)MAX_EPL_LENGTH_CROP,(float)eplLengthF);
+      // eplLengthF =
+      // std::max((float)MAX_EPL_LENGTH_CROP,(float)eplLengthF);
       //
       //			float pixelDistFound =
-      // sqrtf((float)((pReal[0]/pReal[2] - best_match_x)*(pReal[0]/pReal[2] -
-      // best_match_x)
+      // sqrtf((float)((pReal[0]/pReal[2] -
+      // best_match_x)*(pReal[0]/pReal[2] - best_match_x)
       //					+ (pReal[1]/pReal[2] -
       // best_match_y)*(pReal[1]/pReal[2] - best_match_y)));
       //

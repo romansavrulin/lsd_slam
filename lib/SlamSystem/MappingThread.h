@@ -81,6 +81,15 @@ public:
       createNewKeyFrameImpl(keyframe, frame);
   }
 
+  void doCreateNewKeyFrame(const KeyFrame::SharedPtr &keyframe,
+                           const ImageSet::SharedPtr &set) {
+    if (_thread)
+      _thread->send(std::bind(&MappingThread::createNewKeyFrameImplSet, this,
+                              keyframe, set));
+    else
+      createNewKeyFrameImplSet(keyframe, set);
+  }
+
   // Used during re-localization
   Relocalizer relocalizer;
 
@@ -95,6 +104,9 @@ private:
 
   void createNewKeyFrameImpl(const KeyFrame::SharedPtr &keyframe,
                              const Frame::SharedPtr &frame);
+
+  void createNewKeyFrameImplSet(const KeyFrame::SharedPtr &keyframe,
+                                const ImageSet::SharedPtr &set);
 
   // == Local functions ==
 
