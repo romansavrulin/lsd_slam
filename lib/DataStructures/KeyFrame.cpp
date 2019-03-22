@@ -97,6 +97,29 @@ void KeyFrame::updateDepthFrom(const Frame::SharedPtr &frame) {
   numMappedOnThisTotal++;
 }
 
+void KeyFrame::updateDepthFrom(const ImageSet::SharedPtr &set) {
+
+  assert(set->refFrame()->hasTrackingParent());
+
+  if (set->refFrame()->trackingParent()->id() != id()) {
+    LOGF(WARNING,
+         "updating keyframe %d with frame %d, which was tracked on a different "
+         "keyframe (%d).  While this should work, it is not recommended.",
+         id(), set->refFrame()->id(), set->refFrame()->trackingParent()->id());
+  }
+
+  if (!_depthMap->updateDepthFrom(set->refFrame())) {
+    // TODO Handle error
+
+    return;
+  }
+
+  syncDepthMapToFrame();
+
+  numMappedOnThis++;
+  numMappedOnThisTotal++;
+}
+
 void KeyFrame::syncDepthMapToFrame() { _frame->setDepth(_depthMap); }
 
 void KeyFrame::finalize() {

@@ -37,6 +37,7 @@ public:
 
   //== Depth maintenance functions ==
   void updateDepthFrom(const Frame::SharedPtr &frame);
+  void updateDepthFrom(const ImageSet::SharedPtr &set);
   void syncDepthMapToFrame();
   void finalize();
 
