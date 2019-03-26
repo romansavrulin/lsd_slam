@@ -128,8 +128,8 @@ void DepthMap::initializeFromFrame() {
 void DepthMap::initializeFromSet() {
 
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
-  initializeFromStereo();
-  // initializeRandomly();
+  // initializeFromStereo();
+  initializeRandomly();
 }
 
 void DepthMap::initializeFromStereo() {
@@ -167,8 +167,8 @@ void DepthMap::initializeFromStereo() {
   }
 
   else {
-    LOG(WARNING) << "No disparity map found in time, initalizing randomly";
-    initializeRandomly();
+    // LOG(WARNING) << "No disparity map found in time, initalizing randomly";
+    // initializeRandomly();
   }
 }
 
@@ -756,6 +756,19 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
                    max_idepth, _observeFrame.get(), _observeFrame->image(0),
                    result_idepth, result_var, result_eplLength, stats);
 
+  if (_set != nullptr) {
+    float *iDepth = _set->disparity.iDepth;
+    uint8_t *iDepthValid = _set->disparity.iDepthValid;
+    iDepth += idx;
+    iDepthValid += idx;
+    bool valid = *iDepthValid;
+    if (valid) {
+      // std::cout << "valid" << std::endl;
+      float disparty_depth = *iDepth;
+      result_idepth = disparty_depth; //(disparty_depth + result_idepth) / 2;
+    }
+  }
+
   float diff = result_idepth - target->idepth_smoothed;
 
   // if oob: (really out of bounds)
@@ -1015,7 +1028,7 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
             (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
                 source->idepth_smoothed +
             trafoInv_t;
-        pn = (pn1 + pn2) / 2;
+        pn = pn1; //(pn1 + pn2) / 2;
       }
 
       new_idepth = 1.0f / pn[2];
