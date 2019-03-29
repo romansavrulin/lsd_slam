@@ -128,8 +128,8 @@ void DepthMap::initializeFromFrame() {
 void DepthMap::initializeFromSet() {
 
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
-  // initializeFromStereo();
-  initializeRandomly();
+  initializeFromStereo();
+  // initializeRandomly();
 }
 
 void DepthMap::initializeFromStereo() {
