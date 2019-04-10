@@ -153,14 +153,21 @@ void DepthMap::initializeFromStereo() {
         ++iDepthValid;
         bool valid = *iDepthValid;
         int idx = x + y * Conf().slamImageSize.width;
-        if (valid) {
+        if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
               idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
               20, Conf().debugDisplay);
         } else {
-          currentDepthMap[idx].isValid = false;
-          currentDepthMap[idx].blacklisted = 0;
+          if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
+            float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
+            currentDepthMap[idx] = DepthMapPixelHypothesis(
+                idepth, idepth, VAR_RANDOM_INIT_INITIAL,
+                VAR_RANDOM_INIT_INITIAL, 20, Conf().debugDisplay);
+          } else {
+            currentDepthMap[idx].isValid = false;
+            currentDepthMap[idx].blacklisted = 0;
+          }
         }
       }
     }
@@ -763,6 +770,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     iDepthValid += idx;
     bool valid = *iDepthValid;
     if (valid) {
+      // if (0) {
       // std::cout << "valid" << std::endl;
       float disparty_depth = *iDepth;
       result_idepth = disparty_depth; //(disparty_depth + result_idepth) / 2;
@@ -1013,7 +1021,8 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
       Eigen::Vector3f pn;
       bool valid = *iDepthValid;
       float new_idepth;
-      if (!valid) {
+      // if (!valid) {
+      if (1) {
         pn =
             (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
                 source->idepth_smoothed +
