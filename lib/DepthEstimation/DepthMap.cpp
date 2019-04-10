@@ -1021,8 +1021,8 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
       Eigen::Vector3f pn;
       bool valid = *iDepthValid;
       float new_idepth;
-      // if (!valid) {
-      if (1) {
+      if (!valid) {
+        // if (1) {
         pn =
             (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
                 source->idepth_smoothed +
