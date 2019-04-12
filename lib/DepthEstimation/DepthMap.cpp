@@ -38,6 +38,13 @@
 #include "util/globalFuncs.h"
 #include "util/settings.h"
 
+/** TEMP OPENCV FOR DEBUGGING
+ **/
+#include "opencv2/core/utility.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/imgproc.hpp"
+
 namespace lsd_slam {
 
 // Constructor when unable to proagate from previous
@@ -138,11 +145,15 @@ void DepthMap::initializeFromStereo() {
   int iDepthSize;
 
   iDepthSize = _set->disparity.iDepthSize;
+  // std::cout << iDepthSize << " , "
+  //           << Conf().slamImageSize.height * Conf().slamImageSize.width
+  //           << std::endl;
   if (iDepthSize == Conf().slamImageSize.height * Conf().slamImageSize.width) {
 
     float *iDepth = _set->disparity.iDepth;
     uint8_t *iDepthValid = _set->disparity.iDepthValid;
-
+    float iDepthMean = _set->disparity.iDepthMean;
+    std::cout << iDepthMean << std::endl;
     activeKeyFrameIsReactivated = false;
 
     const float *maxGradients = frame()->maxGradients();
@@ -155,12 +166,15 @@ void DepthMap::initializeFromStereo() {
         int idx = x + y * Conf().slamImageSize.width;
         if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
+          std::cout << "true: " << idepth << "random: "
+                    << iDepthMean + 1.0f * ((rand() % 100001) / 100000.0f)
+                    << std::endl;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
               idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
               20, Conf().debugDisplay);
         } else {
           if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
-            float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
+            float idepth = iDepthMean + 1.0f * ((rand() % 100001) / 100000.0f);
             currentDepthMap[idx] = DepthMapPixelHypothesis(
                 idepth, idepth, VAR_RANDOM_INIT_INITIAL,
                 VAR_RANDOM_INIT_INITIAL, 20, Conf().debugDisplay);
@@ -762,17 +776,18 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
       doLineStereo(x, y, epx, epy, min_idepth, target->idepth_smoothed,
                    max_idepth, _observeFrame.get(), _observeFrame->image(0),
                    result_idepth, result_var, result_eplLength, stats);
-
+  bool valid = false;
   if (_set != nullptr) {
     float *iDepth = _set->disparity.iDepth;
     uint8_t *iDepthValid = _set->disparity.iDepthValid;
     iDepth += idx;
     iDepthValid += idx;
-    bool valid = *iDepthValid;
+    valid = *iDepthValid;
     if (valid) {
-      // if (0) {
       // std::cout << "valid" << std::endl;
       float disparty_depth = *iDepth;
+      // std::cout << "result_idepth " << result_idepth << " disparty_depth "
+      //          << disparty_depth << std::endl;
       result_idepth = disparty_depth; //(disparty_depth + result_idepth) / 2;
     }
   }
@@ -857,8 +872,12 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     // update var with observation
     float w = result_var / (result_var + id_var);
-    float new_idepth = (1 - w) * result_idepth + w * target->idepth;
-    target->idepth = UNZERO(new_idepth);
+    if (valid) {
+      target->idepth = UNZERO(result_idepth);
+    } else {
+      float new_idepth = (1 - w) * result_idepth + w * target->idepth;
+      target->idepth = UNZERO(new_idepth);
+    }
 
     // variance can only decrease from observation; never increase.
     id_var = id_var * w;
@@ -1002,6 +1021,29 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
               cy = frame()->cy(), fxi = frame()->fxi(), fyi = frame()->fyi(),
               cxi = frame()->cxi(), cyi = frame()->cyi();
 
+  /* plot
+   */
+  /*
+ float *iDepthPlot = _set->disparity.iDepth;
+ uint8_t *iDepthValidPlot = _set->disparity.iDepthValid;
+ cv::Mat imgD(Conf().slamImageSize.height, Conf().slamImageSize.width, CV_32F);
+ for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) {
+   for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
+     ++iDepthPlot;
+     ++iDepthValidPlot;
+     bool val = *iDepthValidPlot;
+     float dep = *iDepthPlot;
+     if (val) {
+       imgD.at<float>(x, y) = dep;
+     } else {
+       imgD.at<float>(x, y) = 0;
+     }
+   }
+ }
+ cv::imshow("depth", imgD);
+ cv::waitKey(1);
+ */
+
   // go through all pixels of OLD image, propagating forwards.
   float *iDepth = _set->disparity.iDepth;
   uint8_t *iDepthValid = _set->disparity.iDepthValid;
@@ -1040,7 +1082,7 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
         pn = pn1; //(pn1 + pn2) / 2;
       }
 
-      new_idepth = 1.0f / pn[2];
+      new_idepth = (1.0f / pn[2]);
       float u_new = pn[0] * new_idepth * fx + cx;
       float v_new = pn[1] * new_idepth * fy + cy;
 
@@ -1169,9 +1211,9 @@ void DepthMap::propagateDepthFrom(const DepthMap::SharedPtr &other,
   runningStats.num_prop_source_invalid = 0;
 
   // LOGF_IF(WARNING, ( !new_keyframe->isTrackingParent( activeKeyFrame) ),
-  // 		"propagating depth from current keyframe %d to new keyframe %d,
-  // which was tracked on a different frame (%d).  While this should work, it is
-  // not recommended.", 		activeKeyFrame->id(),
+  // 		"propagating depth from current keyframe %d to new
+  // keyframe %d, which was tracked on a different frame (%d).  While this
+  // should work, it is not recommended.", 		activeKeyFrame->id(),
   // new_keyframe->id(), 		new_keyframe->trackingParent()->id());
 
   // wipe depthmap
@@ -1617,10 +1659,10 @@ void DepthMap::plotDepthMap(const char *buf1, const char *buf2) {
 // trafo: x_old = trafo * x_new; (from new to old image)
 // realVal: descriptor in OLD image.
 // returns: result_idepth : point depth in new camera's coordinate system
-// returns: result_u/v : point's coordinates in new camera's coordinate system
-// returns: idepth_var: (approximated) measurement variance of inverse depth
-// of result_point_NEW returns error if sucessful; -1 if out of bounds, -2 if
-// not found.
+// returns: result_u/v : point's coordinates in new camera's coordinate
+// system returns: idepth_var: (approximated) measurement variance of
+// inverse depth of result_point_NEW returns error if sucessful; -1 if out
+// of bounds, -2 if not found.
 inline float DepthMap::doLineStereo(
     const float u, const float v, const float epxn, const float epyn,
     const float min_idepth, const float prior_idepth, float max_idepth,
@@ -1632,9 +1674,9 @@ inline float DepthMap::doLineStereo(
   int width = Conf().slamImageSize.width, height = Conf().slamImageSize.height;
 
   // calculate epipolar line start and end point in old image
-  // TODO:  Converted from Conf().camrea to referenceFrame.  Not actually sure
-  // that's the correct frame's K to be using (in the case where K isn't
-  // constant)
+  // TODO:  Converted from Conf().camrea to referenceFrame.  Not actually
+  // sure that's the correct frame's K to be using (in the case where K
+  // isn't constant)
   Eigen::Vector3f KinvP =
       Eigen::Vector3f(referenceFrame->fxi() * u + referenceFrame->cxi(),
                       referenceFrame->fyi() * v + referenceFrame->cyi(), 1.0f);
@@ -1647,8 +1689,8 @@ inline float DepthMap::doLineStereo(
   float firstY = v - 2 * epyn * rescaleFactor;
   float lastX = u + 2 * epxn * rescaleFactor;
   float lastY = v + 2 * epyn * rescaleFactor;
-  // width - 2 and height - 2 comes from the one-sided gradient calculation at
-  // the bottom
+  // width - 2 and height - 2 comes from the one-sided gradient calculation
+  // at the bottom
   if (firstX <= 0 || firstX >= width - 2 || firstY <= 0 ||
       firstY >= height - 2 || lastX <= 0 || lastX >= width - 2 || lastY <= 0 ||
       lastY >= height - 2) {
@@ -1676,7 +1718,8 @@ inline float DepthMap::doLineStereo(
       currentKeyFrameImageData, u + 2 * epxn * rescaleFactor,
       v + 2 * epyn * rescaleFactor, width);
 
-  //	if(referenceFrame->K_otherToThis_t[2] * max_idepth + pInf[2] < 0.01)
+  //	if(referenceFrame->K_otherToThis_t[2] * max_idepth + pInf[2] <
+  // 0.01)
 
   Eigen::Vector3f pClose = pInf + referenceFrame->K_otherToThis_t * max_idepth;
   // if the assumed close-point lies behind the
@@ -1817,7 +1860,8 @@ inline float DepthMap::doLineStereo(
    *
    * => I for later exact min calculation, I need
    * sum(e_i*e_i),sum(e_{i-1}*e_{i-1}),sum(e_{i+1}*e_{i+1}) and sum(e_i *
-   * e_{i-1}) and sum(e_i * e_{i+1}), where i is the respective winning index.
+   * e_{i-1}) and sum(e_i * e_{i+1}), where i is the respective winning
+   * index.
    */
 
   // walk in equally sized steps, starting at depth=infinity.

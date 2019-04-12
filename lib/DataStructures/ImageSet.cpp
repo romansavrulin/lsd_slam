@@ -35,13 +35,28 @@ void ImageSet::pushbackFrame(const cv::Mat &img,
 }
 void ImageSet::setDisparityMap(float *_iDepth, uint8_t *_iDepthValid,
                                int _size) {
-  // iDepth = _iDepth;
-  // iDepthValid = _iDepthValid;
-  // iDepthsize = _size;
+
   disparity.iDepth = _iDepth;
   disparity.iDepthValid = _iDepthValid;
   disparity.iDepthSize = _size;
-  // std::cout << "Size: " << _size << std::endl;
+  float iDepthsum = 0.0;
+  float *id = _iDepth;
+  uint8_t *iv = _iDepthValid;
+  int count = 0;
+  for (int i = 0; i < _size; i++) {
+    ++id;
+    ++iv;
+    bool valid = *iv;
+    if (valid) {
+      float idepth = *id;
+      iDepthsum += idepth;
+      count++;
+    }
+  }
+  float _iDepthMean = iDepthsum / count;
+  // std::cout << "sum: " << iDepthsum << " _iDepthMean: " << _iDepthMean
+  //           << " size: " << _size << std::endl;
+  disparity.iDepthMean = _iDepthMean;
 }
 
 } // namespace lsd_slam

@@ -34,6 +34,7 @@ public:
     float *iDepth;
     uint8_t *iDepthValid;
     int iDepthSize = 0;
+    float iDepthMean = 0.5;
     // Disparity(float *_iDepth, bool _iDepthValid, int _iDepthSize)
     //    : iDepth(_iDepth), iDepthValid(_iDepthValid), iDepthSize(_iDepthSize)
     //    {}
