@@ -56,7 +56,8 @@ public:
   }
 
   void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam);
-  void setDisparityMap(float *_iDepth, uint8_t *_iDepthValid, int _size);
+  void setDisparityMap(float *_iDepth, uint8_t *_iDepthValid, float _iDepthMean,
+                       int _size);
   Sim3 getRefTransformation() { return _frames[_refFrame]->getCamToWorld(); }
   void setReferenceFrame(const unsigned int &frameNum) { _refFrame = frameNum; }
   unsigned int id() { return _frameId; }

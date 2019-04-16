@@ -141,6 +141,10 @@ private:
   std::shared_ptr<Frame> _frame;
   std::shared_ptr<ImageSet> _set;
 
+  // keep track of mean iDepth and ratio to disparity map
+  float _meanIDepth;
+  float _meanIdepthRatio;
+
   const float *activeKeyFrameImageData() { return frame()->image(0); }
   bool activeKeyFrameIsReactivated;
 

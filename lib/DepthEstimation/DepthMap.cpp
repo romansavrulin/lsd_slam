@@ -69,6 +69,8 @@ DepthMap::DepthMap(const ImageSet::SharedPtr &set)
   currentDepthMap = new DepthMapPixelHypothesis[imgArea];
   validityIntegralBuffer = new int[imgArea];
 
+  _meanIdepthRatio = 1;
+
   reset();
 }
 
@@ -153,7 +155,6 @@ void DepthMap::initializeFromStereo() {
     float *iDepth = _set->disparity.iDepth;
     uint8_t *iDepthValid = _set->disparity.iDepthValid;
     float iDepthMean = _set->disparity.iDepthMean;
-    std::cout << iDepthMean << std::endl;
     activeKeyFrameIsReactivated = false;
 
     const float *maxGradients = frame()->maxGradients();
@@ -166,15 +167,16 @@ void DepthMap::initializeFromStereo() {
         int idx = x + y * Conf().slamImageSize.width;
         if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
-          std::cout << "true: " << idepth << "random: "
-                    << iDepthMean + 1.0f * ((rand() % 100001) / 100000.0f)
-                    << std::endl;
+          // std::cout << "true: " << idepth << "random: "
+          //           << iDepthMean + 1.0f * ((rand() % 100001) / 100000.0f)
+          //           << std::endl;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
               idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
               20, Conf().debugDisplay);
         } else {
           if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
-            float idepth = iDepthMean + 1.0f * ((rand() % 100001) / 100000.0f);
+            float idepth =
+                iDepthMean + iDepthMean * 2 * ((rand() % 100001) / 100000.0f);
             currentDepthMap[idx] = DepthMapPixelHypothesis(
                 idepth, idepth, VAR_RANDOM_INIT_INITIAL,
                 VAR_RANDOM_INIT_INITIAL, 20, Conf().debugDisplay);
@@ -395,6 +397,8 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   resetCounters();
 
+  // rescaleFactor = _meanIdepthRatio;
+
   // if(plotStereoImages)  _debugImages.plotNewKeyFrame( new_keyframe );
 
   // if( new_keyframe->hasIDepthBeenSet() )
@@ -461,13 +465,20 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   LOG(DEBUG) << "DepthMap has " << validCount << " valid points";
 
-  rescaleFactor = numIdepth / sumIdepth;
+  // rescaleFactor = numIdepth / sumIdepth;
+  LOG(INFO) << "disparity iDepthMean: " << _set->disparity.iDepthMean
+            << " lsd iDepthMean: " << _meanIDepth
+            << " depth ratio: " << _meanIdepthRatio;
+  LOG(INFO) << "rescaling";
+  // rescaleFactor = _meanIdepthRatio;
   float rescaleFactor2 = rescaleFactor * rescaleFactor;
   for (DepthMapPixelHypothesis *source = currentDepthMap;
        source < currentDepthMap + Conf().slamImageSize.area(); source++) {
     if (!source->isValid)
       continue;
     source->idepth *= rescaleFactor;
+    // RESCALE TO BE SAME SIZE AS Disparity
+    // source->idepth *= _meanIdepthRatio;
     source->idepth_smoothed *= rescaleFactor;
     source->idepth_var *= rescaleFactor2;
     source->idepth_var_smoothed *= rescaleFactor2;
@@ -772,25 +783,39 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
   float result_idepth, result_var, result_eplLength;
 
-  float error =
-      doLineStereo(x, y, epx, epy, min_idepth, target->idepth_smoothed,
-                   max_idepth, _observeFrame.get(), _observeFrame->image(0),
-                   result_idepth, result_var, result_eplLength, stats);
+  float prior_idepth = target->idepth_smoothed;
   bool valid = false;
   if (_set != nullptr) {
     float *iDepth = _set->disparity.iDepth;
     uint8_t *iDepthValid = _set->disparity.iDepthValid;
     iDepth += idx;
     iDepthValid += idx;
-    valid = *iDepthValid;
+    bool valid = *iDepthValid;
     if (valid) {
-      // std::cout << "valid" << std::endl;
-      float disparty_depth = *iDepth;
-      // std::cout << "result_idepth " << result_idepth << " disparty_depth "
-      //          << disparty_depth << std::endl;
-      result_idepth = disparty_depth; //(disparty_depth + result_idepth) / 2;
+      // if (0) {
+      float prior_idepth = *iDepth;
+      // result_idepth = prior_idepth;
     }
   }
+
+  float error =
+      doLineStereo(x, y, epx, epy, min_idepth, prior_idepth, max_idepth,
+                   _observeFrame.get(), _observeFrame->image(0), result_idepth,
+                   result_var, result_eplLength, stats);
+  // if (_set != nullptr) {
+  //   float *iDepth = _set->disparity.iDepth;
+  //   uint8_t *iDepthValid = _set->disparity.iDepthValid;
+  //   iDepth += idx;
+  //   iDepthValid += idx;
+  //   // valid = *iDepthValid;
+  //   if (valid) {
+  //     // std::cout << "valid" << std::endl;
+  //     float disparty_depth = *iDepth;
+  //     // std::cout << "result_idepth " << result_idepth << " disparty_depth "
+  //     //          << disparty_depth << std::endl;
+  //     result_idepth = disparty_depth; //(disparty_depth + result_idepth) / 2;
+  //   }
+  // }
 
   float diff = result_idepth - target->idepth_smoothed;
 
@@ -806,8 +831,8 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     return false;
   }
 
-  // if just not good for stereo (e.g. some inf / nan occured; has inconsistent
-  // minimum; ..)
+  // if just not good for stereo (e.g. some inf / nan occured; has
+  // inconsistent minimum; ..)
   else if (error == -2) {
     stats->num_observe_skip_fail++;
 
@@ -872,12 +897,16 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     // update var with observation
     float w = result_var / (result_var + id_var);
+    float new_idepth = (1 - w) * result_idepth + w * target->idepth;
+    target->idepth = UNZERO(new_idepth);
+    /*
     if (valid) {
       target->idepth = UNZERO(result_idepth);
     } else {
       float new_idepth = (1 - w) * result_idepth + w * target->idepth;
       target->idepth = UNZERO(new_idepth);
     }
+    */
 
     // variance can only decrease from observation; never increase.
     id_var = id_var * w;
@@ -931,8 +960,8 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
   const float fx = ref->fx(), fy = ref->fy(), cx = ref->cx(), cy = ref->cy();
 
   // ======= make epl ========
-  // calculate the plane spanned by the two camera centers and the point (x,y,1)
-  // intersect it with the keyframe's image plane (at depth=1)
+  // calculate the plane spanned by the two camera centers and the point
+  // (x,y,1) intersect it with the keyframe's image plane (at depth=1)
   float epx = -fx * ref->thisToOther_t[0] + ref->thisToOther_t[2] * (x - cx);
   float epy = -fy * ref->thisToOther_t[1] + ref->thisToOther_t[2] * (y - cy);
 
@@ -990,8 +1019,8 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
 
   // LOGF_IF(WARNING, ( !new_keyframe->isTrackingParent( activeKeyFrame) ),
   // 		"propagating depth from current keyframe %d to new keyframe %d,
-  // which was tracked on a different frame (%d).  While this should work, it is
-  // not recommended.", 		activeKeyFrame->id(),
+  // which was tracked on a different frame (%d).  While this should work, it
+  // is not recommended.", 		activeKeyFrame->id(),
   // new_keyframe->id(), 		new_keyframe->trackingParent()->id());
 
   // wipe depthmap
@@ -1026,9 +1055,9 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
   /*
  float *iDepthPlot = _set->disparity.iDepth;
  uint8_t *iDepthValidPlot = _set->disparity.iDepthValid;
- cv::Mat imgD(Conf().slamImageSize.height, Conf().slamImageSize.width, CV_32F);
- for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) {
-   for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
+ cv::Mat imgD(Conf().slamImageSize.height, Conf().slamImageSize.width,
+ CV_32F); for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) { for
+ (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
      ++iDepthPlot;
      ++iDepthValidPlot;
      bool val = *iDepthValidPlot;
@@ -1047,6 +1076,8 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
   // go through all pixels of OLD image, propagating forwards.
   float *iDepth = _set->disparity.iDepth;
   uint8_t *iDepthValid = _set->disparity.iDepthValid;
+  float iDepthSum = 0;
+  float iDepthCount = 0;
   for (int y = 0; y < Conf().slamImageSize.height; y++)
     for (int x = 0; x < Conf().slamImageSize.width; x++) {
       ++iDepth;
@@ -1063,26 +1094,36 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
       Eigen::Vector3f pn;
       bool valid = *iDepthValid;
       float new_idepth;
-      if (!valid) {
-        // if (1) {
+      // if (!valid) {
+      if (1) {
         pn =
             (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
                 source->idepth_smoothed +
             trafoInv_t;
       } else {
         float current_depth = 1 / (*iDepth);
+        // Eigen::Vector3f pn1 =
+        //     (trafoInv_R *
+        //      Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, current_depth))
+        //      +
+        //     trafoInv_t;
         Eigen::Vector3f pn1 =
-            (trafoInv_R *
-             Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, current_depth)) +
+            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
+                current_depth +
             trafoInv_t;
+
         Eigen::Vector3f pn2 =
             (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
                 source->idepth_smoothed +
             trafoInv_t;
-        pn = pn1; //(pn1 + pn2) / 2;
+        // pn = (pn1 + pn2) / 2;
+        pn = pn1;
       }
-
       new_idepth = (1.0f / pn[2]);
+      if (valid) {
+        iDepthCount++;
+        iDepthSum += new_idepth;
+      }
       float u_new = pn[0] * new_idepth * fx + cx;
       float v_new = pn[1] * new_idepth * fy + cy;
 
@@ -1179,7 +1220,12 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
             merged_validity, Conf().debugDisplay);
       }
     }
-
+  _meanIDepth = iDepthSum / iDepthCount;
+  if (_set != nullptr) {
+    _meanIdepthRatio = _meanIDepth / _set->disparity.iDepthMean;
+  } else {
+    _meanIdepthRatio = 1;
+  }
   // swap!
   //	std::swap(currentDepthMap, otherDepthMap);
 
