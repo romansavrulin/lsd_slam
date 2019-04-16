@@ -176,7 +176,7 @@ void DepthMap::initializeFromStereo() {
         } else {
           if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
             float idepth =
-                iDepthMean + iDepthMean * 2 * ((rand() % 100001) / 100000.0f);
+                iDepthMean + iDepthMean * ((rand() % 100001) / 100000.0f);
             currentDepthMap[idx] = DepthMapPixelHypothesis(
                 idepth, idepth, VAR_RANDOM_INIT_INITIAL,
                 VAR_RANDOM_INIT_INITIAL, 20, Conf().debugDisplay);
@@ -397,7 +397,7 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   resetCounters();
 
-  // rescaleFactor = _meanIdepthRatio;
+  rescaleFactor = _meanIdepthRatio;
 
   // if(plotStereoImages)  _debugImages.plotNewKeyFrame( new_keyframe );
 
@@ -470,7 +470,7 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
             << " lsd iDepthMean: " << _meanIDepth
             << " depth ratio: " << _meanIdepthRatio;
   LOG(INFO) << "rescaling";
-  // rescaleFactor = _meanIdepthRatio;
+  rescaleFactor = _meanIdepthRatio;
   float rescaleFactor2 = rescaleFactor * rescaleFactor;
   for (DepthMapPixelHypothesis *source = currentDepthMap;
        source < currentDepthMap + Conf().slamImageSize.area(); source++) {
@@ -1076,6 +1076,7 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
   // go through all pixels of OLD image, propagating forwards.
   float *iDepth = _set->disparity.iDepth;
   uint8_t *iDepthValid = _set->disparity.iDepthValid;
+  float dispartiyMapSum = 0;
   float iDepthSum = 0;
   float iDepthCount = 0;
   for (int y = 0; y < Conf().slamImageSize.height; y++)
@@ -1123,6 +1124,7 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
       if (valid) {
         iDepthCount++;
         iDepthSum += new_idepth;
+        dispartiyMapSum += *iDepth;
       }
       float u_new = pn[0] * new_idepth * fx + cx;
       float v_new = pn[1] * new_idepth * fy + cy;
@@ -1220,9 +1222,12 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
             merged_validity, Conf().debugDisplay);
       }
     }
+
   _meanIDepth = iDepthSum / iDepthCount;
+  float dispartiyMapIDepth = dispartiyMapSum / iDepthCount;
   if (_set != nullptr) {
-    _meanIdepthRatio = _meanIDepth / _set->disparity.iDepthMean;
+    //_meanIdepthRatio = _set->disparity.iDepthMean / _meanIDepth;
+    _meanIdepthRatio = dispartiyMapIDepth / _meanIDepth;
   } else {
     _meanIdepthRatio = 1;
   }
