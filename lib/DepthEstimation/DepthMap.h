@@ -33,6 +33,12 @@
 #include "DataStructures/ImageSet.h"
 #include "DepthMapDebugImages.h"
 
+/** TEMP OPENCV FOR DEBUGGING
+ **/
+#include "opencv2/core/utility.hpp"
+#include "opencv2/highgui.hpp"
+#include "opencv2/imgcodecs.hpp"
+#include "opencv2/imgproc.hpp"
 #include <opencv2/calib3d.hpp>
 
 namespace lsd_slam {
@@ -144,6 +150,8 @@ private:
   // keep track of mean iDepth and ratio to disparity map
   float _meanIDepth;
   float _meanIdepthRatio;
+
+  cv::Mat debugDepthImg;
 
   const float *activeKeyFrameImageData() { return frame()->image(0); }
   bool activeKeyFrameIsReactivated;

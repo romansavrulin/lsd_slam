@@ -38,13 +38,6 @@
 #include "util/globalFuncs.h"
 #include "util/settings.h"
 
-/** TEMP OPENCV FOR DEBUGGING
- **/
-#include "opencv2/core/utility.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/imgproc.hpp"
-
 namespace lsd_slam {
 
 // Constructor when unable to proagate from previous
@@ -68,6 +61,10 @@ DepthMap::DepthMap(const ImageSet::SharedPtr &set)
   otherDepthMap = new DepthMapPixelHypothesis[imgArea];
   currentDepthMap = new DepthMapPixelHypothesis[imgArea];
   validityIntegralBuffer = new int[imgArea];
+
+  debugDepthImg = cv::Mat::zeros(
+      cv::Size(Conf().slamImageSize.height, Conf().slamImageSize.width),
+      CV_32FC1);
 
   _meanIdepthRatio = 1;
 
@@ -150,6 +147,8 @@ void DepthMap::initializeFromStereo() {
   // std::cout << iDepthSize << " , "
   //           << Conf().slamImageSize.height * Conf().slamImageSize.width
   //           << std::endl;
+  cv::Mat depthImg(Conf().slamImageSize.height, Conf().slamImageSize.width,
+                   CV_32FC1);
   if (iDepthSize == Conf().slamImageSize.height * Conf().slamImageSize.width) {
 
     float *iDepth = _set->disparity.iDepth;
@@ -159,12 +158,13 @@ void DepthMap::initializeFromStereo() {
 
     const float *maxGradients = frame()->maxGradients();
     std::vector<float> idepth_vector;
-    for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) {
-      for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
-        ++iDepth;
-        ++iDepthValid;
+    for (int y = 0; y < Conf().slamImageSize.height; y++) {
+      for (int x = 0; x < Conf().slamImageSize.width; x++) {
         bool valid = *iDepthValid;
         int idx = x + y * Conf().slamImageSize.width;
+        if (valid) {
+          depthImg.at<float>(y, x) = *iDepth;
+        }
         if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
           // std::cout << "true: " << idepth << "random: "
@@ -185,14 +185,18 @@ void DepthMap::initializeFromStereo() {
             currentDepthMap[idx].blacklisted = 0;
           }
         }
+        iDepth++;
+        iDepthValid++;
       }
     }
   }
+  cv::imshow("depthImg", depthImg);
+  cv::waitKey(1);
 
-  else {
-    // LOG(WARNING) << "No disparity map found in time, initalizing randomly";
-    // initializeRandomly();
-  }
+  // else {
+  // LOG(WARNING) << "No disparity map found in time, initalizing randomly";
+  // initializeRandomly();
+  //}
 }
 
 void DepthMap::initializeRandomly() {
@@ -636,7 +640,9 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
   const float *keyFrameMaxGradBuf = frame()->maxGradients(0);
 
   int successes = 0;
-
+  debugDepthImg = cv::Mat::zeros(
+      cv::Size(Conf().slamImageSize.height, Conf().slamImageSize.width),
+      CV_32FC1);
   for (int y = yMin; y < yMax; y++)
     for (int x = 3; x < Conf().slamImageSize.width - 3; x++) {
       int idx = x + y * Conf().slamImageSize.width;
@@ -1079,11 +1085,11 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
   float dispartiyMapSum = 0;
   float iDepthSum = 0;
   float iDepthCount = 0;
+
+  cv::Mat depthImg(Conf().slamImageSize.height, Conf().slamImageSize.width,
+                   CV_32FC1);
   for (int y = 0; y < Conf().slamImageSize.height; y++)
     for (int x = 0; x < Conf().slamImageSize.width; x++) {
-      ++iDepth;
-      ++iDepthValid;
-
       const DepthMapPixelHypothesis *source = other->hypothesisAt(x, y);
 
       if (!source->isValid) {
@@ -1095,6 +1101,9 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
       Eigen::Vector3f pn;
       bool valid = *iDepthValid;
       float new_idepth;
+      if (valid) {
+        depthImg.at<float>(y, x) = 1 / (*iDepth);
+      }
       // if (!valid) {
       if (1) {
         pn =
@@ -1221,7 +1230,12 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
             1.0f / (1.0f / targetBest->idepth_var + 1.0f / new_var),
             merged_validity, Conf().debugDisplay);
       }
+      iDepth++;
+      iDepthValid++;
     }
+
+  cv::imshow("depthImg2", depthImg);
+  cv::waitKey(1);
 
   _meanIDepth = iDepthSum / iDepthCount;
   float dispartiyMapIDepth = dispartiyMapSum / iDepthCount;
