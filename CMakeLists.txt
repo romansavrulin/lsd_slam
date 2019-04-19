@@ -74,20 +74,10 @@ fips_include_directories( ${CMAKE_SOURCE_DIR}/lib
 
 fips_add_subdirectory( lib/ )
 
-## Provide option to not build tools, default to yes unless FIPS_IMPORT
-option( LSDSLAM_BUILD_TOOLS ON )
-if( NOT FIPS_IMPORT )
-  set( LSDSLAM_BUILD_TOOLS OFF )
-endif()
-
-if( LSDSLAM_BUILD_TOOLS )
-  fips_add_subdirectory( tools/ )
-endif()
 
 if( NOT FIPS_IMPORT )
 
   if( FIPS_UNITTESTS )
-    ## Build a local copy of gtest (as per the GTest FAQ)
     fips_add_subdirectory( test/unit/ )
   endif()
 
