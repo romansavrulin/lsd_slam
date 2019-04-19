@@ -57,7 +57,7 @@ will build release binaries.  `linux-make-unittest` will build debug binaries an
 # Running
 
 This version of LSD builds as a library.  It does not contain an application
-(it quickly results in lots of additional dependencies for loading config files
+(it quickly adds lots of additional dependencies for loading config files
 and images).
 
 See [lsd-slam-pangolin-gui](https://github.com/amarburg/lsd-slam-pangolin-gui) for a
