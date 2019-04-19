@@ -15,5 +15,5 @@ gtest_begin( lsdslam NO_TEMPLATE )
       ${TESTIMAGES_SRCS}
     )
 
-    fips_deps( lsdslam videoio )
+    fips_deps( lsdslam )
 gtest_end()
