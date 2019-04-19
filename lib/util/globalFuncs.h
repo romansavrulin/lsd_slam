@@ -23,7 +23,6 @@
 
 #include "util/settings.h"
 #include "util/SophusUtil.h"
-#include "util/OpenCVDefines.h"
 
 #include "ThreadMutexObject.h"
 
