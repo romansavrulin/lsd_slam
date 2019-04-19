@@ -3,6 +3,7 @@
 
 
 #include <opencv2/core.hpp>
+#include "util/OpenCVDefines.h"
 
 #include "libvideoio/ImageSize.h"
 
@@ -40,7 +41,7 @@ public:
   // version of the function...
   int debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame, DepthMapPixelHypothesis *currentDepthMap, int refID, const char *buf1, const char *buf2 );
   int debugPlotDepthMap( const Frame::SharedPtr &activeKeyFrame, const DepthMapPixelHypothesisVector &currentDepthMap, int refID, const char *buf1, const char *buf2 );
-  
+
 
 protected:
 
