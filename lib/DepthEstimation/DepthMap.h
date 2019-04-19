@@ -151,6 +151,8 @@ private:
   float _meanIDepth;
   float _meanIdepthRatio;
 
+  // std::vector<float> _debugIdepth;
+
   cv::Mat debugDepthImg;
 
   const float *activeKeyFrameImageData() { return frame()->image(0); }
