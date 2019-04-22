@@ -179,9 +179,10 @@ public:
   }
 
   bool isTrackingParent(const std::shared_ptr<Frame> &other) const;
-  cv::Mat getCvImage();
   bool isTrackingParent(const std::shared_ptr<KeyFrame> &other) const;
   bool isTrackingParent(int id) const;
+
+  cv::Mat getCvImage();
 
   Sim3 lastConstraintTrackedCamToWorld;
 

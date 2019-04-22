@@ -25,6 +25,9 @@ namespace lsd_slam {
       displayDepthMap( true ),
       dumpMap( false ),
       doFullReConstraintTrack( false ),
+
+      doLeftRightStereo( true ),
+
       print()
   {
   }

@@ -30,6 +30,7 @@ namespace lsd_slam {
 // Relies on the lazy-initialize nature of Frame to be efficient
 class ImageSet {
 public:
+
   struct Disparity {
     float *iDepth;
     uint8_t *iDepthValid;
@@ -38,15 +39,19 @@ public:
     //    : iDepth(_iDepth), iDepthValid(_iDepthValid), iDepthSize(_iDepthSize)
     //    {}
   };
+
   ImageSet() = delete;
 
   ImageSet(const ImageSet &) = delete;
 
   ImageSet(unsigned int id, const cv::Mat &img, const libvideoio::Camera &cam);
 
-  ImageSet(unsigned int id, const std::vector<cv::Mat> &imgs,
-           const std::vector<libvideoio::Camera> &cams, const unsigned int ref);
+  // ImageSet(unsigned int id, const std::vector<cv::Mat> &imgs,
+  //          const std::vector<libvideoio::Camera> &cams, const unsigned int ref);
+
   ~ImageSet();
+
+  size_t size() const { return _frames.size(); }
 
   Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
 
@@ -54,11 +59,16 @@ public:
     return _frames[frameNum];
   }
 
-  void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam);
+  void addFrame(const cv::Mat &img, const libvideoio::Camera &cam,
+                      const Sophus::SE3 &frameToRef = Sophus::SE3() );
+
+
   void setDisparityMap(float *_iDepth, uint8_t *_iDepthValid, int _size);
   Sim3 getRefTransformation() { return _frames[_refFrame]->getCamToWorld(); }
   void setReferenceFrame(const unsigned int &frameNum) { _refFrame = frameNum; }
   unsigned int id() { return _frameId; }
+
+  void propagatePoseFromRefFrame();
 
   Disparity disparity;
 
@@ -67,10 +77,13 @@ public:
   typedef std::shared_ptr<ImageSet> SharedPtr;
 
 private:
+
+
+
   unsigned int _refFrame;
   unsigned int _frameId;
   std::vector<Frame::SharedPtr> _frames;
-  std::vector<Sophus::SE3d> _se3FromFirst;
+  std::vector<Sophus::SE3d> _se3FromRef;
 
   // float *_disparityMap;
 };

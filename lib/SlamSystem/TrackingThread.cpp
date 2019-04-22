@@ -27,19 +27,9 @@
 
 #include "DataStructures/KeyFrame.h"
 #include "Tracking/SE3Tracker.h"
-// #include "Tracking/Sim3Tracker.h"
-// #include "DepthEstimation/DepthMap.h"
 #include "Tracking/TrackingReference.h"
-// #include "util/globalFuncs.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "GlobalMapping/TrackableKeyFrameSearch.h"
-//#include "ros/ros.h"
-// #include "GlobalMapping/g2oTypeSim3Sophus.h"
-// #include "IOWrapper/ImageDisplay.h"
-// #include "IOWrapper/Output3DWrapper.h"
-// #include <g2o/core/robust_kernel_impl.h>
-// #include "DataStructures/FrameMemory.h"
-// #include "deque
 
 #include "SlamSystem/MappingThread.h"
 
@@ -61,10 +51,10 @@ using active_object::Active;
 
 TrackingThread::TrackingThread(SlamSystem &system, bool threaded)
     : _system(system), _perf(), _tracker(new SE3Tracker(Conf().slamImageSize)),
-      //_trackingReference( new TrackingReference() ),
       _trackingIsGood(true), _newKeyFramePending(false),
       _latestGoodPoseCamToWorld(),
-      _thread(threaded ? Active::createActive() : NULL) {
+      _thread(threaded ? Active::createActive() : NULL)
+{
   // Do not use more than 4 levels for odometry tracking
   for (int level = 4; level < PYRAMID_LEVELS; ++level)
     _tracker->settings.maxItsPerLvl[level] = 0;
@@ -102,6 +92,9 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
 
   LOG(DEBUG) << "Done tracking, took " << timer.stop() * 1000 << " ms";
   _perf.track.update(timer);
+
+  LOG(DEBUG) << "Propagating pose from refFrame to others in set";
+  set->propagatePoseFromRefFrame();
 
   tracking_lastResidual = _tracker->lastResidual;
   tracking_lastUsage = _tracker->pointUsage;

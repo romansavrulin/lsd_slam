@@ -55,6 +55,8 @@ public:
  bool dumpMap;
  bool doFullReConstraintTrack;
 
+ bool doLeftRightStereo;
+
  struct PrintConfiguration {
    PrintConfiguration();
 
