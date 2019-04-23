@@ -116,12 +116,14 @@ void SlamSystem::nextImage(unsigned int id, const cv::Mat &img,
 }
 
 void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
+  LOG(WARNING) << "== Processing frame " << set->id();
+
   if (!_initialized) {
+    LOG(WARNING) << " ~~ First frame, initializing system";
     _mapThread->createFirstKeyFrame(set);
     _initialized = true;
     return;
   }
-
   _trackingThread->doTrackSet(set);
 
   logPerformanceData();

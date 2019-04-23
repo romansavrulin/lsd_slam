@@ -118,13 +118,13 @@ void KeyFrame::updateDepthFrom(const ImageSet::SharedPtr &set) {
   }
 
   if( Conf().doLeftRightStereo ) {
-    LOG(DEBUG) << "Doing left-right stereo";
+    LOG(DEBUG) << "Doing ImageSet stereo";
 
     const size_t numFrames = set->size();
 
     for( size_t i = 0; i < numFrames; ++i ) {
+      if( set->isRefFrame(i) ) continue;
       Frame::SharedPtr otherFrame( set->getFrame(i) );
-      if( refFrame->id() == set->getFrame(i)->id() ) continue;
 
       LOG(DEBUG) << "Mapping side frame " << i;
 

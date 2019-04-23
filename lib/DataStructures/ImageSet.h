@@ -32,9 +32,15 @@ class ImageSet {
 public:
 
   struct Disparity {
+  public:
+    Disparity()
+      : iDepth(nullptr), iDepthValid(nullptr), iDepthSize(0)
+    {;}
+
     float *iDepth;
     uint8_t *iDepthValid;
-    int iDepthSize = 0;
+    int iDepthSize;
+
     // Disparity(float *_iDepth, bool _iDepthValid, int _iDepthSize)
     //    : iDepth(_iDepth), iDepthValid(_iDepthValid), iDepthSize(_iDepthSize)
     //    {}
@@ -53,6 +59,7 @@ public:
 
   size_t size() const { return _frames.size(); }
 
+  bool isRefFrame( int i ) const { return i == _refFrame; }
   Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
 
   Frame::SharedPtr &getFrame(const unsigned int frameNum) {
@@ -60,7 +67,7 @@ public:
   }
 
   void addFrame(const cv::Mat &img, const libvideoio::Camera &cam,
-                      const Sophus::SE3 &frameToRef = Sophus::SE3() );
+                      const Sophus::SE3d &frameToRef = Sophus::SE3d() );
 
 
   void setDisparityMap(float *_iDepth, uint8_t *_iDepthValid, int _size);

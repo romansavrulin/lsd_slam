@@ -756,7 +756,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
                    max_idepth, _observeFrame.get(), _observeFrame->image(0),
                    result_idepth, result_var, result_eplLength, stats);
 
-  if (_set != nullptr) {
+  if (_set != nullptr && _set->disparity.iDepthSize > idx) {
     float *iDepth = _set->disparity.iDepth;
     uint8_t *iDepthValid = _set->disparity.iDepthValid;
     iDepth += idx;
