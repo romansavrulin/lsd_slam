@@ -172,25 +172,27 @@ void DepthMap::initializeFromStereo() {
           currentDepthMap[idx] = DepthMapPixelHypothesis(
               idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
               20, Conf().debugDisplay);
-        } else {
-          if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
-            float r =
-                (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) -
-                 0.5) *
-                2; // random from [-1,1]
-
-            float idepth = iDepthMean + iDepthMean / 2 * r;
-            // std::cout << rand() % iDepthMean - iDepthMean / 2 <<
-            // std::endl;
-            // iDepthMean + iDepthMean * ((rand() % 100001) / 100000.0f);
-            currentDepthMap[idx] = DepthMapPixelHypothesis(
-                idepth, idepth, VAR_RANDOM_INIT_INITIAL,
-                VAR_RANDOM_INIT_INITIAL, 20, Conf().debugDisplay);
-          } else {
-            currentDepthMap[idx].isValid = false;
-            currentDepthMap[idx].blacklisted = 0;
-          }
         }
+        // else {
+        //   if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
+        //     float r =
+        //         (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) -
+        //          0.5) *
+        //         2; // random from [-1,1]
+        //
+        //     float idepth = iDepthMean + iDepthMean / 2 * r;
+        //     // std::cout << rand() % iDepthMean - iDepthMean / 2 <<
+        //     // std::endl;
+        //     // iDepthMean + iDepthMean * ((rand() % 100001) / 100000.0f);
+        //     currentDepthMap[idx] = DepthMapPixelHypothesis(
+        //         idepth, idepth, VAR_RANDOM_INIT_INITIAL,
+        //         VAR_RANDOM_INIT_INITIAL, 20, Conf().debugDisplay);
+        //   }
+        //   // else {
+        //   //   currentDepthMap[idx].isValid = false;
+        //   //   currentDepthMap[idx].blacklisted = 0;
+        //   // }
+        // }
         iDepth++;
         iDepthValid++;
       }
@@ -735,9 +737,9 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
   result_idepth = UNZERO(result_idepth);
 
   // add hypothesis
-  *target = DepthMapPixelHypothesis(result_idepth, result_var,
-                                    VALIDITY_COUNTER_INITIAL_OBSERVE,
-                                    Conf().debugDisplay);
+  // *target = DepthMapPixelHypothesis(result_idepth, result_var,
+  //                                   VALIDITY_COUNTER_INITIAL_OBSERVE,
+  //                                   Conf().debugDisplay);
 
   if (plotStereoImages)
     _debugImages.setHypothesisHandling(
@@ -925,7 +927,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     // update var with observation
     float w = result_var / (result_var + id_var);
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
-    target->idepth = UNZERO(new_idepth);
+    // target->idepth = UNZERO(new_idepth);
     /*
     if (valid) {
       target->idepth = UNZERO(result_idepth);
