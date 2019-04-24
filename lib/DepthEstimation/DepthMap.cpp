@@ -198,8 +198,8 @@ void DepthMap::initializeFromStereo() {
       }
     }
   }
-  cv::imshow("depthImg", depthImg);
-  cv::waitKey(1);
+  // cv::imshow("depthImg", depthImg);
+  // cv::waitKey(1);
 
   // else {
   // LOG(WARNING) << "No disparity map found in time, initalizing randomly";
@@ -634,7 +634,7 @@ void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
       boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3,
       Conf().slamImageSize.height - 3, 10);
 
-  cv::imshow("debugdepth", debugDepthImg);
+  // cv::imshow("debugdepth", debugDepthImg);
 
   LOGF_IF(DEBUG, Conf().print.observeStatistics,
           "OBSERVE (%d): %d / %d created; %d / %d updated; %d skipped; %d "
@@ -811,21 +811,21 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
   float prior_idepth = target->idepth_smoothed;
   bool valid = false;
-  if (_set != nullptr) {
-    float *iDepth = _set->disparity.iDepth;
-    uint8_t *iDepthValid = _set->disparity.iDepthValid;
-    iDepth += idx;
-    iDepthValid += idx;
-    bool valid = *iDepthValid;
-    if (valid) {
-      // if (0) {
-      float prior_idepth = *iDepth;
-      debugDepthImg.at<float>(y, x) = 1 / prior_idepth;
-      // result_idepth = prior_idepth;
-    } else {
-      debugDepthImg.at<float>(y, x) = 0.0;
-    }
-  }
+  // if (_set != nullptr) {
+  //   float *iDepth = _set->disparity.iDepth;
+  //   uint8_t *iDepthValid = _set->disparity.iDepthValid;
+  //   iDepth += idx;
+  //   iDepthValid += idx;
+  //   bool valid = *iDepthValid;
+  //   if (valid) {
+  //     // if (0) {
+  //     float prior_idepth = *iDepth;
+  //     debugDepthImg.at<float>(y, x) = 1 / prior_idepth;
+  //     // result_idepth = prior_idepth;
+  //   } else {
+  //     debugDepthImg.at<float>(y, x) = 0.0;
+  //   }
+  // }
 
   float error =
       doLineStereo(x, y, epx, epy, min_idepth, prior_idepth, max_idepth,
@@ -928,14 +928,14 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     float w = result_var / (result_var + id_var);
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
     // target->idepth = UNZERO(new_idepth);
-    /*
+
     if (valid) {
       target->idepth = UNZERO(result_idepth);
-    } else {
-      float new_idepth = (1 - w) * result_idepth + w * target->idepth;
-      target->idepth = UNZERO(new_idepth);
     }
-    */
+    // else {
+    //   float new_idepth = (1 - w) * result_idepth + w * target->idepth;
+    //   target->idepth = UNZERO(new_idepth);
+    // }
 
     // variance can only decrease from observation; never increase.
     id_var = id_var * w;
@@ -1154,32 +1154,35 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
             (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
                 id +
             trafoInv_t;
-        depthImg2.at<float>(y, x) = pn[2];
-      } else {
-        float current_depth = 1 / (*iDepth);
-        // Eigen::Vector3f pn1 =
-        //     (trafoInv_R *
-        //      Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, current_depth))
-        //      +
-        //     trafoInv_t;
-        Eigen::Vector3f pn1 =
-            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
-                current_depth +
-            trafoInv_t;
-
-        Eigen::Vector3f pn2 =
-            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
-                source->idepth_smoothed +
-            trafoInv_t;
-        // pn = (pn1 + pn2) / 2;
-        pn = pn1;
+        // depthImg2.at<float>(y, x) = pn[2];
       }
-      new_idepth = (1.0f / pn[2]);
-      if (valid) {
-        iDepthCount++;
-        iDepthSum += new_idepth;
-        dispartiyMapSum += *iDepth;
-      }
+      // else {
+      //   float current_depth = 1 / (*iDepth);
+      //   // Eigen::Vector3f pn1 =
+      //   //     (trafoInv_R *
+      //   //      Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, current_depth))
+      //   //      +
+      //   //     trafoInv_t;
+      //   Eigen::Vector3f pn1 =
+      //       (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi +
+      //       cyi, 1.0f)) /
+      //           current_depth +
+      //       trafoInv_t;
+      //
+      //   Eigen::Vector3f pn2 =
+      //       (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi +
+      //       cyi, 1.0f)) /
+      //           source->idepth_smoothed +
+      //       trafoInv_t;
+      //   // pn = (pn1 + pn2) / 2;
+      //   pn = pn1;
+      // }
+      // new_idepth = (1.0f / pn[2]);
+      // if (valid) {
+      //   iDepthCount++;
+      //   iDepthSum += new_idepth;
+      //   dispartiyMapSum += *iDepth;
+      // }
       float u_new = pn[0] * new_idepth * fx + cx;
       float v_new = pn[1] * new_idepth * fy + cy;
 
