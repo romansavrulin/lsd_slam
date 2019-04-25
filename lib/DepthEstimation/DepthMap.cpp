@@ -198,8 +198,8 @@ void DepthMap::initializeFromStereo() {
       }
     }
   }
-  // cv::imshow("depthImg", depthImg);
-  // cv::waitKey(1);
+  cv::imshow("depthImg", depthImg);
+  cv::waitKey(1);
 
   // else {
   // LOG(WARNING) << "No disparity map found in time, initalizing randomly";
@@ -1109,8 +1109,9 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
   float iDepthSum = 0;
   float iDepthCount = 0;
 
-  cv::Mat depthImg2(Conf().slamImageSize.height, Conf().slamImageSize.width,
-                    CV_32FC1);
+  // cv::Mat depthImg2(Conf().slamImageSize.height, Conf().slamImageSize.width,
+  //                   CV_32FC1);
+  std::cout << "R: " << trafoInv_R << "T: " << trafoInv_t << std::endl;
   for (int y = 0; y < Conf().slamImageSize.height; y++)
     for (int x = 0; x < Conf().slamImageSize.width; x++) {
       const DepthMapPixelHypothesis *source = other->hypothesisAt(x, y);
@@ -1123,39 +1124,16 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
       runningStats.num_prop_attempts++;
       Eigen::Vector3f pn;
       bool valid = *iDepthValid;
-      float new_idepth;
-      // if (valid) {
-      //   float current_depth = *iDepth;
-      //   Eigen::Vector3f pn1 =
-      //       (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi +
-      //       cyi, 1.0f)) /
-      //           current_depth +
-      //       trafoInv_t;
-      //
-      //   Eigen::Vector3f pn2 =
-      //       (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi +
-      //       cyi, 1.0f)) /
-      //           source->idepth_smoothed +
-      //       trafoInv_t;
-      //
-      //   std::cout << "current_depth" << pn1 << std::endl;
-      //   std::cout << "idepth_smoothed" << pn2 << std::endl;
-      //   depthImg2.at<float>(y, x) = 100 / pn2[2];
-      // } else {
-      //   depthImg2.at<float>(y, x) = 0.0;
-      // }
-      // if (!valid) {
-      if (1) {
-        float id = source->idepth_smoothed;
-        if (valid) {
-          id = *iDepth;
-        }
-        pn =
-            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
-                id +
-            trafoInv_t;
-        // depthImg2.at<float>(y, x) = pn[2];
+
+      float id = source->idepth_smoothed;
+
+      if (valid) {
+        id = *iDepth;
       }
+      float new_idepth = id;
+      pn = (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
+               id +
+           trafoInv_t;
       // else {
       //   float current_depth = 1 / (*iDepth);
       //   // Eigen::Vector3f pn1 =
