@@ -8,7 +8,7 @@ ImageSet::ImageSet(unsigned int id, const cv::Mat &img,
                    const libvideoio::Camera &cam)
     : _refFrame(0) {
   _frames.push_back(std::make_shared<Frame>(id, cam, img.size(), 0.0, img.data));
-  _se3FromRef.push_back(Sophus::SE3d());
+  _se3ToRef.push_back(Sophus::SE3d());
   _frameId = id;
 }
 
@@ -20,7 +20,7 @@ ImageSet::ImageSet(unsigned int id, const cv::Mat &img,
 //                                             0.0, imgs.at(0).data));
 //   _frames.push_back(std::make_shared<Frame>(id, cams.at(1), imgs.at(1).size(),
 //                                             0.0, imgs.at(1).data));
-//   _se3FromRef.push_back(Sophus::SE3());
+//   _se3ToRef.push_back(Sophus::SE3());
 //   _frameId = id;
 //   _refFrame = ref;
 // }
@@ -31,7 +31,7 @@ void ImageSet::addFrame(const cv::Mat &img,
                              const libvideoio::Camera &cam,
                              const Sophus::SE3d &frameToRef ) {
   _frames.push_back( std::make_shared<Frame>(_frameId, cam, img.size(), 0.0, img.data) );
-  _se3FromRef.push_back( frameToRef );
+  _se3ToRef.push_back( frameToRef );
 }
 
 void ImageSet::setDisparityMap(float *_iDepth, uint8_t *_iDepthValid,
@@ -51,17 +51,20 @@ void ImageSet::propagatePoseFromRefFrame()
     boost::lock_guard<boost::shared_mutex> guard(setMutex);
 
     Sim3 refToParent = refFrame()->pose->thisToParent_raw;
+    LOG(DEBUG) << "Current refToParent:\n" << refToParent.matrix3x4();
 
     const size_t sz = size();
     for( int i = 0; i < sz; ++i ) {
       if( i == _refFrame ) continue;
 
-      Frame::SharedPtr frame( _frames[i] );
+      Frame::SharedPtr thisFrame( _frames[i] );
 
-      LOG(DEBUG) << "Propagating pose from ref frame to sub-image " << i;
+      LOG(DEBUG) << "   Propagating pose from ref frame " << _refFrame << " to sub-image " << i;
 
-      frame->pose->thisToParent_raw = sim3FromSE3(_se3FromRef[i])*refToParent;
-    	frame->setTrackingParent( refFrame()->trackingParent() );
+      thisFrame->pose->thisToParent_raw = sim3FromSE3(_se3ToRef[i])*refToParent;
+
+      LOG(DEBUG) << "   SetImage " << i << " to Parent:\n" << thisFrame->pose->thisToParent_raw.matrix3x4();
+    	thisFrame->setTrackingParent( refFrame()->trackingParent() );
 
     }
 }

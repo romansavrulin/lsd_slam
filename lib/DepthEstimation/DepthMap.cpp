@@ -276,6 +276,17 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
   else
     refToKf = frame()->getCamToWorld().inverse() * updateFrame->getCamToWorld();
 
+  const Sophus::Vector3d dist = refToKf.translation();
+  const double d = dist.dot(dist);
+
+  LOG(INFO) << "Virtual stereo baseline length: " << d;
+
+  if( d < Conf().minVirtualBaselineLength ) {
+    LOG(WARNING) << " ... too short, no stereo update";
+    return false;
+  }
+
+
   updateFrame->prepareForStereoWith(frame(), refToKf, 0);
 
   // while((int)referenceFrameByID.size() + referenceFrameByID_offset <=
@@ -685,7 +696,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
 
   if (plotStereoImages)
     _debugImages.setHypothesisHandling(
-        x, y, cv::Vec3b(255, 255, 255)); // white for GOT CREATED
+        x, y, cv::Vec3b(255, 165, 0)); // Orange for GOT CREATED
   stats->num_observe_created++;
 
   return true;
@@ -829,16 +840,14 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     stats->num_observe_inconsistent++;
     if (plotStereoImages)
       _debugImages.setHypothesisHandling(
-          x, y, cv::Vec3b(255, 255, 0)); // Turkoise FOR big inconsistent
+          x, y, cv::Vec3b(255, 255, 0)); // TURQUOISE FOR big inconsistent
 
     target->idepth_var *= FAIL_VAR_INC_FAC;
     if (target->idepth_var > MAX_VAR)
       target->isValid = false;
 
     return false;
-  }
-
-  else {
+  } else {
     // one more successful observation!
     stats->num_observe_good++;
     stats->num_observe_updated++;
@@ -946,6 +955,7 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
 
   return true;
 }
+
 void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
                                      float &rescaleFactor) {
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
@@ -1011,14 +1021,12 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
 
       runningStats.num_prop_attempts++;
       Eigen::Vector3f pn;
-      bool valid = *iDepthValid;
+
+      const int idx = y*Conf().slamImageSize.width + x;
       float new_idepth;
-      if (!valid) {
-        pn =
-            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
-                source->idepth_smoothed +
-            trafoInv_t;
-      } else {
+
+      // TODO:  Dangerous.  If the first clause is false, the second clause is segfault
+      if ( (idx < _set->disparity.iDepthSize) && *iDepthValid ) {
         float current_depth = 1 / (*iDepth);
         Eigen::Vector3f pn1 =
             (trafoInv_R *
@@ -1029,7 +1037,14 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
                 source->idepth_smoothed +
             trafoInv_t;
         pn = pn1; //(pn1 + pn2) / 2;
+      } else {
+        //
+        pn =
+            (trafoInv_R * Eigen::Vector3f(x * fxi + cxi, y * fyi + cyi, 1.0f)) /
+                source->idepth_smoothed +
+            trafoInv_t;
       }
+
 
       new_idepth = 1.0f / pn[2];
       float u_new = pn[0] * new_idepth * fx + cx;

@@ -66,6 +66,11 @@ public:
     return _frames[frameNum];
   }
 
+  Sophus::SE3d &getSE3ToRef( const unsigned int frameNum) {
+    return _se3ToRef[frameNum];
+  }
+
+
   void addFrame(const cv::Mat &img, const libvideoio::Camera &cam,
                       const Sophus::SE3d &frameToRef = Sophus::SE3d() );
 
@@ -90,7 +95,7 @@ private:
   unsigned int _refFrame;
   unsigned int _frameId;
   std::vector<Frame::SharedPtr> _frames;
-  std::vector<Sophus::SE3d> _se3FromRef;
+  std::vector<Sophus::SE3d> _se3ToRef;
 
   // float *_disparityMap;
 };

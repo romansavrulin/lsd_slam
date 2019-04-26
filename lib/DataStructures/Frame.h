@@ -173,7 +173,11 @@ public:
   void setTrackingParent(const std::shared_ptr<KeyFrame> &newParent) {
     _trackingParent = newParent;
   }
-  bool hasTrackingParent() const { return (bool)_trackingParent; }
+
+  bool hasTrackingParent() const {
+    return (bool)_trackingParent;
+  }
+
   const std::shared_ptr<KeyFrame> &trackingParent() const {
     return _trackingParent;
   }

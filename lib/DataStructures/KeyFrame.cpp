@@ -111,10 +111,11 @@ void KeyFrame::updateDepthFrom(const ImageSet::SharedPtr &set) {
          id(), refFrame->id(), refFrame->trackingParent()->id());
   }
 
+  LOG(DEBUG) << "Updating depth in KF " << id() << " from frame " << refFrame->id();
   if (!_depthMap->updateDepthFrom(refFrame) ) {
-    // TODO Handle error
+    // TODO Handle error.  Have to disambiguiate between an error and "baseline too short, didn't update"
     LOG(WARNING) << "Error while updating depth map from image set " << id();
-    return;
+    //return;
   }
 
   if( Conf().doLeftRightStereo ) {
@@ -126,9 +127,9 @@ void KeyFrame::updateDepthFrom(const ImageSet::SharedPtr &set) {
       if( set->isRefFrame(i) ) continue;
       Frame::SharedPtr otherFrame( set->getFrame(i) );
 
-      LOG(DEBUG) << "Mapping side frame " << i;
+      LOG(DEBUG) << "   Also mapping from " << i << "'th image in set " << set->id();
 
-      // Check if the side frame is too far away?
+      // TODO: Check if this frame is too far away from the keyframe?
       // Depends on the pose of the otherFrame being set
 
       _depthMap->updateDepthFrom( otherFrame );

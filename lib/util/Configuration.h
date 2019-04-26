@@ -57,6 +57,9 @@ public:
 
  bool doLeftRightStereo;
 
+ // Variables to control depth mapping
+ float minVirtualBaselineLength;
+
  struct PrintConfiguration {
    PrintConfiguration();
 

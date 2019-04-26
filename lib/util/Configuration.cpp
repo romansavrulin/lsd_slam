@@ -28,6 +28,8 @@ namespace lsd_slam {
 
       doLeftRightStereo( false ),
 
+      minVirtualBaselineLength( 0.001 ),
+
       print()
   {
   }
@@ -46,7 +48,8 @@ namespace lsd_slam {
   Configuration::PrintConfiguration::PrintConfiguration()
     : threadingInfo( true ),
       memoryDebugInfo(false),
-      trackingIterationInfo(false)
+      trackingIterationInfo(false),
+      observeStatistics( true)
     {;}
 
 

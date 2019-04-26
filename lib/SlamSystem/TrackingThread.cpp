@@ -80,18 +80,33 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
       << "TRACKING frame " << set->refFrame()->id() << " onto ref. "
       << _currentKeyFrame->id();
 
-  SE3 frameToReference_initialEstimate =
+  SE3 frameToParentEstimate =
       se3FromSim3(_currentKeyFrame->pose()->getCamToWorld().inverse() *
                   _latestGoodPoseCamToWorld);
 
   Timer timer;
 
-  LOG(DEBUG) << "Start tracking...";
-  SE3 newRefToFrame_poseUpdate = _tracker->trackFrame(
-      _currentKeyFrame, set->refFrame(), frameToReference_initialEstimate);
-
-  LOG(DEBUG) << "Done tracking, took " << timer.stop() * 1000 << " ms";
+  LOG(DEBUG) << "Tracking from " << set->id() << " against " << _currentKeyFrame->id() << "...";
+  SE3 updatedFrameToParent = _tracker->trackFrame( _currentKeyFrame, set->refFrame(), frameToParentEstimate);
+  LOG(DEBUG) << "   ... done. Tracking took " << timer.stop() * 1000 << " ms";
   _perf.track.update(timer);
+
+  const bool doTrackImageSetFrames = false;
+  if( doTrackImageSetFrames && set->size() > 1 ) {
+    Frame::SharedPtr other = set->getFrame(1);
+    Sophus::SE3d otherToRef = set->getSE3ToRef(1);
+
+//    Sophus::SE3d otherToParentEstimate = otherToRef * updatedParentToFrame.inverse();
+    Sophus::SE3d otherToParentEstimate = otherToRef * updatedFrameToParent;
+
+    LOG(WARNING) << "Before tracking, estimate:\n" << otherToParentEstimate.matrix3x4();
+
+    LOG(DEBUG) << "Tracking frame 1...";
+    SE3 updatedOtherToParent = _tracker->trackFrame(
+        _currentKeyFrame, other, otherToParentEstimate);
+
+    LOG(WARNING) << "After tracking, gets:\n" << updatedOtherToParent.matrix3x4();
+  }
 
   LOG(DEBUG) << "Propagating pose from refFrame to others in set";
   set->propagatePoseFromRefFrame();
@@ -138,7 +153,8 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
 
   if (!_newKeyFramePending &&
       _currentKeyFrame->numMappedOnThisTotal > MIN_NUM_MAPPED) {
-    Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() *
+        
+    Sophus::Vector3d dist = updatedFrameToParent.translation() *
                             _currentKeyFrame->frame()->meanIdepth;
     float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f /
                                    INITIALIZATION_PHASE_COUNT,
