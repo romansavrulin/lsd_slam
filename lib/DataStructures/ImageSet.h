@@ -59,7 +59,7 @@ public:
 
   size_t size() const { return _frames.size(); }
 
-  bool isRefFrame( int i ) const { return i == _refFrame; }
+  bool isRefFrame( unsigned int i ) const { return i == _refFrame; }
   Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
 
   Frame::SharedPtr &getFrame(const unsigned int frameNum) {

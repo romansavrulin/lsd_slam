@@ -20,10 +20,11 @@ public:
   // Accessors
   const cv::Mat &depthImage() const { return _debugImageDepth; }
 
-  void plotUpdateKeyFrame( const Frame::SharedPtr &activeKeyFrame,
-                          const Frame::SharedPtr &oldestReferenceFrame,
-                          const Frame::SharedPtr &newestReferenceFrame );
-  void displayUpdateKeyFrame();
+  void initDepthMapUpdate( const Frame::SharedPtr &activeKeyFrame, const Frame::SharedPtr &currentFrame );
+
+  //                        const Frame::SharedPtr &oldestReferenceFrame,
+  //                        const Frame::SharedPtr &newestReferenceFrame );
+  void displayDepthMapUpdate();
 
   void plotNewKeyFrame( const Frame::SharedPtr &newKeyFrame );
   void displayNewKeyFrame();

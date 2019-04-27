@@ -54,7 +54,7 @@ bool printOverallTiming = true;
 
 bool plotTrackingIterationInfo = false;
 bool plotSim3TrackingIterationInfo = false;
-bool plotStereoImages = false;
+//bool plotStereoImages = false;
 bool plotTracking = false;
 
 float KFUsageWeight = 4;

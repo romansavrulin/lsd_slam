@@ -46,18 +46,23 @@
 using namespace lsd_slam;
 
 SlamSystem::SlamSystem()
-    : _perf(), _outputWrappers(), _finalized(), _initialized(false),
-      //	_keyFrames(),
+    : _perf(),
+      _outputWrappers(),
+      _initialized(false),
+      _finalized(),
+      _trackingThread( new TrackingThread(*this, Conf().runRealTime ) ),
       _keyFrameGraph(new KeyFrameGraph),
-      _trackableKeyFrameSearch(new TrackableKeyFrameSearch(_keyFrameGraph)) {
+      _trackableKeyFrameSearch(new TrackableKeyFrameSearch(_keyFrameGraph))
+{
 
   // Because some of these rely on Conf(), need to explicitly call after
   // static initialization.  Is this true?
   const bool threaded = Conf().runRealTime;
+
   _optThread.reset(new OptimizationThread(*this, threaded));
   _mapThread.reset(new MappingThread(*this, threaded));
   _constraintThread.reset(new ConstraintSearchThread(*this, threaded));
-  _trackingThread.reset(new TrackingThread(*this, threaded));
+  //_trackingThread.reset(new TrackingThread(*this, threaded));
 
   timeLastUpdate.start();
 }
@@ -125,6 +130,8 @@ void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
     return;
   }
   _trackingThread->doTrackSet(set);
+
+  if( Conf().plot.doWaitKey >= 0 ) cv::waitKey( Conf().plot.doWaitKey );
 
   logPerformanceData();
 }
@@ -234,13 +241,14 @@ void SlamSystem::logPerformanceData() {
   }
 }
 
-void SlamSystem::updateDisplayDepthMap() {
-  if (!Conf().displayDepthMap)
-    return;
+void SlamSystem::updateDisplayDepthMap()
+{
 
-  const double scale = (bool)currentKeyFrame()
-                           ? currentKeyFrame()->frame()->getCamToWorld().scale()
-                           : 1.0;
+  if (!Conf().displayDepthMap) return;
+
+  // const double scale = (bool)currentKeyFrame()
+  //                          ? currentKeyFrame()->frame()->getCamToWorld().scale()
+  //                          : 1.0;
 
   // debug plot depthmap
   char buf1[200] = "";

@@ -20,9 +20,8 @@ namespace lsd_slam {
       continuousPCOutput( true ),
 
       debugDisplay( 0 ),
-
-      onSceenInfoDisplay( true ),
       displayDepthMap( true ),
+      onSceenInfoDisplay( true ),
       dumpMap( false ),
       doFullReConstraintTrack( false ),
 
@@ -30,7 +29,8 @@ namespace lsd_slam {
 
       minVirtualBaselineLength( 0.001 ),
 
-      print()
+      print(),
+      plot()
   {
   }
 
@@ -51,6 +51,12 @@ namespace lsd_slam {
       trackingIterationInfo(false),
       observeStatistics( true)
     {;}
+
+    //==
+    Configuration::PlotConfiguration::PlotConfiguration()
+      : doWaitKey( -1 ),
+        debugStereo( false )
+      {;}
 
 
 }

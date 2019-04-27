@@ -201,7 +201,7 @@ const int PYRAMID_DIVISOR=(0x1<<PYRAMID_LEVELS);
 // extern bool printOverallTiming;
 extern bool plotTrackingIterationInfo;
 extern bool plotSim3TrackingIterationInfo;
-extern bool plotStereoImages;
+//extern bool plotStereoImages;
 extern bool plotTracking;
 
 

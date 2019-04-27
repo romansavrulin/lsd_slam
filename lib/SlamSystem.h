@@ -139,8 +139,8 @@ private:
 
 	//== Component threads
 	unique_ptr<TrackingThread>         _trackingThread;
-	unique_ptr<OptimizationThread>     _optThread;
 	unique_ptr<MappingThread>          _mapThread;
+	unique_ptr<OptimizationThread>     _optThread;
 	unique_ptr<ConstraintSearchThread> _constraintThread;
 
 	// == Shared "global" data structures ==

@@ -255,10 +255,8 @@ void DepthMap::initializeFromGTDepth() {
 }
 
 //=== "Public interface" functions ==
-bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
-  // assert(isValid());
-
-  // LOG(INFO) << "In DepthMap::updateKeyframe";
+bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame)
+{
 
   Timer timeAll;
 
@@ -279,7 +277,7 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
   const Sophus::Vector3d dist = refToKf.translation();
   const double d = dist.dot(dist);
 
-  LOG(INFO) << "Virtual stereo baseline length: " << d;
+  LOG(INFO) << "Virtual stereo baseline length squared: " << d;
 
   if( d < Conf().minVirtualBaselineLength ) {
     LOG(WARNING) << " ... too short, no stereo update";
@@ -295,9 +293,7 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
   //	}
 
   resetCounters();
-
-  // if(plotStereoImages) _debugImages.plotUpdateKeyFrame( activeKeyFrame,
-  // oldest_referenceFrame, newest_referenceFrame );
+  if(Conf().plot.debugStereo) _debugImages.initDepthMapUpdate( _frame, updateFrame );
 
   {
     Timer time;
@@ -320,8 +316,7 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
 
   _perf.update.update(timeAll);
 
-  if (plotStereoImages)
-    _debugImages.displayUpdateKeyFrame();
+  if (Conf().plot.debugStereo) _debugImages.displayDepthMapUpdate();
 
   LOGF_IF(DEBUG, Conf().print.lineStereoStatistics,
           "ST: calls %6d, comp %6d, int %7d; good %6d (%.0f%%), neg %6d "
@@ -385,7 +380,7 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   resetCounters();
 
-  // if(plotStereoImages)  _debugImages.plotNewKeyFrame( new_keyframe );
+  // if(Conf().plot.debugStereo)  _debugImages.plotNewKeyFrame( new_keyframe );
 
   // if( new_keyframe->hasIDepthBeenSet() )
   // 	LOG(INFO) << "Creating new KeyFrame but it already has depth
@@ -465,7 +460,7 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   _perf.create.update(timeAll);
 
-  if (plotStereoImages)
+  if (Conf().plot.debugStereo)
     _debugImages.displayNewKeyFrame();
 }
 
@@ -657,7 +652,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
                                (Conf().slamImageSize.width >>
                                 SE3TRACKING_MIN_LEVEL) *
                                    (y >> SE3TRACKING_MIN_LEVEL)]) {
-      if (plotStereoImages)
+      if (Conf().plot.debugStereo)
         _debugImages.setHypothesisHandling(
             x, y, cv::Vec3b(255, 0, 0)); // BLUE for SKIPPED NOT GOOD TRACKED
       return false;
@@ -694,7 +689,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
                                     VALIDITY_COUNTER_INITIAL_OBSERVE,
                                     Conf().debugDisplay);
 
-  if (plotStereoImages)
+  if (Conf().plot.debugStereo)
     _debugImages.setHypothesisHandling(
         x, y, cv::Vec3b(255, 165, 0)); // Orange for GOT CREATED
   stats->num_observe_created++;
@@ -714,7 +709,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   // 	if((int)target->nextStereoFrameMinID - referenceFrameByID_offset >=
   // (int)referenceFrameByID.size())
   // 	{
-  // 		if(plotStereoImages) _debugImages.setHypothesisHandling(x,y,
+  // 		if(Conf().plot.debugStereo) _debugImages.setHypothesisHandling(x,y,
   // cv::Vec3b(0,255,0));       // GREEN FOR skip
   //
   // 		stats->num_observe_skip_alreadyGood++;
@@ -737,7 +732,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
                                (Conf().slamImageSize.width >>
                                 SE3TRACKING_MIN_LEVEL) *
                                    (y >> SE3TRACKING_MIN_LEVEL)]) {
-      if (plotStereoImages)
+      if (Conf().plot.debugStereo)
         _debugImages.setHypothesisHandling(
             x, y, cv::Vec3b(255, 0, 0)); // BLUE for SKIPPED NOT GOOD TRACKED
       return false;
@@ -788,7 +783,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     // want to try again.
     stats->num_observe_skip_oob++;
 
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(x, y,
                                          cv::Vec3b(0, 0, 255)); // RED FOR OOB
     return false;
@@ -799,7 +794,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   else if (error == -2) {
     stats->num_observe_skip_fail++;
 
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(255, 0, 255)); // PURPLE FOR NON-GOOD
 
@@ -820,7 +815,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   // if not found (error too high)
   else if (error == -3) {
     stats->num_observe_notfound++;
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(0, 0, 0)); // BLACK FOR big not-found
 
@@ -828,7 +823,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   }
 
   else if (error == -4) {
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(0, 0, 0)); // BLACK FOR big not-found
     return false;
@@ -838,7 +833,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   else if (DIFF_FAC_OBSERVE * diff * diff >
            result_var + target->idepth_var_smoothed) {
     stats->num_observe_inconsistent++;
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(255, 255, 0)); // TURQUOISE FOR big inconsistent
 
@@ -882,10 +877,10 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
       //! here...
       // float inc = _parent->numFramesTrackedOnThis /
       // (float)(_parent->numMappedOnThis+5);
-      float inc = 3;
+      // if (inc < 3)
+      //   inc = 3;
 
-      if (inc < 3)
-        inc = 3;
+      float inc = 3;
 
       inc += ((int)(result_eplLength * 10000) % 2);
 
@@ -897,7 +892,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
       target->nextStereoFrameMinID = _observeFrame->id() + inc;
     }
 
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(0, 255, 255)); // yellow for GOT UPDATED
 
@@ -2119,7 +2114,7 @@ inline float DepthMap::doLineStereo(
                ((didSubpixel ? 0.05f : 0.5f) * sampleDist * sampleDist +
                 geoDispError + photoDispError); // square to make variance
 
-  if (plotStereoImages) {
+  if (Conf().plot.debugStereo) {
     if (rand() % 5 == 0) {
       // if(rand()%500 == 0)
       //	printf("geo: %f, photo: %f, alpha: %f\n", sqrt(geoDispError),

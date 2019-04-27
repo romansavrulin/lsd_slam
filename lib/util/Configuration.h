@@ -86,6 +86,13 @@ public:
    bool overallTiming;
  } print;
 
+ struct PlotConfiguration {
+   PlotConfiguration();
+
+   int doWaitKey;
+   bool debugStereo;
+ } plot;
+
 private:
   // Private constructor.  User shouldn't make their own copy of Configuration
   Configuration();
