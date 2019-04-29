@@ -131,7 +131,10 @@ void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
   }
   _trackingThread->doTrackSet(set);
 
-  if( Conf().plot.doWaitKey >= 0 ) cv::waitKey( Conf().plot.doWaitKey );
+  if( Conf().plot.doWaitKey >= 0 ) {
+    LOG_IF( WARNING, Conf().plot.doWaitKey == 0 ) << "   --- waitKey(0);  Press a key in an OpenCV window to continue ---";
+    cv::waitKey( Conf().plot.doWaitKey );
+  }
 
   logPerformanceData();
 }
