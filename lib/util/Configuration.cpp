@@ -49,7 +49,13 @@ namespace lsd_slam {
     : threadingInfo( true ),
       memoryDebugInfo(false),
       trackingIterationInfo(false),
-      observeStatistics( true)
+      observeStatistics( false ),
+      observePurgeStatistics( false ),
+      propagationStatistics (false ),
+      fillHolesStatistics( false ),
+      regularizeStatistics( false ),
+      lineStereoStatistics( false ),
+      lineStereoFails( false )
     {;}
 
     //==
