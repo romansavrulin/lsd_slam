@@ -151,6 +151,7 @@ private:
   // ======= Functions =====
 
   void logPerformanceData();
+  Eigen::Matrix4f frameToWorld();
 
   //== Component threads
   unique_ptr<TrackingThread> _trackingThread;

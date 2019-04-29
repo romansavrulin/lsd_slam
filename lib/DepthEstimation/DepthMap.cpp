@@ -293,7 +293,7 @@ void DepthMap::initializeFromGTDepth() {
 bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
   // assert(isValid());
 
-  // LOG(INFO) << "In DepthMap::updateKeyframe";
+  // LOG(WARNING) << "In DepthMap::updateDepthFrom";
 
   Timer timeAll;
 
@@ -662,7 +662,7 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
   // debugDepthImg = cv::Mat::zeros(
   //     cv::Size(Conf().slamImageSize.height, Conf().slamImageSize.width),
   //     CV_32FC1);
-
+  // uint8_t *iDepthValid = _set->disparity.iDepthValid;
   for (int y = yMin; y < yMax; y++)
     for (int x = 3; x < Conf().slamImageSize.width - 3; x++) {
       int idx = x + y * Conf().slamImageSize.width;
@@ -735,7 +735,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
     return false;
 
   result_idepth = UNZERO(result_idepth);
-
+  // LOG(WARNING) << "In DepthMap::observeDepthCreate" << result_idepth;
   // add hypothesis
   // *target = DepthMapPixelHypothesis(result_idepth, result_var,
   //                                   VALIDITY_COUNTER_INITIAL_OBSERVE,
