@@ -39,7 +39,8 @@ void MappingThread::mapSetImpl(const KeyFrame::SharedPtr &kf,
   kf->updateDepthFrom(set);
 
   _system.updateDisplayDepthMap();
-  _system.publishCurrentKeyframe();
+  //_system.publishCurrentKeyframe();
+  _system.publishCurrentFrame();
 }
 
 void MappingThread::createFirstKeyFrame(const Frame::SharedPtr &frame) {

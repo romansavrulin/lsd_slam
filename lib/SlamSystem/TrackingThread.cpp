@@ -64,7 +64,8 @@ TrackingThread::TrackingThread(SlamSystem &system, bool threaded)
       //_trackingReference( new TrackingReference() ),
       _trackingIsGood(true), _newKeyFramePending(false),
       _latestGoodPoseCamToWorld(),
-      _thread(threaded ? Active::createActive() : NULL) {
+      _thread(threaded ? Active::createActive() : NULL),
+      _currentFrame(nullptr) {
   // Do not use more than 4 levels for odometry tracking
   for (int level = 4; level < PYRAMID_LEVELS; ++level)
     _tracker->settings.maxItsPerLvl[level] = 0;
@@ -93,7 +94,22 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
   SE3 frameToReference_initialEstimate =
       se3FromSim3(_currentKeyFrame->pose()->getCamToWorld().inverse() *
                   _latestGoodPoseCamToWorld);
-
+  // Temp debug
+  // Eigen::Matrix3f R;
+  // Eigen::Quaterniond q;
+  // q.x() = frameToReference_initialEstimate.so3().unit_quaternion().x();
+  // q.y() = frameToReference_initialEstimate.so3().unit_quaternion().y();
+  // q.z() = frameToReference_initialEstimate.so3().unit_quaternion().z();
+  // q.w() = frameToReference_initialEstimate.so3().unit_quaternion().w();
+  // if (q.w() < 0) {
+  //   q.x() *= -1;
+  //   q.y() *= -1;
+  //   q.z() *= -1;
+  //   q.w() *= -1;
+  // }
+  // R = q.toRotationMatrix().cast<float>();
+  //
+  // LOG(WARNING) << "Current frame pose estimate" << R;
   Timer timer;
 
   LOG(DEBUG) << "Start tracking...";
@@ -131,6 +147,7 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
   LOG_IF(DEBUG, Conf().print.threadingInfo) << "Publishing tracked frame";
   _system.publishTrackedFrame(set->refFrame());
   _system.publishPose(set->refFrame()->getCamToWorld().cast<float>());
+  _currentFrame = set->refFrame();
 
   // Keyframe selection
   LOG(INFO) << "Tracked " << set->id() << " against keyframe "
@@ -223,7 +240,8 @@ void TrackingThread::takeRelocalizeResult(const RelocalizerResult &result) {
     //_system.keyFrameGraph()->addFrame(result.successfulFrame );
 
     // TODO commenting this out in the assumption I don't need it... need to
-    // revist _system.mapThread->pushUnmappedTrackedFrame( result.successfulFrame
+    // revist _system.mapThread->pushUnmappedTrackedFrame(
+    // result.successfulFrame
     //);
 
     //{

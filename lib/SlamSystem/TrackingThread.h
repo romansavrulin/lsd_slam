@@ -66,6 +66,7 @@ public:
   }
 
   KeyFrame::SharedPtr &currentKeyFrame(void) { return _currentKeyFrame; }
+  Frame::SharedPtr &currentFrame(void) { return _currentFrame; }
 
   int findConstraintsForNewKeyFrames(Frame *newKeyFrame,
                                      bool forceParent = true,
@@ -112,6 +113,7 @@ private:
   bool _newKeyFramePending;
 
   KeyFrame::SharedPtr _currentKeyFrame;
+  Frame::SharedPtr _currentFrame;
 
   Sim3 _latestGoodPoseCamToWorld;
 

@@ -158,8 +158,8 @@ void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
 // 		{
 // 			if(noCreate)
 // 			{
-// 				LOG(INFO) << "mapping is disabled & moved outside
-// of known map. Starting Relocalizer!";
+// 				LOG(INFO) << "mapping is disabled & moved
+// outside of known map. Starting Relocalizer!";
 // trackingThread->setTrackingIsBad();
 // 				//nextRelocIdx = -1; /// What does this do?
 // 			}
@@ -247,8 +247,8 @@ void SlamSystem::updateDisplayDepthMap() {
   if (Conf().onSceenInfoDisplay) {
     // snprintf(buf1,200,"Map: Upd %3.0fms (%2.0fHz); Trk %3.0fms (%2.0fHz); %d
     // / %d", 		depthMap()->perf().update.ms(),
-    // depthMap()->perf().update.rate(), 		_trackingThread->perf().track.ms(),
-    // _trackingThread->perf().track.rate(),
+    // depthMap()->perf().update.rate(),
+    // _trackingThread->perf().track.ms(), _trackingThread->perf().track.rate(),
     // 		currentKeyFrame()->numFramesTrackedOnThis,
     // currentKeyFrame()->numMappedOnThis ); //,
     // (int)unmappedTrackedFrames().size());
@@ -281,6 +281,10 @@ void SlamSystem::updateDisplayDepthMap() {
   }
 
 void SlamSystem::publishPose(const Sophus::Sim3f &pose) {
+  Eigen::Matrix3f R = pose.rotationMatrix();
+
+  // R = q.toRotationMatrix().cast<float>();
+
   OUTPUT_FOR_EACH(publishPose(pose))
 }
 
@@ -304,6 +308,62 @@ void SlamSystem::publishCurrentKeyframe() {
   if (currentKeyFrame()) {
     OUTPUT_FOR_EACH(publishKeyframe(currentKeyFrame()->frame()))
     OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()->frame()))
+  } else {
+    LOG(DEBUG) << "No currentKeyframe, unable to publish";
+  }
+}
+
+void SlamSystem::publishCurrentFrame() {
+  if (currentKeyFrame()) {
+    // TODO G to world, not KF
+    SE3 FToKF = se3FromSim3(currentFrame()->getCamToWorld());
+    Eigen::Matrix4f G_f_kf = Eigen::Matrix4f::Zero(4, 4);
+    Eigen::Matrix3f R;
+    Eigen::Vector3f T;
+    Eigen::Quaterniond q;
+    q.x() = FToKF.so3().unit_quaternion().x();
+    q.y() = FToKF.so3().unit_quaternion().y();
+    q.z() = FToKF.so3().unit_quaternion().z();
+    q.w() = FToKF.so3().unit_quaternion().w();
+    if (q.w() < 0) {
+      q.x() *= -1;
+      q.y() *= -1;
+      q.z() *= -1;
+      q.w() *= -1;
+    }
+    R = q.toRotationMatrix().cast<float>();
+    T(0) = FToKF.translation()[0];
+    T(1) = FToKF.translation()[1];
+    T(2) = FToKF.translation()[2];
+    G_f_kf.block<3, 3>(0, 0) = R;
+    G_f_kf.block<3, 1>(0, 3) = T;
+    G_f_kf(3, 3) = 1.0;
+
+    SE3 KFToW = se3FromSim3(currentKeyFrame()->getCamToWorld());
+    Eigen::Matrix4f G_kf_world = Eigen::Matrix4f::Zero(4, 4);
+    q.x() = KFToW.so3().unit_quaternion().x();
+    q.y() = KFToW.so3().unit_quaternion().y();
+    q.z() = KFToW.so3().unit_quaternion().z();
+    q.w() = KFToW.so3().unit_quaternion().w();
+    if (q.w() < 0) {
+      q.x() *= -1;
+      q.y() *= -1;
+      q.z() *= -1;
+      q.w() *= -1;
+    }
+    R = q.toRotationMatrix().cast<float>();
+    T(0) = KFToW.translation()[0];
+    T(1) = KFToW.translation()[1];
+    T(2) = KFToW.translation()[2];
+    G_kf_world.block<3, 3>(0, 0) = R;
+    G_kf_world.block<3, 1>(0, 3) = T;
+    G_kf_world(3, 3) = 1.0;
+    // LOG(WARNING) << "G: " << G;
+
+    Eigen::Matrix4f G = G_kf_world * G_f_kf;
+
+    OUTPUT_FOR_EACH(publishFrame(currentKeyFrame()->frame(), G_f_kf))
+    // OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()))
   } else {
     LOG(DEBUG) << "No currentKeyframe, unable to publish";
   }
