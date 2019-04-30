@@ -324,51 +324,13 @@ void SlamSystem::publishCurrentFrame() {
 }
 
 Eigen::Matrix4f SlamSystem::frameToWorld() {
-  SE3 FToKF = se3FromSim3(currentFrame()->getCamToWorld());
-  Eigen::Matrix4f G_f_kf = Eigen::Matrix4f::Zero(4, 4);
-  Eigen::Matrix3f R;
-  Eigen::Vector3f T;
-  Eigen::Quaterniond q;
-  q.x() = FToKF.so3().unit_quaternion().x();
-  q.y() = FToKF.so3().unit_quaternion().y();
-  q.z() = FToKF.so3().unit_quaternion().z();
-  q.w() = FToKF.so3().unit_quaternion().w();
-  if (q.w() < 0) {
-    q.x() *= -1;
-    q.y() *= -1;
-    q.z() *= -1;
-    q.w() *= -1;
-  }
-  R = q.toRotationMatrix().cast<float>();
-  T(0) = FToKF.translation()[0];
-  T(1) = FToKF.translation()[1];
-  T(2) = FToKF.translation()[2];
-  G_f_kf.block<3, 3>(0, 0) = R;
-  G_f_kf.block<3, 1>(0, 3) = T;
-  G_f_kf(3, 3) = 1.0;
-
-  SE3 KFToW = se3FromSim3(currentKeyFrame()->getCamToWorld());
-  Eigen::Matrix4f G_kf_world = Eigen::Matrix4f::Zero(4, 4);
-  q.x() = KFToW.so3().unit_quaternion().x();
-  q.y() = KFToW.so3().unit_quaternion().y();
-  q.z() = KFToW.so3().unit_quaternion().z();
-  q.w() = KFToW.so3().unit_quaternion().w();
-  if (q.w() < 0) {
-    q.x() *= -1;
-    q.y() *= -1;
-    q.z() *= -1;
-    q.w() *= -1;
-  }
-  R = q.toRotationMatrix().cast<float>();
-  T(0) = KFToW.translation()[0];
-  T(1) = KFToW.translation()[1];
-  T(2) = KFToW.translation()[2];
-  G_kf_world.block<3, 3>(0, 0) = R;
-  G_kf_world.block<3, 1>(0, 3) = T;
-  G_kf_world(3, 3) = 1.0;
-
-  // Eigen::Matrix4f G = G_kf_world.inverse() * G_f_kf;
   Eigen::Matrix4f G = Eigen::Matrix4f::Identity();
+  Sim3 refToKf = currentFrame()->pose->thisToParent_raw;
+  SE3 KFToW = se3FromSim3(refToKf);
+  Eigen::Vector3f T = KFToW.translation().cast<float>();
+  Eigen::Matrix3f R = KFToW.rotationMatrix().cast<float>();
+  G.block<3, 3>(0, 0) = R;
+  G.block<3, 1>(0, 3) = T;
 
   return G;
 }

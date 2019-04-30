@@ -34,7 +34,7 @@ KeyFrame::PropagateAndCreate(const KeyFrame::SharedPtr &other,
   KeyFrame::SharedPtr kf(new KeyFrame(frame));
 
   float rescaleFactor = 1.0;
-  kf->depthMap()->propagateFrom(other->depthMap(), rescaleFactor, false);
+  kf->depthMap()->propagateFrom(other->depthMap(), rescaleFactor);
   kf->syncDepthMapToFrame();
 
   kf->frame()->pose->setThisToParent(sim3FromSE3(
@@ -49,7 +49,7 @@ KeyFrame::PropagateAndCreate(const KeyFrame::SharedPtr &other,
   KeyFrame::SharedPtr kf(new KeyFrame(set));
 
   float rescaleFactor = 1.0;
-  kf->depthMap()->propagateFrom(other->depthMap(), rescaleFactor, true);
+  kf->depthMap()->propagateFrom(other->depthMap(), rescaleFactor);
   kf->syncDepthMapToFrame();
 
   kf->frame()->pose->setThisToParent(sim3FromSE3(

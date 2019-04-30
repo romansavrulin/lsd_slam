@@ -33,14 +33,6 @@
 #include "DataStructures/ImageSet.h"
 #include "DepthMapDebugImages.h"
 
-/** TEMP OPENCV FOR DEBUGGING
- **/
-#include "opencv2/core/utility.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgcodecs.hpp"
-#include "opencv2/imgproc.hpp"
-#include <opencv2/calib3d.hpp>
-
 namespace lsd_slam {
 
 class DepthMapPixelHypothesis;
@@ -81,7 +73,7 @@ public:
   // void initializefromStereo( const std::shared_ptr<ImageSet> &set);
 
   void propagateFrom(const DepthMap::SharedPtr &new_keyframe,
-                     float &rescaleFactor, bool stereo_depth);
+                     float &rescaleFactor);
 
   void finalize();
 
@@ -124,14 +116,6 @@ private:
   std::shared_ptr<Frame> _frame;
   std::shared_ptr<ImageSet> _set;
 
-  // keep track of mean iDepth and ratio to disparity map
-  float _meanIDepth;
-  float _meanIdepthRatio;
-
-  // std::vector<float> _debugIdepth;
-
-  cv::Mat debugDepthImg;
-
   const float *activeKeyFrameImageData() { return frame()->image(0); }
   bool activeKeyFrameIsReactivated;
 
@@ -161,8 +145,6 @@ private:
 
   // Reset currentDepthMap by re-projecting is from activeKeyFrame to
   // new_keyframe
-  void propagateDepthFrom(const DepthMap::SharedPtr &new_keyframe,
-                          float &rescaleFactor);
   void propagateDepthFromSet(const DepthMap::SharedPtr &new_keyframe,
                              float &rescaleFactor);
 
