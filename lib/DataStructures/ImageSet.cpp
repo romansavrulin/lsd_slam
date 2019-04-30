@@ -66,6 +66,10 @@ void ImageSet::propagatePoseFromRefFrame()
       LOG(DEBUG) << "   SetImage " << i << " to Parent:\n" << thisFrame->pose->thisToParent_raw.matrix3x4();
     	thisFrame->setTrackingParent( refFrame()->trackingParent() );
 
+      // Stopgap for now.   How to set a good value if the secondary frames
+      // aren't running through the tracker
+      thisFrame->initialTrackedResidual = refFrame()->initialTrackedResidual;
+
     }
 }
 

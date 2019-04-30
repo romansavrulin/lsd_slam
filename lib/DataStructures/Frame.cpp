@@ -39,7 +39,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
              double timestamp, const unsigned char *image)
     : _trackingParent(nullptr), _id(frameId), _timestamp(timestamp),
       data(cam, sz, image), pose(new FramePoseStruct(*this)), referenceID(-1),
-      referenceLevel(-1), numMappablePixels(-1), meanIdepth(1), numPoints(0),
+      referenceLevel(-1), numMappablePixels(-1), initialTrackedResidual(0),
+      meanIdepth(1), numPoints(0),
       idxInKeyframes(-1), edgeErrorSum(1), edgesNum(1),
       lastConstraintTrackedCamToWorld(Sim3()), isActive(false) {
   privateFrameAllocCount++;
@@ -53,7 +54,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
              double timestamp, const float *image)
     : _trackingParent(nullptr), _id(frameId), _timestamp(timestamp),
       data(cam, sz, image), pose(new FramePoseStruct(*this)), referenceID(-1),
-      referenceLevel(-1), numMappablePixels(-1), meanIdepth(1), numPoints(0),
+      referenceLevel(-1), numMappablePixels(-1), initialTrackedResidual(0),
+      meanIdepth(1), numPoints(0),
       idxInKeyframes(-1), edgeErrorSum(1), edgesNum(1),
       lastConstraintTrackedCamToWorld(Sim3()), isActive(false) {
   privateFrameAllocCount++;
