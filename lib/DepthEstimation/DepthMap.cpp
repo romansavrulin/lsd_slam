@@ -1671,19 +1671,19 @@ inline float DepthMap::doLineStereo(
 
   // calculate values to search for
   const float *currentKeyFrameImageData = activeKeyFrameImageData();
-  float realVal_p1 =
-      getInterpolatedElement(currentKeyFrameImageData, u + epxn * rescaleFactor,
-                             v + epyn * rescaleFactor, width);
-  float realVal_m1 =
-      getInterpolatedElement(currentKeyFrameImageData, u - epxn * rescaleFactor,
-                             v - epyn * rescaleFactor, width);
-  float realVal = getInterpolatedElement(currentKeyFrameImageData, u, v, width);
-  float realVal_m2 = getInterpolatedElement(
-      currentKeyFrameImageData, u - 2 * epxn * rescaleFactor,
-      v - 2 * epyn * rescaleFactor, width);
-  float realVal_p2 = getInterpolatedElement(
+  const float realVal_p2 = getInterpolatedElement(
       currentKeyFrameImageData, u + 2 * epxn * rescaleFactor,
       v + 2 * epyn * rescaleFactor, width);
+  const float realVal_p1 = getInterpolatedElement(
+      currentKeyFrameImageData, u + epxn * rescaleFactor,
+      v + epyn * rescaleFactor, width);
+  const float realVal = getInterpolatedElement(currentKeyFrameImageData, u, v, width);
+  const float realVal_m1 =getInterpolatedElement(
+      currentKeyFrameImageData, u - epxn * rescaleFactor,
+      v - epyn * rescaleFactor, width);
+  const float realVal_m2 = getInterpolatedElement(
+      currentKeyFrameImageData, u - 2 * epxn * rescaleFactor,
+      v - 2 * epyn * rescaleFactor, width);
 
   //	if(referenceFrame->K_otherToThis_t[2] * max_idepth + pInf[2] < 0.01)
 
@@ -1953,7 +1953,7 @@ inline float DepthMap::doLineStereo(
   }
 
   bool didSubpixel = false;
-  if (useSubpixelStereo) {
+  if (Conf().doSubpixelStereo) {
     // ================== compute exact match =========================
     // compute gradients (they are actually only half the real gradient)
     float gradPre_pre = -(best_match_errPre - best_match_DiffErrPre);
@@ -2057,7 +2057,7 @@ inline float DepthMap::doLineStereo(
               cxi = referenceFrame->cxi(), cyi = referenceFrame->cyi();
 
   float idnew_best_match; // depth in the new image
-  float alpha; // d(idnew_best_match) / d(disparity in pixel) == conputed
+  float alpha; // d(idnew_best_match) / d(disparity in pixel) == computed
                // inverse depth derived by the pixel-disparity.
   if (incx * incx > incy * incy) {
     float oldX = fxi * best_match_x + cxi;
@@ -2154,7 +2154,7 @@ inline float DepthMap::doLineStereo(
       float fac = best_match_err /
                   ((float)MAX_ERROR_STEREO + sqrtf(gradAlongLine) * 20);
 
-      cv::Scalar color = cv::Scalar(255 * fac, 255 - 255 * fac, 0); // bw
+      cv::Scalar color = cv::Scalar(255 * fac, 255 * (1-fac), 0); // bw
 
       /*
       if(rescaleFactor > 1)

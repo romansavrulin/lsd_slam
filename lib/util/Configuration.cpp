@@ -25,6 +25,7 @@ namespace lsd_slam {
       dumpMap( false ),
       doFullReConstraintTrack( false ),
 
+      doSubpixelStereo( true ),
       doLeftRightStereo( false ),
 
       minVirtualBaselineLength( 0.001 ),

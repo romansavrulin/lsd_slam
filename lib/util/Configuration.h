@@ -55,6 +55,7 @@ public:
  bool dumpMap;
  bool doFullReConstraintTrack;
 
+ bool doSubpixelStereo;
  bool doLeftRightStereo;
 
  // Variables to control depth mapping
