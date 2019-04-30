@@ -46,6 +46,8 @@ DepthMap::DepthMap(const Frame::SharedPtr &frame)
       activeKeyFrameIsReactivated(false) {
   const size_t imgArea(Conf().slamImageSize.area());
 
+  trav_KF << 0, 0, 0;
+
   otherDepthMap = new DepthMapPixelHypothesis[imgArea];
   currentDepthMap = new DepthMapPixelHypothesis[imgArea];
   validityIntegralBuffer = new int[imgArea];
@@ -57,6 +59,8 @@ DepthMap::DepthMap(const ImageSet::SharedPtr &set)
     : _perf(), _debugImages(Conf().slamImageSize), _set(set),
       _frame(set->refFrame()), activeKeyFrameIsReactivated(false) {
   const size_t imgArea(Conf().slamImageSize.area());
+
+  trav_KF << 0, 0, 0;
 
   otherDepthMap = new DepthMapPixelHypothesis[imgArea];
   currentDepthMap = new DepthMapPixelHypothesis[imgArea];
@@ -311,6 +315,12 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
   else
     refToKf = frame()->getCamToWorld().inverse() * updateFrame->getCamToWorld();
 
+  // Keyframe to Frame
+  // SE3 KFToW = se3FromSim3(refToKf);
+  // trav_KF(0) = KFToW.translation()[0];
+  // trav_KF(1) = KFToW.translation()[1];
+  // trav_KF(2) = KFToW.translation()[2];
+  trav_KF = refToKf.translation().cast<float>();
   updateFrame->prepareForStereoWith(frame(), refToKf, 0);
 
   // while((int)referenceFrameByID.size() + referenceFrameByID_offset <=
@@ -966,21 +976,23 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     float w = result_var / (result_var + id_var);
 
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
-    if (!valid) {
+
+    if (!valid && trav_KF.norm() > 0.15) {
       // LOG(WARNING) << "new_idepth: " << new_idepth
       //              << " result_idepth: " << result_idepth << " old idepth "
       //              << target->idepth << " w: " << w;
       // LOG(WARNING) << "result_var: " << result_var << " id_var: " << id_var;
+      target->idepth = UNZERO(new_idepth);
     }
 
-    if (valid) {
+    else if (valid) {
       // float new_idepth = (1 - w) * result_idepth + w * target->idepth;
       // LOG(WARNING) << "new: " << new_idepth << "result: " << result_idepth
       //              << "original: " << target->idepth;
       // target->idepth = UNZERO(new_idepth);
       // target->idepth = UNZERO(result_idepth);
       // target->idepth = UNZERO(*iDepth);
-      new_idepth = *iDepth;
+      // new_idepth = *iDepth;
       target->idepth = UNZERO(new_idepth);
     }
 
