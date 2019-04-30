@@ -73,31 +73,7 @@ DepthMap::DepthMap(const ImageSet::SharedPtr &set)
 
   reset();
 }
-
-// // Constructor when propagation from an existing Depthmap
-// DepthMap::DepthMap( const DepthMap::SharedPtr &other, const Frame::SharedPtr
-// &keyframe ) : _perf(), 	_debugImages( Conf().slamImageSize ), _frame(
-// keyframe
-// ), 	activeKeyFrameIsReactivated = false;
-// {
-// 	const size_t imgArea( Conf().slamImageSize.area() );
-//
-// 	otherDepthMap = new DepthMapPixelHypothesis[imgArea];
-// 	currentDepthMap = new DepthMapPixelHypothesis[imgArea];
-// 	validityIntegralBuffer = new int[imgArea];
-//
-// 	propagateFrom( other );
-//
-// 	reset();
-// }
-
-// Convenience accessors.  Due to circular dependency between DepthMap
-// and KeyFrame, these can't be inline in the header file
-
 DepthMap::~DepthMap() {
-  // if( (bool)activeKeyFrame )
-  // 	activeKeyFramelock.unlock();
-
   delete[] otherDepthMap;
   delete[] currentDepthMap;
 
@@ -124,32 +100,18 @@ void DepthMap::reset() {
 
 void DepthMap::initializeFromFrame() {
   CHECK(_frame != nullptr) << "FRAME HAS NOT BEEN SET";
-  if (frame()->hasIDepthBeenSet()) {
-    LOG(INFO) << "Using initial Depth estimate in first frame.";
-    initializeFromGTDepth();
-  } else {
-    LOG(INFO) << "Doing Stereo initialization!";
-    initializeRandomly();
-    // depthMap()->initializefromStereo(set);
-  }
+  initializeRandomly();
 }
 
 void DepthMap::initializeFromSet() {
-
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
   initializeFromStereo();
-  // initializeRandomly();
 }
 
 void DepthMap::initializeFromStereo() {
   // TODO Initialize from stereo images
-  // boost::shared_lock_guard<boost::shared_mutex> set_lock(_set->setMutex);
   int iDepthSize;
-
   iDepthSize = _set->disparity.iDepthSize;
-  // std::cout << iDepthSize << " , "
-  //           << Conf().slamImageSize.height * Conf().slamImageSize.width
-  //           << std::endl;
   cv::Mat depthImg(Conf().slamImageSize.height, Conf().slamImageSize.width,
                    CV_32FC1);
   if (iDepthSize == Conf().slamImageSize.height * Conf().slamImageSize.width) {
@@ -170,45 +132,17 @@ void DepthMap::initializeFromStereo() {
         }
         if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
-          // std::cout << "true: " << idepth << "random: "
-          //           << iDepthMean + 1.0f * ((rand() % 100001) / 100000.0f)
-          //           << std::endl;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
               idepth, idepth, VAR_RANDOM_INIT_INITIAL / 1000,
               VAR_RANDOM_INIT_INITIAL / 1000, 20, Conf().debugDisplay);
         }
-        // else {
-        //   if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
-        //     float r =
-        //         (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) -
-        //          0.5) *
-        //         2; // random from [-1,1]
-        //
-        //     float idepth = iDepthMean + iDepthMean / 2 * r;
-        //     // std::cout << rand() % iDepthMean - iDepthMean / 2 <<
-        //     // std::endl;
-        //     // iDepthMean + iDepthMean * ((rand() % 100001) / 100000.0f);
-        //     currentDepthMap[idx] = DepthMapPixelHypothesis(
-        //         idepth, idepth, VAR_RANDOM_INIT_INITIAL,
-        //         VAR_RANDOM_INIT_INITIAL, 20, Conf().debugDisplay);
-        //   }
-        //   // else {
-        //   //   currentDepthMap[idx].isValid = false;
-        //   //   currentDepthMap[idx].blacklisted = 0;
-        //   // }
-        // }
         iDepth++;
         iDepthValid++;
       }
     }
+  } else {
+    LOG(WARNING) << "No disparity map found";
   }
-  cv::imshow("depthImg", depthImg);
-  cv::waitKey(1);
-
-  // else {
-  // LOG(WARNING) << "No disparity map found in time, initalizing randomly";
-  // initializeRandomly();
-  //}
 }
 
 void DepthMap::initializeRandomly() {
@@ -232,82 +166,11 @@ void DepthMap::initializeRandomly() {
   }
 }
 
-void DepthMap::initializeFromGTDepth() {
-  initializeRandomly();
-
-  // TODO:   Disabled temporarily while re-plumbing DepthMap.   Should be
-  // re-enabled
-
-  // CHECK(new_frame->hasIDepthBeenSet());
-  //
-  // activeKeyFramelock = new_frame->getActiveLock();
-  // activeKeyFrame = new_frame;
-  // //activeKeyFrameImageData = activeKeyFrame->image(0);
-  // activeKeyFrameIsReactivated = false;
-  //
-  // const float* idepth = new_frame->idepth();
-  //
-  //
-  // float averageGTIDepthSum = 0;
-  // int averageGTIDepthNum = 0;
-  // for(int y=0;y<Conf().slamImageSize.height;y++)
-  // {
-  // 	for(int x=0;x<Conf().slamImageSize.width;x++)
-  // 	{
-  // 		float idepthValue = idepth[x+y*Conf().slamImageSize.width];
-  // 		if(!isnanf(idepthValue) && idepthValue > 0)
-  // 		{
-  // 			averageGTIDepthSum += idepthValue;
-  // 			averageGTIDepthNum ++;
-  // 		}
-  // 	}
-  // }
-  //
-  //
-  // for(int y=0;y<Conf().slamImageSize.height;y++)
-  // {
-  // 	for(int x=0;x<Conf().slamImageSize.width;x++)
-  // 	{
-  // 		int idx = x+y*Conf().slamImageSize.width;
-  // 		float idepthValue = idepth[idx];
-  //
-  // 		if(!isnanf(idepthValue) && idepthValue > 0)
-  // 		{
-  // 			currentDepthMap[idx] = DepthMapPixelHypothesis(
-  // 					idepthValue,
-  // 					idepthValue,
-  // 					VAR_GT_INIT_INITIAL,
-  // 					VAR_GT_INIT_INITIAL,
-  // 					20,
-  // 				  Conf().debugDisplay );
-  // 		}
-  // 		else
-  // 		{
-  // 			currentDepthMap[idx].isValid = false;
-  // 			currentDepthMap[idx].blacklisted = 0;
-  // 		}
-  // 	}
-  // }
-  //
-  //
-  // activeKeyFrame->setDepth(currentDepthMap);
-}
-
 //=== "Public interface" functions ==
 bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
-  // assert(isValid());
-
-  // LOG(WARNING) << "In DepthMap::updateDepthFrom";
+  LOG(INFO) << "Updating depth from frame";
 
   Timer timeAll;
-
-  // oldest_referenceFrame = referenceFrames.front();
-  // newest_referenceFrame = referenceFrames.back();
-  // referenceFrameByID.clear();
-  // referenceFrameByID_offset = oldest_referenceFrame->id();
-  //
-  // for(std::shared_ptr<Frame> frame : referenceFrames)
-  // {
 
   Sim3 refToKf;
   if (updateFrame->trackingParent()->id() == frame()->id())
@@ -315,23 +178,10 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
   else
     refToKf = frame()->getCamToWorld().inverse() * updateFrame->getCamToWorld();
 
-  // Keyframe to Frame
-  // SE3 KFToW = se3FromSim3(refToKf);
-  // trav_KF(0) = KFToW.translation()[0];
-  // trav_KF(1) = KFToW.translation()[1];
-  // trav_KF(2) = KFToW.translation()[2];
   trav_KF = refToKf.translation().cast<float>();
   updateFrame->prepareForStereoWith(frame(), refToKf, 0);
 
-  // while((int)referenceFrameByID.size() + referenceFrameByID_offset <=
-  // frame->id()) 	referenceFrameByID.push_back(frame);
-
-  //	}
-
   resetCounters();
-
-  // if(plotStereoImages) _debugImages.plotUpdateKeyFrame( activeKeyFrame,
-  // oldest_referenceFrame, newest_referenceFrame );
 
   {
     Timer time;
@@ -339,7 +189,6 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
     _perf.observe.update(time);
   }
 
-  // if(rand()%10==0)
   {
     Timer time;
     regularizeDepthMapFillHoles();
@@ -395,38 +244,14 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
   return true;
 }
 
-// void DepthMap::invalidate()
-// {
-// 	if(activeKeyFrame==0) return;
-// 	activeKeyFrame=0;
-// 	activeKeyFramelock.unlock();
-// }
-
 void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
                              float &rescaleFactor, bool stereo_depth) {
-  // assert(isValid());
-  // assert(new_keyframe != nullptr);
-  // assert(new_keyframe->hasTrackingParent());
-  //
-  // //boost::shared_lock<boost::shared_mutex> lock =
-  // activeKeyFrame->getActiveLock(); boost::shared_lock<boost::shared_mutex>
-  // lock2 = new_keyframe->getActiveLock(); std::lock_guard<std::mutex> lock(
-  // new_keyframe->frameMutex );
-
-  // TODO.  Check that my frame tracked on other's frame
-
   Timer timeAll;
 
   resetCounters();
 
-  // rescaleFactor = _meanIdepthRatio;
+  // TODO just remove rescaleFactor in this branch. Not needed
   rescaleFactor = 1.0;
-
-  // if(plotStereoImages)  _debugImages.plotNewKeyFrame( new_keyframe );
-
-  // if( new_keyframe->hasIDepthBeenSet() )
-  // 	LOG(INFO) << "Creating new KeyFrame but it already has depth
-  // information";
 
   {
     Timer time;
@@ -437,11 +262,6 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
     }
     _perf.propagate.update(time);
   }
-
-  // activeKeyFrame = new_keyframe;
-  // activeKeyFramelock = activeKeyFrame->getActiveLock();
-  // //activeKeyFrameImageData = new_keyframe->image(0);
-  // activeKeyFrameIsReactivated = false;
 
   {
     int validCount = 0;
@@ -473,7 +293,6 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
     _perf.regularize.update(time);
   }
 
-  // make mean inverse depth be one.
   float sumIdepth = 0, numIdepth = 0;
   int validCount = 0;
   for (DepthMapPixelHypothesis *source = currentDepthMap;
@@ -488,12 +307,6 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   LOG(DEBUG) << "DepthMap has " << validCount << " valid points";
 
-  // rescaleFactor = numIdepth / sumIdepth;
-  LOG(INFO) << "disparity iDepthMean: " << _set->disparity.iDepthMean
-            << " lsd iDepthMean: " << _meanIDepth
-            << " depth ratio: " << _meanIdepthRatio;
-  LOG(INFO) << "rescaling";
-  // rescaleFactor = _meanIdepthRatio;
   rescaleFactor = 1.0;
   float rescaleFactor2 = rescaleFactor * rescaleFactor;
   uint8_t *iDepthValid = _set->disparity.iDepthValid;
@@ -502,11 +315,7 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
     if (!source->isValid)
       continue;
     bool valid = *iDepthValid;
-    if (!valid) {
-      source->idepth *= rescaleFactor;
-    }
-    // RESCALE TO BE SAME SIZE AS Disparity
-    // source->idepth *= _meanIdepthRatio;
+    source->idepth *= rescaleFactor;
     source->idepth_smoothed *= rescaleFactor;
     source->idepth_var *= rescaleFactor2;
     source->idepth_var_smoothed *= rescaleFactor2;
@@ -521,8 +330,6 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 }
 
 void DepthMap::finalize() {
-  //	assert(isValid());
-
   Timer timeAll;
 
   {
@@ -534,59 +341,11 @@ void DepthMap::finalize() {
   {
     Timer time;
     regularizeDepthMap(false, VAL_SUM_MIN_FOR_KEEP);
-    // regularizeDepthMap(true, VAL_SUM_MIN_FOR_KEEP);
     _perf.regularize.update(time);
   }
 
   _perf.finalize.update(timeAll);
 }
-
-// void DepthMap::activateExistingKF( const Frame::SharedPtr &kf)
-// {
-// 	assert(kf->hasIDepthBeenSet());
-//
-// 	activeKeyFramelock = kf->getActiveLock();
-// 	activeKeyFrame = kf;
-//
-// 	const float* idepth = activeKeyFrame->idepth_reAct();
-// 	const float* idepthVar = activeKeyFrame->idepthVar_reAct();
-// 	const unsigned char* validity = activeKeyFrame->validity_reAct();
-//
-// 	DepthMapPixelHypothesis* pt = currentDepthMap;
-// 	activeKeyFrame->numMappedOnThis = 0;
-// 	activeKeyFrame->numFramesTrackedOnThis = 0;
-// 	//activeKeyFrameImageData = activeKeyFrame->image(0);
-// 	activeKeyFrameIsReactivated = true;
-//
-// 	for(int y=0;y<Conf().slamImageSize.height;y++)
-// 	{
-// 		for(int x=0;x<Conf().slamImageSize.width;x++)
-// 		{
-// 			int idx = x + y*Conf().slamImageSize.width;
-// 			if(*idepthVar > 0)
-// 			{
-// 				*pt = DepthMapPixelHypothesis(
-// 						*idepth,
-// 						*idepthVar,
-// 						*validity,
-// 					  Conf().debugDisplay );
-// 			}
-// 			else
-// 			{
-// 				currentDepthMap[idx].isValid = false;
-// 				currentDepthMap[idx].blacklisted = (*idepthVar
-// == -2) ? MIN_BLACKLIST-1 : 0;
-// 			}
-//
-// 			idepth++;
-// 			idepthVar++;
-// 			validity++;
-// 			pt++;
-// 		}
-// 	}
-//
-// 	regularizeDepthMap(false, VAL_SUM_MIN_FOR_KEEP);
-// }
 
 void DepthMap::resetCounters() {
   runningStats.num_stereo_comparisons = 0;
@@ -639,9 +398,6 @@ void DepthMap::resetCounters() {
 //=== Actual working functions ====
 void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
   _observeFrame = updateFrame;
-  // debugDepthImg = cv::Mat::zeros(Conf().slamImageSize.height,
-  //                                Conf().slamImageSize.width, CV_32FC1);
-  // debugDepthImg = _observeFrame->getCvImage();
 
   threadReducer.reduce(
       boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3,
@@ -670,11 +426,7 @@ void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
 
 void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
   const float *keyFrameMaxGradBuf = frame()->maxGradients(0);
-
   int successes = 0;
-  // debugDepthImg = cv::Mat::zeros(
-  //     cv::Size(Conf().slamImageSize.height, Conf().slamImageSize.width),
-  //     CV_32FC1);
   for (int y = yMin; y < yMax; y++)
     for (int x = 3; x < Conf().slamImageSize.width - 3; x++) {
       int idx = x + y * Conf().slamImageSize.width;
@@ -695,11 +447,9 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
 
       bool success;
       if (!hasHypothesis && valid) {
-
         // success = observeDepthCreate(x, y, idx, stats);
         success = createNewStereoDepthPoint(x, y, idx, stats);
       } else if (hasHypothesis) {
-        // debugDepthImg.at<float>(y, x) = 1;
         success = observeDepthUpdate(x, y, idx, keyFrameMaxGradBuf, stats);
       }
       if (success)
@@ -710,10 +460,9 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
 bool DepthMap::createNewStereoDepthPoint(const int &x, const int &y,
                                          const int &idx,
                                          RunningStats *const &stats) {
+  // Exclusive to low-motion LSD slam. Only create from valid disparity points
   DepthMapPixelHypothesis *target = currentDepthMap + idx;
 
-  //	Frame::SharedPtr _observeFrame( activeKeyFrameIsReactivated ?
-  // newest_referenceFrame : oldest_referenceFrame );
   float *iDepth = _set->disparity.iDepth + idx;
   *target = DepthMapPixelHypothesis(
       *iDepth, *iDepth, VAR_RANDOM_INIT_INITIAL / 1000,
@@ -727,12 +476,11 @@ bool DepthMap::createNewStereoDepthPoint(const int &x, const int &y,
   return true;
 }
 
+// TODO Can probably remove, not used in this LSD slam branch
 bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
                                   RunningStats *const &stats) {
   DepthMapPixelHypothesis *target = currentDepthMap + idx;
 
-  //	Frame::SharedPtr _observeFrame( activeKeyFrameIsReactivated ?
-  // newest_referenceFrame : oldest_referenceFrame );
   float *iDepth = _set->disparity.iDepth + idx;
   if (_observeFrame->isTrackingParent(frame()->id())) {
     bool *wasGoodDuringTracking = _observeFrame->refPixelWasGoodNoCreate();
@@ -977,7 +725,8 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
 
-    if (!valid && trav_KF.norm() > 0.15) {
+    if (!valid && !Conf().supressLSDPoints &&
+        trav_KF.norm() > Conf().minVirtualBaselineLength) {
       // LOG(WARNING) << "new_idepth: " << new_idepth
       //              << " result_idepth: " << result_idepth << " old idepth "
       //              << target->idepth << " w: " << w;

@@ -63,35 +63,11 @@ public:
   DepthMap(const std::shared_ptr<Frame> &frame);
   DepthMap(const std::shared_ptr<ImageSet> &set);
 
-  // //== Propagation constructor for subsequent keyframes
-  // DepthMap( const DepthMap::SharedPtr &other, const Frame::SharedPtr &frame
-  // );
-
   ~DepthMap();
 
   /** Resets everything. */
   void reset();
 
-  // /**
-  //  * does obervation and regularization only.
-  //  **/
-  // void updateKeyframe(std::deque< Frame::SharedPtr > referenceFrames);
-  //
-  // /**
-  //  * does propagation and whole-filling-regularization (no observation, for
-  //  that need to call updateKeyframe()!)
-  //  **/
-  // void createKeyFrame( const Frame::SharedPtr &new_keyframe );
-
-  /**
-   * does one fill holes iteration
-   */
-  // void finalizeKeyFrame();
-
-  // void invalidate();
-  // inline bool isValid() {return (bool)activeKeyFrame;};
-
-  // int debugPlotDepthMap();
   const DepthMapDebugImages &debugImages() const { return _debugImages; }
 
   // This is the only debug plot which is triggered externally..
@@ -100,7 +76,6 @@ public:
   //== Initializers, required only when propagating from a previous keyframe
   void initializeFromFrame();
   void initializeFromSet();
-  void initializeFromGTDepth();
   void initializeFromStereo();
   void initializeRandomly();
   // void initializefromStereo( const std::shared_ptr<ImageSet> &set);
