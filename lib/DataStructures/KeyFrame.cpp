@@ -127,7 +127,7 @@ void KeyFrame::updateDepthFrom(const ImageSet::SharedPtr &set) {
       if( set->isRefFrame(i) ) continue;
       Frame::SharedPtr otherFrame( set->getFrame(i) );
 
-      LOG(DEBUG) << "   Also mapping from " << i << "'th image in set " << set->id();
+      LOG(DEBUG) << "   mapping from the " << i << "'th image in set " << set->id();
 
       // TODO: Check if this frame is too far away from the keyframe?
       // Depends on the pose of the otherFrame being set
