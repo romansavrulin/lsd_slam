@@ -60,7 +60,7 @@ bool plotTracking = false;
 float KFUsageWeight = 4;
 float KFDistWeight = 3;
 
-float minUseGrad = 5;
+float minUseGrad = 10;
 float cameraPixelNoise2 = 4*4;
 float depthSmoothingFactor = 1;
 

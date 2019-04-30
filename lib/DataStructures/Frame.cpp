@@ -223,15 +223,15 @@ void Frame::prepareForStereoWith(const Frame::SharedPtr &other,
                     otherToThis.rotationMatrix().cast<float>() *
                     otherToThis.scale();
   _sd.otherToThis_t = otherToThis.translation().cast<float>();
-  _sd.K_otherToThis_t = other->camera(level).K * sd().otherToThis_t;
+  _sd.K_otherToThis_t = other->camera(level).K * _sd.otherToThis_t;
 
   _sd.thisToOther_t = thisToOther.translation().cast<float>();
-  _sd.K_thisToOther_t = camera(level).K * sd().thisToOther_t;
+  _sd.K_thisToOther_t = camera(level).K * _sd.thisToOther_t;
   _sd.thisToOther_R =
       thisToOther.rotationMatrix().cast<float>() * thisToOther.scale();
-  _sd.otherToThis_R_row0 = sd().thisToOther_R.col(0);
-  _sd.otherToThis_R_row1 = sd().thisToOther_R.col(1);
-  _sd.otherToThis_R_row2 = sd().thisToOther_R.col(2);
+  _sd.otherToThis_R_row0 = _sd.thisToOther_R.col(0);
+  _sd.otherToThis_R_row1 = _sd.thisToOther_R.col(1);
+  _sd.otherToThis_R_row2 = _sd.thisToOther_R.col(2);
 
   _sd.distSquared = otherToThis.translation().dot(otherToThis.translation());
 

@@ -116,11 +116,11 @@ const int PYRAMID_DIVISOR=(0x1<<PYRAMID_LEVELS);
 #define MIN_DEPTH 0.05f // this is the minimal depth tested for stereo.
 
 // particularely important for initial pixel.
-#define MAX_EPL_LENGTH_CROP 30.0f // maximum length of epl to search.
-#define MIN_EPL_LENGTH_CROP (3.0f) // minimum length of epl to search.
+// #define MAX_EPL_LENGTH_CROP 30.0f // maximum length of epl to search.
+// #define MIN_EPL_LENGTH_CROP (3.0f) // minimum length of epl to search.
 
 // this is the distance of the sample points used for the stereo descriptor.
-#define GRADIENT_SAMPLE_DIST 1.0f
+// #define GRADIENT_SAMPLE_DIST 1.0f
 
 // pixel a point needs to be away from border... if too small: segfaults!
 #define SAMPLE_POINT_TO_BORDER 7

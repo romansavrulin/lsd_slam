@@ -60,6 +60,11 @@ public:
  // Variables to control depth mapping
  float minVirtualBaselineLength;
 
+ // Stereo and gradient calculations
+ float minEplLengthCrop, maxEplLengthCrop;
+ float gradientSampleDistance;
+
+
  struct PrintConfiguration {
    PrintConfiguration();
 

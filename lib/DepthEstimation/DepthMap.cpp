@@ -261,14 +261,6 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame)
 
   Timer timeAll;
 
-  // oldest_referenceFrame = referenceFrames.front();
-  // newest_referenceFrame = referenceFrames.back();
-  // referenceFrameByID.clear();
-  // referenceFrameByID_offset = oldest_referenceFrame->id();
-  //
-  // for(std::shared_ptr<Frame> frame : referenceFrames)
-  // {
-
   Sim3 refToKf;
   if (updateFrame->trackingParent()->id() == frame()->id())
     refToKf = updateFrame->pose->thisToParent_raw;
@@ -287,11 +279,6 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame)
 
 
   updateFrame->prepareForStereoWith(frame(), refToKf, 0);
-
-  // while((int)referenceFrameByID.size() + referenceFrameByID_offset <=
-  // frame->id()) 	referenceFrameByID.push_back(frame);
-
-  //	}
 
   resetCounters();
   if(Conf().plot.debugStereo) _debugImages.initDepthMapUpdate( _frame, updateFrame );
@@ -888,7 +875,8 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
           absGrad * (VALIDITY_COUNTER_MAX_VARIABLE) / 255.0f;
 
     // increase Skip!
-    if (result_eplLength < MIN_EPL_LENGTH_CROP) {
+
+    if (result_eplLength < Conf().minEplLengthCrop) {
       //!!TODO.  Disabled this because I can't get to the statistics from
       //! here...
       // float inc = _parent->numFramesTrackedOnThis /
@@ -902,7 +890,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
       stats->num_observe_addSkip++;
 
-      if (result_eplLength < 0.5 * MIN_EPL_LENGTH_CROP)
+      if (result_eplLength < 0.5 * Conf().minEplLengthCrop)
         inc *= 3;
 
       target->nextStereoFrameMinID = _observeFrame->id() + inc;
@@ -960,7 +948,7 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
   }
 
   // ===== DONE - return "normalized" epl =====
-  float fac = GRADIENT_SAMPLE_DIST / sqrt(eplLengthSquared);
+  float fac = Conf().gradientSampleDistance / sqrt(eplLengthSquared);
   *pepx = epx * fac;
   *pepy = epy * fac;
 
@@ -1656,7 +1644,7 @@ inline float DepthMap::doLineStereo(
   Eigen::Vector3f KinvP =
       Eigen::Vector3f(referenceFrame->fxi() * u + referenceFrame->cxi(),
                       referenceFrame->fyi() * v + referenceFrame->cyi(), 1.0f);
-  Eigen::Vector3f pInf = referenceFrame->sd().K_otherToThis_R * KinvP;
+  Eigen::Vector3f pInf = referenceFrame->sd().K_otherToThis_R * KinvP;      // (u,v) mapped from referenceFrame to frame
   Eigen::Vector3f pReal = pInf / prior_idepth + referenceFrame->sd().K_otherToThis_t;
 
   float rescaleFactor = pReal[2] * prior_idepth;
@@ -1706,8 +1694,7 @@ inline float DepthMap::doLineStereo(
     max_idepth = (0.001f - pInf[2]) / referenceFrame->sd().K_otherToThis_t[2];
     pClose = pInf + referenceFrame->sd().K_otherToThis_t * max_idepth;
   }
-  pClose =
-      pClose / pClose[2]; // pos in new image of point (xy), assuming max_idepth
+  pClose = pClose / pClose[2]; // pos in new image of point (xy), assuming max_idepth
 
   Eigen::Vector3f pFar = pInf + referenceFrame->sd().K_otherToThis_t * min_idepth;
   // if the assumed far-point lies behind the image or closter than the
@@ -1730,13 +1717,15 @@ inline float DepthMap::doLineStereo(
   if (!(eplLength > 0) || std::isinf(eplLength))
     return -4;
 
-  if (eplLength > MAX_EPL_LENGTH_CROP) {
-    pClose[0] = pFar[0] + incx * MAX_EPL_LENGTH_CROP / eplLength;
-    pClose[1] = pFar[1] + incy * MAX_EPL_LENGTH_CROP / eplLength;
+  const float MaxEplLengthCrop = Conf().maxEplLengthCrop;
+  if (eplLength > MaxEplLengthCrop) {
+    pClose[0] = pFar[0] + incx * MaxEplLengthCrop / eplLength;
+    pClose[1] = pFar[1] + incy * MaxEplLengthCrop / eplLength;
   }
 
-  incx *= GRADIENT_SAMPLE_DIST / eplLength;
-  incy *= GRADIENT_SAMPLE_DIST / eplLength;
+  const float GradientSampleDistance = Conf().gradientSampleDistance;
+  incx *= GradientSampleDistance / eplLength;
+  incy *= GradientSampleDistance / eplLength;
 
   // extend one sample_dist to left & right.
   pFar[0] -= incx;
@@ -1745,8 +1734,9 @@ inline float DepthMap::doLineStereo(
   pClose[1] += incy;
 
   // make epl long enough (pad a little bit).
-  if (eplLength < MIN_EPL_LENGTH_CROP) {
-    float pad = (MIN_EPL_LENGTH_CROP - (eplLength)) / 2.0f;
+  const float MinEplLengthCrop = Conf().minEplLengthCrop;
+  if (eplLength < MinEplLengthCrop) {
+    float pad = (MinEplLengthCrop - (eplLength)) / 2.0f;
     pFar[0] -= incx * pad;
     pFar[1] -= incy * pad;
 
@@ -2036,7 +2026,7 @@ inline float DepthMap::doLineStereo(
 
   // sampleDist is the distance in pixel at which the realVal's were
   // sampled
-  float sampleDist = GRADIENT_SAMPLE_DIST * rescaleFactor;
+  const float sampleDist = Conf().gradientSampleDistance * rescaleFactor;
 
   float gradAlongLine = 0;
   float tmp = realVal_p2 - realVal_p1;

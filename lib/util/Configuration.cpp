@@ -29,6 +29,11 @@ namespace lsd_slam {
 
       minVirtualBaselineLength( 0.001 ),
 
+      minEplLengthCrop(3.0f),
+      maxEplLengthCrop(30.0f),
+
+      gradientSampleDistance(1.0f),
+
       print(),
       plot()
   {
