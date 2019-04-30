@@ -138,6 +138,8 @@ public:
 private:
   IndexThreadReduce threadReducer;
 
+  Eigen::Vector3f trav_KF;
+
   PerformanceData _perf;
   DepthMapDebugImages _debugImages;
 
@@ -196,6 +198,8 @@ private:
   void observeDepthRow(int yMin, int yMax, RunningStats *stats);
   bool observeDepthCreate(const int &x, const int &y, const int &idx,
                           RunningStats *const &stats);
+  bool createNewStereoDepthPoint(const int &x, const int &y, const int &idx,
+                                 RunningStats *const &stats);
   bool observeDepthUpdate(const int &x, const int &y, const int &idx,
                           const float *keyFrameMaxGradBuf,
                           RunningStats *const &stats);

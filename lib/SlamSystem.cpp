@@ -367,7 +367,8 @@ Eigen::Matrix4f SlamSystem::frameToWorld() {
   G_kf_world.block<3, 1>(0, 3) = T;
   G_kf_world(3, 3) = 1.0;
 
-  Eigen::Matrix4f G = G_kf_world * G_f_kf;
+  // Eigen::Matrix4f G = G_kf_world.inverse() * G_f_kf;
+  Eigen::Matrix4f G = Eigen::Matrix4f::Identity();
 
   return G;
 }
