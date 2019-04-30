@@ -121,7 +121,7 @@ void SlamSystem::nextImage(unsigned int id, const cv::Mat &img,
 }
 
 void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
-  LOG(WARNING) << "== Processing frame " << set->id();
+  LOG(WARNING) << "== Processing frame " << set->id() << " ==";
 
   if (!_initialized) {
     LOG(WARNING) << " ~~ First frame, initializing system";
@@ -130,6 +130,8 @@ void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
     return;
   }
   _trackingThread->doTrackSet(set);
+
+  LOG(DEBUG) << "== Completed frame " << set->id() << " ==";
 
   if( Conf().plot.doWaitKey >= 0 ) {
     LOG_IF( WARNING, Conf().plot.doWaitKey == 0 ) << "   --- waitKey(0);  Press a key in an OpenCV window to continue ---";
