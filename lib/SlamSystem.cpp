@@ -107,9 +107,6 @@ void SlamSystem::finalize() {
 
   LOG(INFO) << "Done Finalizing Graph.!!";
   _finalized.notify();
-
-  LOG(INFO) << "Done Finalizing Graph.!!";
-  _finalized.notify();
 }
 
 // std::shared_ptr<KeyFrame> &SlamSystem::currentKeyFrame()
