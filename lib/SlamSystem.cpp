@@ -317,6 +317,7 @@ void SlamSystem::publishKeyframe(const Frame::SharedPtr &frame) {
 
 void SlamSystem::publishCurrentKeyframe() {
   if (currentKeyFrame()) {
+    //LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id() << " at " << currentKeyFrame()->frame();
     OUTPUT_FOR_EACH(publishKeyframe(currentKeyFrame()->frame()))
     OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()->frame()))
   } else {
