@@ -180,6 +180,7 @@ void DepthMap::initializeRandomly() {
   for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) {
     for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
       int idx = x + y * Conf().slamImageSize.width;
+
       if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
         float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
         currentDepthMap[idx] = DepthMapPixelHypothesis(
@@ -320,7 +321,7 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame)
 
   LOGF_IF(DEBUG, Conf().print.lineStereoStatistics,
           "ST: calls %6d, comp %6d, int %7d; good %6d (%.0f%%), neg %6d "
-          "(%.0f%%); interp %6d / %6d / %6d\n",
+          "(%.0f%%); interp %6d / %6d / %6d",
           runningStats.num_stereo_calls, runningStats.num_stereo_comparisons,
           runningStats.num_pixelInterpolations,
           runningStats.num_stereo_successfull,
@@ -333,12 +334,15 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame)
           runningStats.num_stereo_interpPost);
 
   LOGF_IF(DEBUG, Conf().print.lineStereoFails,
-          "ST-ERR: oob %d (scale %d, inf %d, near %d); err %d (%d uncl; %d "
-          "end; zro: %d btw, %d no, %d two; %d big)\n",
+          "ST-ERR: oob %d (scale %d, nan %d, inf %d, near %d); err %d (%d uncl; %d "
+          "end; zro: %d btw, %d no, %d two; %d big)",
           runningStats.num_stereo_rescale_oob +
+              runningStats.num_stereo_rescale_nan +
               runningStats.num_stereo_inf_oob +
               runningStats.num_stereo_near_oob,
-          runningStats.num_stereo_rescale_oob, runningStats.num_stereo_inf_oob,
+          runningStats.num_stereo_rescale_oob,
+          runningStats.num_stereo_rescale_nan,
+          runningStats.num_stereo_inf_oob,
           runningStats.num_stereo_near_oob,
           runningStats.num_stereo_invalid_unclear_winner +
               runningStats.num_stereo_invalid_atEnd +
@@ -537,6 +541,7 @@ void DepthMap::resetCounters() {
   runningStats.num_stereo_calls = 0;
 
   runningStats.num_stereo_rescale_oob = 0;
+  runningStats.num_stereo_rescale_nan = 0;
   runningStats.num_stereo_inf_oob = 0;
   runningStats.num_stereo_near_oob = 0;
   runningStats.num_stereo_invalid_unclear_winner = 0;
@@ -614,17 +619,18 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
   for (int y = yMin; y < yMax; y++)
     for (int x = 3; x < Conf().slamImageSize.width - 3; x++) {
       int idx = x + y * Conf().slamImageSize.width;
-      DepthMapPixelHypothesis *target = currentDepthMap + idx;
-      bool hasHypothesis = target->isValid;
+
+      DepthMapPixelHypothesis &target(currentDepthMap[idx]);
+      bool hasHypothesis = target.isValid;
 
       // ======== 1. check absolute grad =========
       if (hasHypothesis && keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE) {
-        target->isValid = false;
+        target.isValid = false;
         continue;
       }
 
       if (keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_CREATE ||
-          target->blacklisted < MIN_BLACKLIST)
+          target.blacklisted < MIN_BLACKLIST)
         continue;
 
       bool success;
@@ -633,8 +639,7 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
       else
         success = observeDepthUpdate(x, y, idx, keyFrameMaxGradBuf, stats);
 
-      if (success)
-        successes++;
+      if (success) successes++;
     }
 }
 
@@ -701,6 +706,8 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
                                   const float *keyFrameMaxGradBuf,
                                   RunningStats *const &stats) {
   DepthMapPixelHypothesis *target = currentDepthMap + idx;
+
+  LOG_IF( WARNING, !target->isValid ) << "In observeDepthUpdate, hypothesis at " << x << "," << y << " is invalid";
   //	Frame::SharedPtr refFrame;
 
   // TODO.  Not sure what's happening in this code block.
@@ -802,7 +809,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     if (target->validity_counter < 0)
       target->validity_counter = 0;
 
-    target->nextStereoFrameMinID = 0;
+    // target->nextStereoFrameMinID = 0;
 
     target->idepth_var *= FAIL_VAR_INC_FAC;
     if (target->idepth_var > MAX_VAR) {
@@ -829,9 +836,12 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     return false;
   }
 
-  // if inconsistent
+  // if this result is very inconsistent with existing estimate
   else if (DIFF_FAC_OBSERVE * diff * diff >
            result_var + target->idepth_var_smoothed) {
+
+    //LOG(DEBUG) << "INCONS: " << x << "," << y << " : (" << result_idepth << " - " << target->idepth_smoothed << ")^2 > (" << result_var << " + " << target->idepth_var_smoothed << ")";
+
     stats->num_observe_inconsistent++;
     if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
@@ -849,10 +859,12 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     // do textbook ekf update:
     // increase var by a little (prediction-uncertainty)
+    const float prev_var = target->idepth_var;
     float id_var = target->idepth_var * SUCC_VAR_INC_FAC;
 
     // update var with observation
     float w = result_var / (result_var + id_var);
+    const float prev_idepth = target->idepth;
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
     target->idepth = UNZERO(new_idepth);
 
@@ -860,6 +872,10 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     id_var = id_var * w;
     if (id_var < target->idepth_var)
       target->idepth_var = id_var;
+
+    LOG_IF( WARNING, isnan(prev_idepth) && target->isValid ) << "Trying to update a DepthHypothesis, but it's NaN";
+    //LOG(DEBUG) << "Update: " << x << "," << y << " : " << prev_idepth << " --> " << result_idepth << " = " << target->idepth << " (" << prev_var << " --> " << result_var << " = " << target->idepth_var << ")";
+
 
     // increase validity!
     target->validity_counter += VALIDITY_COUNTER_INC;
@@ -910,8 +926,8 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
   // ======= make epl ========
   // calculate the plane spanned by the two camera centers and the point (x,y,1)
   // intersect it with the keyframe's image plane (at depth=1)
-  float epx = -fx * ref->thisToOther_t[0] + ref->thisToOther_t[2] * (x - cx);
-  float epy = -fy * ref->thisToOther_t[1] + ref->thisToOther_t[2] * (y - cy);
+  float epx = -fx * ref->sd().thisToOther_t[0] + ref->sd().thisToOther_t[2] * (x - cx);
+  float epy = -fy * ref->sd().thisToOther_t[1] + ref->sd().thisToOther_t[2] * (y - cy);
 
   if (isnanf(epx + epy))
     return false;
@@ -1612,6 +1628,7 @@ void DepthMap::plotDepthMap(const char *buf1, const char *buf2) {
   _debugImages.debugPlotDepthMap(frame(), currentDepthMap, 0, buf1, buf2);
 }
 
+
 // find pixel in image (do stereo along epipolar line).
 // mat: NEW image
 // KinvP: point in OLD image (Kinv * (u_old, v_old, 1)), projected
@@ -1633,14 +1650,14 @@ inline float DepthMap::doLineStereo(
   int width = Conf().slamImageSize.width, height = Conf().slamImageSize.height;
 
   // calculate epipolar line start and end point in old image
-  // TODO:  Converted from Conf().camrea to referenceFrame.  Not actually sure
+  // TODO:  Converted from Conf().camera to referenceFrame.  Not actually sure
   // that's the correct frame's K to be using (in the case where K isn't
   // constant)
   Eigen::Vector3f KinvP =
       Eigen::Vector3f(referenceFrame->fxi() * u + referenceFrame->cxi(),
                       referenceFrame->fyi() * v + referenceFrame->cyi(), 1.0f);
-  Eigen::Vector3f pInf = referenceFrame->K_otherToThis_R * KinvP;
-  Eigen::Vector3f pReal = pInf / prior_idepth + referenceFrame->K_otherToThis_t;
+  Eigen::Vector3f pInf = referenceFrame->sd().K_otherToThis_R * KinvP;
+  Eigen::Vector3f pReal = pInf / prior_idepth + referenceFrame->sd().K_otherToThis_t;
 
   float rescaleFactor = pReal[2] * prior_idepth;
 
@@ -1656,7 +1673,10 @@ inline float DepthMap::doLineStereo(
     return -1;
   }
 
-  if (!(rescaleFactor > 0.7f && rescaleFactor < 1.4f)) {
+  if( isnan(rescaleFactor)) {
+    stats->num_stereo_rescale_nan++;
+    return -1;
+  } else if (!(rescaleFactor > 0.7f && rescaleFactor < 1.4f)) {
     stats->num_stereo_rescale_oob++;
     return -1;
   }
@@ -1679,17 +1699,17 @@ inline float DepthMap::doLineStereo(
 
   //	if(referenceFrame->K_otherToThis_t[2] * max_idepth + pInf[2] < 0.01)
 
-  Eigen::Vector3f pClose = pInf + referenceFrame->K_otherToThis_t * max_idepth;
+  Eigen::Vector3f pClose = pInf + referenceFrame->sd().K_otherToThis_t * max_idepth;
   // if the assumed close-point lies behind the
   // image, have to change that.
   if (pClose[2] < 0.001f) {
-    max_idepth = (0.001f - pInf[2]) / referenceFrame->K_otherToThis_t[2];
-    pClose = pInf + referenceFrame->K_otherToThis_t * max_idepth;
+    max_idepth = (0.001f - pInf[2]) / referenceFrame->sd().K_otherToThis_t[2];
+    pClose = pInf + referenceFrame->sd().K_otherToThis_t * max_idepth;
   }
   pClose =
       pClose / pClose[2]; // pos in new image of point (xy), assuming max_idepth
 
-  Eigen::Vector3f pFar = pInf + referenceFrame->K_otherToThis_t * min_idepth;
+  Eigen::Vector3f pFar = pInf + referenceFrame->sd().K_otherToThis_t * min_idepth;
   // if the assumed far-point lies behind the image or closter than the
   // near-point, we moved past the Point it and should stop.
   if (pFar[2] < 0.001f || max_idepth < min_idepth) {
@@ -2051,29 +2071,29 @@ inline float DepthMap::doLineStereo(
                // inverse depth derived by the pixel-disparity.
   if (incx * incx > incy * incy) {
     float oldX = fxi * best_match_x + cxi;
-    float nominator = (oldX * referenceFrame->otherToThis_t[2] -
-                       referenceFrame->otherToThis_t[0]);
-    float dot0 = KinvP.dot(referenceFrame->otherToThis_R_row0);
-    float dot2 = KinvP.dot(referenceFrame->otherToThis_R_row2);
+    float nominator = (oldX * referenceFrame->sd().otherToThis_t[2] -
+                       referenceFrame->sd().otherToThis_t[0]);
+    float dot0 = KinvP.dot(referenceFrame->sd().otherToThis_R_row0);
+    float dot2 = KinvP.dot(referenceFrame->sd().otherToThis_R_row2);
 
     idnew_best_match = (dot0 - oldX * dot2) / nominator;
     alpha = incx * fxi *
-            (dot0 * referenceFrame->otherToThis_t[2] -
-             dot2 * referenceFrame->otherToThis_t[0]) /
+            (dot0 * referenceFrame->sd().otherToThis_t[2] -
+             dot2 * referenceFrame->sd().otherToThis_t[0]) /
             (nominator * nominator);
 
   } else {
     float oldY = fyi * best_match_y + cyi;
 
-    float nominator = (oldY * referenceFrame->otherToThis_t[2] -
-                       referenceFrame->otherToThis_t[1]);
-    float dot1 = KinvP.dot(referenceFrame->otherToThis_R_row1);
-    float dot2 = KinvP.dot(referenceFrame->otherToThis_R_row2);
+    float nominator = (oldY * referenceFrame->sd().otherToThis_t[2] -
+                       referenceFrame->sd().otherToThis_t[1]);
+    float dot1 = KinvP.dot(referenceFrame->sd().otherToThis_R_row1);
+    float dot2 = KinvP.dot(referenceFrame->sd().otherToThis_R_row2);
 
     idnew_best_match = (dot1 - oldY * dot2) / nominator;
     alpha = incy * fyi *
-            (dot1 * referenceFrame->otherToThis_t[2] -
-             dot2 * referenceFrame->otherToThis_t[1]) /
+            (dot1 * referenceFrame->sd().otherToThis_t[2] -
+             dot2 * referenceFrame->sd().otherToThis_t[1]) /
             (nominator * nominator);
   }
 
@@ -2098,12 +2118,14 @@ inline float DepthMap::doLineStereo(
   // calibration)
   Eigen::Vector2f gradsInterp =
       getInterpolatedElement42(frame()->gradients(0), u, v, width);
-  float geoDispError =
+  const float geoDispErrorDenom =
       (gradsInterp[0] * epxn + gradsInterp[1] * epyn) + DIVISION_EPS;
-  geoDispError =
+  float geoDispError =
       trackingErrorFac * trackingErrorFac *
       (gradsInterp[0] * gradsInterp[0] + gradsInterp[1] * gradsInterp[1]) /
-      (geoDispError * geoDispError);
+      (geoDispErrorDenom * geoDispErrorDenom);
+
+  LOG_IF(DEBUG, isnan(geoDispError) || isinf(geoDispError)) << "trackingErrorFac: " << trackingErrorFac << "; gradsInterp:" << gradsInterp[0] << ", "<< gradsInterp[1] << "; geoDispError: " << geoDispError;
 
   // geoDispError *= (0.5 + 0.5 *result_idepth) * (0.5 + 0.5
   // *result_idepth);
@@ -2113,6 +2135,8 @@ inline float DepthMap::doLineStereo(
   result_var = alpha * alpha *
                ((didSubpixel ? 0.05f : 0.5f) * sampleDist * sampleDist +
                 geoDispError + photoDispError); // square to make variance
+
+  //LOG(DEBUG) << "result_var: " << u << "," << v << " alpha: " << alpha << "; sampleDist: " << sampleDist << "; geoDispError: " << geoDispError << "; photoDispError: " << photoDispError;
 
   if (Conf().plot.debugStereo) {
     if (rand() % 5 == 0) {
