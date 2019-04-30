@@ -247,6 +247,8 @@ public:
 	int num_pixelInterpolations;
 
 	int num_stereo_rescale_oob;
+	int num_stereo_rescale_nan;
+
 	int num_stereo_inf_oob;
 	int num_stereo_near_oob;
 	int num_stereo_invalid_unclear_winner;
