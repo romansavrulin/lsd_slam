@@ -38,8 +38,11 @@ int privateFrameAllocCount = 0;
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
              double timestamp, const unsigned char *image)
     : _trackingParent(nullptr), _id(frameId), _timestamp(timestamp),
-      data(cam, sz, image), pose(new FramePoseStruct(*this)), referenceID(-1),
-      referenceLevel(-1), numMappablePixels(-1), meanIdepth(1), numPoints(0),
+      data(cam, sz, image), pose(new FramePoseStruct(*this)),
+      numMappablePixels(-1),
+      _sd(),
+      initialTrackedResidual(0),
+      meanIdepth(1), numPoints(0),
       idxInKeyframes(-1), edgeErrorSum(1), edgesNum(1),
       lastConstraintTrackedCamToWorld(Sim3()), isActive(false) {
   privateFrameAllocCount++;
@@ -52,8 +55,11 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
              double timestamp, const float *image)
     : _trackingParent(nullptr), _id(frameId), _timestamp(timestamp),
-      data(cam, sz, image), pose(new FramePoseStruct(*this)), referenceID(-1),
-      referenceLevel(-1), numMappablePixels(-1), meanIdepth(1), numPoints(0),
+      data(cam, sz, image), pose(new FramePoseStruct(*this)),
+      numMappablePixels(-1),
+      _sd(),
+      initialTrackedResidual(0),
+      meanIdepth(1), numPoints(0),
       idxInKeyframes(-1), edgeErrorSum(1), edgesNum(1),
       lastConstraintTrackedCamToWorld(Sim3()), isActive(false) {
   privateFrameAllocCount++;
@@ -213,24 +219,24 @@ void Frame::prepareForStereoWith(const Frame::SharedPtr &other,
   Sim3 otherToThis = thisToOther.inverse();
 
   // otherToThis = data.worldToCam * other->data.camToWorld;
-  K_otherToThis_R = other->camera(level).K *
+  _sd.K_otherToThis_R = other->camera(level).K *
                     otherToThis.rotationMatrix().cast<float>() *
                     otherToThis.scale();
-  otherToThis_t = otherToThis.translation().cast<float>();
-  K_otherToThis_t = other->camera(level).K * otherToThis_t;
+  _sd.otherToThis_t = otherToThis.translation().cast<float>();
+  _sd.K_otherToThis_t = other->camera(level).K * _sd.otherToThis_t;
 
-  thisToOther_t = thisToOther.translation().cast<float>();
-  K_thisToOther_t = camera(level).K * thisToOther_t;
-  thisToOther_R =
+  _sd.thisToOther_t = thisToOther.translation().cast<float>();
+  _sd.K_thisToOther_t = camera(level).K * _sd.thisToOther_t;
+  _sd.thisToOther_R =
       thisToOther.rotationMatrix().cast<float>() * thisToOther.scale();
-  otherToThis_R_row0 = thisToOther_R.col(0);
-  otherToThis_R_row1 = thisToOther_R.col(1);
-  otherToThis_R_row2 = thisToOther_R.col(2);
+  _sd.otherToThis_R_row0 = _sd.thisToOther_R.col(0);
+  _sd.otherToThis_R_row1 = _sd.thisToOther_R.col(1);
+  _sd.otherToThis_R_row2 = _sd.thisToOther_R.col(2);
 
-  distSquared = otherToThis.translation().dot(otherToThis.translation());
+  _sd.distSquared = otherToThis.translation().dot(otherToThis.translation());
 
-  referenceID = other->id();
-  referenceLevel = level;
+  _sd.referenceID = other->id();
+  _sd.referenceLevel = level;
 }
 
 cv::Mat Frame::getCvImage() {

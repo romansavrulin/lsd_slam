@@ -14,13 +14,18 @@ Configuration::Configuration()
       SLAMEnabled(true), doKFReActivation(true), doMapping(true),
       continuousPCOutput(true),
 
-      autoRun(true), autoRunWithinFrame(true),
+      debugDisplay(0), displayDepthMap(true), onSceenInfoDisplay(true),
+      dumpMap(false), doFullReConstraintTrack(false),
 
-      debugDisplay(0),
+      doSubpixelStereo(true), doLeftRightStereo(false),
 
-      onSceenInfoDisplay(true), displayDepthMap(true), dumpMap(false),
-      doFullReConstraintTrack(false), print(), minVirtualBaselineLength(0.0),
-      supressLSDPoints(false) {}
+      minVirtualBaselineLength(0.001), supressLSDPoints(false),
+
+      minEplLengthCrop(3.0f), maxEplLengthCrop(30.0f),
+
+      gradientSampleDistance(1.0f),
+
+      print(), plot() {}
 
 const ImageSize &Configuration::setSlamImageSize(const ImageSize &sz) {
   CHECK(sz.width % 16 == 0 && sz.height % 16 == 0)
@@ -34,8 +39,17 @@ const ImageSize &Configuration::setSlamImageSize(const ImageSize &sz) {
 
 //==
 Configuration::PrintConfiguration::PrintConfiguration()
-    : threadingInfo(true), memoryDebugInfo(false),
-      trackingIterationInfo(false) {
+    : threadingInfo(true), memoryDebugInfo(false), trackingIterationInfo(false),
+      observeStatistics(false), observePurgeStatistics(false),
+      propagationStatistics(false), fillHolesStatistics(false),
+      regularizeStatistics(false), lineStereoStatistics(false),
+      lineStereoFails(false) {
+  ;
+}
+
+//==
+Configuration::PlotConfiguration::PlotConfiguration()
+    : doWaitKey(-1), debugStereo(false) {
   ;
 }
 

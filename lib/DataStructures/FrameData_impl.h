@@ -7,8 +7,8 @@ namespace lsd_slam {
 	FrameData<__LEVELS>::FrameData( const Camera &cam, const ImageSize &slamImageSize, const unsigned char *img )
 		:	hasIDepthBeenSet( false ),
 		validity_reAct( 0 ),
-		idepthVar_reAct( 0 ),
 		idepth_reAct( 0 ),
+		idepthVar_reAct( 0 ),
 		refPixelWasGood( 0 )
 	{
 		commonInitialization( cam, slamImageSize );
@@ -30,8 +30,8 @@ template< int __LEVELS >
 FrameData<__LEVELS>::FrameData( const Camera &cam, const ImageSize &slamImageSize, const float *img )
 	:	hasIDepthBeenSet( false ),
 	validity_reAct( 0 ),
-	idepthVar_reAct( 0 ),
 	idepth_reAct( 0 ),
+	idepthVar_reAct( 0 ),
 	refPixelWasGood( 0 )
 {
 	commonInitialization( cam, slamImageSize );

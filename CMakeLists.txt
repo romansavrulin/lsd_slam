@@ -1,4 +1,3 @@
-
 ## Error message if not run in fips
 if (NOT FIPS_CONFIG)
   message(FATAL_ERROR "As of December 2017, I'm using \"fips\" as a package manager.   The \"cmake\" branch contains the working head for the cmake-based build.  See README.md for more information.")
@@ -13,17 +12,10 @@ if (NOT FIPS_IMPORT)
   fips_setup(PROJECT lsd_slam)
 endif()
 
-option(BUILD_GUI "Build Pangolin-based GUI" OFF)
-
 find_package(Boost COMPONENTS thread filesystem system REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
-
-## I believe the fipsified version of g2o will handle this...
-# ## I haven't packaged suitesparse yet...
-find_package(SuiteSparse REQUIRED)
-find_package( TinyXML2 REQUIRED )
 
 # FabMap
 # uncomment this part to enable fabmap
@@ -34,8 +26,6 @@ find_package( TinyXML2 REQUIRED )
 
 
 ##==== Check and define the architecture
-## Architecture-specific optimizations
-option( CUDA_VERSION "Use CUDA" "")
 
 EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 message( STATUS "Architecture: ${ARCHITECTURE}" )
@@ -55,10 +45,14 @@ elseif( ${ARCHITECTURE} STREQUAL "x86_64" )
   endif()
 endif()
 
+
 set( OPENCV_COMPONENTS core highgui imgproc video calib3d )
 find_package(OpenCV COMPONENTS ${OPENCV_COMPONENTS} REQUIRED)
 
-if( OpenCV_VERSION_MAJOR EQUAL "3" )
+if( OpenCV_VERSION_MAJOR EQUAL "4" )
+  message( STATUS "Using OpenCV 4.x")
+  add_definitions( -DOPENCV4 )
+elseif( OpenCV_VERSION_MAJOR EQUAL "3" )
   message( STATUS "Using OpenCV 3.x")
   add_definitions( -DOPENCV3 )
 else()
@@ -66,45 +60,24 @@ else()
   add_definitions( -DOPENCV2 )
 endif()
 
-if( CUDA_VERSION )
-	find_package( CUDA REQUIRED ${CUDA_VERSION} )
-  SET( CUDA_USE_STATIC_CUDA_RUNTIME OFF )
-endif()
-
 ## C++ flags applied to all builds
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set( LSDSLAM_INCLUDE_DIRS
-	${CMAKE_SOURCE_DIR}/lib
-	${CMAKE_SOURCE_DIR}/lib/lsd_core
-	${EIGEN3_INCLUDE_DIR}
-	${OpenCV_INCLUDE_DIRS}
-	${Boost_INCLUDE_DIR}
-	${Pangolin_INCLUDE_DIRS}
-  ${CSPARSE_INCLUDE_DIR}
-	${PROJECT_SOURCE_DIR}/thirdparty/Sophus )
-
-if(APPLE)
-	set( CMAKE_MACOSX_RPATH OFF )
-endif()
-
-fips_include_directories( ${LSDSLAM_INCLUDE_DIRS} )
+fips_include_directories( ${CMAKE_SOURCE_DIR}/lib
+        ${CMAKE_SOURCE_DIR}/lib/lsd_core
+        ${EIGEN3_INCLUDE_DIR}
+        ${OpenCV_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIR}
+        ${Pangolin_INCLUDE_DIRS}
+        ${CSPARSE_INCLUDE_DIR}
+        ${PROJECT_SOURCE_DIR}/thirdparty/Sophus )
 
 fips_add_subdirectory( lib/ )
 
-## Provide option to not build tools, default to yes unless FIP_IMPORT
-option( LSDSLAM_BUILD_TOOLS ON )
-if( NOT FIPS_IMPORT )
-  set( LSDSLAM_BUILD_TOOLS OFF )
-endif()
-if( LSDSLAM_BUILD_TOOLS )
-  fips_add_subdirectory( tools/ )
-endif()
 
 if( NOT FIPS_IMPORT )
 
   if( FIPS_UNITTESTS )
-    ## Build a local copy of gtest (as per the GTest FAQ)
     fips_add_subdirectory( test/unit/ )
   endif()
 

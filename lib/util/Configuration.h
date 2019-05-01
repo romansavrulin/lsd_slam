@@ -47,19 +47,22 @@ public:
 
   // settings variables
   // controlled via keystrokes
-  bool autoRun;
-  bool autoRunWithinFrame;
   int debugDisplay;
   bool displayDepthMap;
   bool onSceenInfoDisplay;
   bool dumpMap;
   bool doFullReConstraintTrack;
 
+  bool doSubpixelStereo;
   bool doLeftRightStereo;
 
   // Variables to control depth mapping
-  bool supressLSDPoints;
   float minVirtualBaselineLength;
+  bool supressLSDPoints;
+
+  // Stereo and gradient calculations
+  float minEplLengthCrop, maxEplLengthCrop;
+  float gradientSampleDistance;
 
   struct PrintConfiguration {
     PrintConfiguration();
@@ -87,7 +90,15 @@ public:
     bool overallTiming;
   } print;
 
+  struct PlotConfiguration {
+    PlotConfiguration();
+
+    int doWaitKey;
+    bool debugStereo;
+  } plot;
+
 private:
+  // Private constructor.  User shouldn't make their own copy of Configuration
   Configuration();
 };
 

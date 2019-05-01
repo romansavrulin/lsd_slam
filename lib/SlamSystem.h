@@ -149,7 +149,6 @@ private:
   ThreadSynchronizer _finalized;
 
   // ======= Functions =====
-
   void logPerformanceData();
   Eigen::Matrix4f frameToWorld();
 

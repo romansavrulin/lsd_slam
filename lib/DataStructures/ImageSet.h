@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "DataStructures/Frame.h"
+#include "libvideoio/Camera.h"
 #include "util/SophusUtil.h"
-#include <libvideoio/Camera.h>
 
 namespace lsd_slam {
 
@@ -43,6 +43,7 @@ public:
     int iDepthSize;
     float iDepthMean;
   };
+
   ImageSet() = delete;
 
   ImageSet(const ImageSet &) = delete;
@@ -51,8 +52,12 @@ public:
 
   ImageSet(unsigned int id, const std::vector<cv::Mat> &imgs,
            const std::vector<libvideoio::Camera> &cams, const unsigned int ref);
+
   ~ImageSet();
 
+  size_t size() const { return _frames.size(); }
+
+  bool isRefFrame(unsigned int i) const { return i == _refFrame; }
   Frame::SharedPtr &refFrame() { return _frames[_refFrame]; }
 
   Frame::SharedPtr &getFrame(const unsigned int frameNum) {
@@ -62,9 +67,18 @@ public:
   void pushbackFrame(const cv::Mat &img, const libvideoio::Camera &cam);
   void setDisparityMap(float *_iDepth, uint8_t *_iDepthValid, float _iDepthMean,
                        int _size);
+  Sophus::SE3d &getSE3ToRef(const unsigned int frameNum) {
+    return _se3ToRef[frameNum];
+  }
+
   Sim3 getRefTransformation() { return _frames[_refFrame]->getCamToWorld(); }
   void setReferenceFrame(const unsigned int &frameNum) { _refFrame = frameNum; }
   unsigned int id() { return _frameId; }
+
+  void propagatePoseFromRefFrame();
+  void addFrame(const cv::Mat &img, const libvideoio::Camera &cam,
+                const Sophus::SE3d &frameToRef);
+  void setFrameToRef(const int frame, const Sophus::SE3d &frameToRef);
 
   Disparity disparity;
 
@@ -76,7 +90,7 @@ private:
   unsigned int _refFrame;
   unsigned int _frameId;
   std::vector<Frame::SharedPtr> _frames;
-  std::vector<Sophus::SE3d> _se3FromFirst;
+  std::vector<Sophus::SE3d> _se3ToRef;
 
   // float *_disparityMap;
 };

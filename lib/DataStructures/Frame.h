@@ -49,12 +49,11 @@ typedef _TrackingRef<PYRAMID_LEVELS> TrackingReference;
 
 class Frame {
 private:
-  // Again, having wierd FrameData alignment issues where it's of different
+  //  STILL having wierd FrameData alignment issues where it's of different
   // lengths in different subunits unless it's at the top...
   FrameData<PYRAMID_LEVELS> data;
 
 public:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   friend class FrameMemory;
 
   typedef std::shared_ptr<Frame> SharedPtr;
@@ -173,15 +172,20 @@ public:
   void setTrackingParent(const std::shared_ptr<KeyFrame> &newParent) {
     _trackingParent = newParent;
   }
-  bool hasTrackingParent() const { return (bool)_trackingParent; }
+
+  bool hasTrackingParent() const {
+    return (bool)_trackingParent;
+  }
+
   const std::shared_ptr<KeyFrame> &trackingParent() const {
     return _trackingParent;
   }
 
   bool isTrackingParent(const std::shared_ptr<Frame> &other) const;
-  cv::Mat getCvImage();
   bool isTrackingParent(const std::shared_ptr<KeyFrame> &other) const;
   bool isTrackingParent(int id) const;
+
+  cv::Mat getCvImage();
 
   Sim3 lastConstraintTrackedCamToWorld;
 
@@ -196,18 +200,33 @@ public:
   // int permaRefNumPts;
 
   // A bunch of state which is created by prepareForStereoWith()
-  int referenceID;
-  int referenceLevel;
-  float distSquared;
-  Eigen::Matrix3f K_otherToThis_R;
-  Eigen::Vector3f K_otherToThis_t;
-  Eigen::Vector3f otherToThis_t;
-  Eigen::Vector3f K_thisToOther_t;
-  Eigen::Matrix3f thisToOther_R;
-  Eigen::Vector3f otherToThis_R_row0;
-  Eigen::Vector3f otherToThis_R_row1;
-  Eigen::Vector3f otherToThis_R_row2;
-  Eigen::Vector3f thisToOther_t;
+  struct StereoData {
+  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    StereoData()
+      : referenceID(-1), referenceLevel(-1)
+      {;}
+
+    StereoData( const StereoData & ) = delete;
+
+    int referenceID;
+    int referenceLevel;
+    float distSquared;
+    Eigen::Matrix3f K_otherToThis_R;
+    Eigen::Vector3f K_otherToThis_t;
+    Eigen::Vector3f otherToThis_t;
+    Eigen::Vector3f K_thisToOther_t;
+    Eigen::Matrix3f thisToOther_R;
+    Eigen::Vector3f otherToThis_R_row0;
+    Eigen::Vector3f otherToThis_R_row1;
+    Eigen::Vector3f otherToThis_R_row2;
+    Eigen::Vector3f thisToOther_t;
+  } _sd;
+
+  const StereoData &sd() const { return _sd; }
+
+  
 
   // statistics
   float initialTrackedResidual;

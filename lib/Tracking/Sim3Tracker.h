@@ -20,7 +20,7 @@
 
 #pragma once
 #include <opencv2/core/core.hpp>
-#include "util/settings.h"
+#include "util/DenseDepthTrackerSettings.h"
 #include "util/EigenCoreInclude.h"
 #include "util/SophusUtil.h"
 #include "util/Configuration.h"

@@ -1,0 +1,62 @@
+@startuml
+
+title Assuming processing happens faster than frame rate.
+
+[-> SlamSystem: nextImage
+
+SlamSystem -> TrackingThread: doTrackSet frame 0 (non-blocking)
+note over TrackingThread: No Keyframe yet, makes frame 0 into Keyframe A
+
+...
+...
+
+[-> SlamSystem: nextImage
+SlamSystem -> TrackingThread: doTrackSet frame 1 (non-blocking)
+note over TrackingThread: Tracks frame 1 on Keyframe A
+
+TrackingThread -> MappingThread: doMapSet frame 1 on Keyframe A (non-blocking)
+activate MappingThread
+deactivate MappingThread
+
+...
+...
+
+[-> SlamSystem: nextImage
+SlamSystem -> TrackingThread: doTrackSet frame 2 (non-blocking)
+note over TrackingThread: Tracks frame 2 on Keyframe A
+
+TrackingThread -> MappingThread: doMapSet frame 2 on Keyframe A (non-blocking)
+activate MappingThread
+
+note over TrackingThread: Determines frame 2 should be next KeyFrame
+
+|||
+deactivate MappingThread
+
+TrackingThread -> MappingThread: doCreateNewKeyFrame of frame 2 based on KeyFrame A (non-blocking)
+activate MappingThread
+note over MappingThread:  Initialize KeyFrame B from frame 2; Project KeyFrame A's depth map to KeyFrame B.
+
+[-> SlamSystem: nextImage
+SlamSystem -> TrackingThread: doTrackSet frame 3 (non-blocking)
+note over TrackingThread: Tracks frame 3 on Keyframe A (still)
+
+MappingThread -> TrackingThread: doUseNewKeyFrame with KeyFrame B
+deactivate MappingThread
+
+TrackingThread -> MappingThread: doMapSet frame 3 on Keyframe A (non-blocking)
+activate MappingThread
+note over MappingThread:  Maps frame 3 onto KeyFrame A
+deactivate MappingThread
+
+...
+...
+
+[-> SlamSystem: nextImage
+SlamSystem -> TrackingThread: doTrackSet frame 4 (non-blocking)
+note over TrackingThread: Tracks frame 4 on Keyframe B
+note over MappingThread:  Maps frame 4 onto KeyFrame B
+activate MappingThread
+deactivate MappingThread
+
+@enduml

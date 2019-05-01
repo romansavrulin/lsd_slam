@@ -50,13 +50,7 @@ namespace lsd_slam
 #endif
 
 
-#if defined(NDEBUG)
-	#define enablePrintDebugInfo false
-#else
-	#define enablePrintDebugInfo true
-#endif
-
-/** ============== constants for validity handeling ======================= */
+/** ============== constants for validity handling ======================= */
 
 // validity can take values between 0 and X, where X depends on the abs. gradient at that location:
 // it is calculated as VALIDITY_COUNTER_MAX + (absGrad/255)*VALIDITY_COUNTER_MAX_VARIABLE
@@ -77,10 +71,10 @@ namespace lsd_slam
 
 
 
-/** ============== Depth Variance Handeling ======================= */
+/** ============== Depth Variance Handling ======================= */
 #define SUCC_VAR_INC_FAC (1.01f) // before an ekf-update, the variance is increased by this factor.
 #define FAIL_VAR_INC_FAC 1.1f // after a failed stereo observation, the variance is increased by this factor.
-#define MAX_VAR (0.5f*0.5f) // initial variance on creation - if variance becomes larter than this, hypothesis is removed.
+#define MAX_VAR (0.5f*0.5f) // initial variance on creation - if variance becomes larger than this, hypothesis is removed.
 
 #define VAR_GT_INIT_INITIAL 0.01f*0.01f	// initial variance vor Ground Truth Initialization
 #define VAR_RANDOM_INIT_INITIAL (0.5f*MAX_VAR)	// initial variance vor Random Initialization
@@ -122,11 +116,11 @@ const int PYRAMID_DIVISOR=(0x1<<PYRAMID_LEVELS);
 #define MIN_DEPTH 0.05f // this is the minimal depth tested for stereo.
 
 // particularely important for initial pixel.
-#define MAX_EPL_LENGTH_CROP 30.0f // maximum length of epl to search.
-#define MIN_EPL_LENGTH_CROP (3.0f) // minimum length of epl to search.
+// #define MAX_EPL_LENGTH_CROP 30.0f // maximum length of epl to search.
+// #define MIN_EPL_LENGTH_CROP (3.0f) // minimum length of epl to search.
 
 // this is the distance of the sample points used for the stereo descriptor.
-#define GRADIENT_SAMPLE_DIST 1.0f
+// #define GRADIENT_SAMPLE_DIST 1.0f
 
 // pixel a point needs to be away from border... if too small: segfaults!
 #define SAMPLE_POINT_TO_BORDER 7
@@ -207,21 +201,15 @@ const int PYRAMID_DIVISOR=(0x1<<PYRAMID_LEVELS);
 // extern bool printOverallTiming;
 extern bool plotTrackingIterationInfo;
 extern bool plotSim3TrackingIterationInfo;
-extern bool plotStereoImages;
+//extern bool plotStereoImages;
 extern bool plotTracking;
 
 
 extern bool allowNegativeIdepths;
 extern bool useMotionModel;
-extern bool useSubpixelStereo;
+
 extern bool multiThreading;
 extern bool useAffineLightningEstimation;
-
-extern float freeDebugParam1;
-extern float freeDebugParam2;
-extern float freeDebugParam3;
-extern float freeDebugParam4;
-extern float freeDebugParam5;
 
 
 extern float KFDistWeight;
@@ -259,6 +247,8 @@ public:
 	int num_pixelInterpolations;
 
 	int num_stereo_rescale_oob;
+	int num_stereo_rescale_nan;
+
 	int num_stereo_inf_oob;
 	int num_stereo_near_oob;
 	int num_stereo_invalid_unclear_winner;
@@ -347,55 +337,6 @@ public:
 	}
 };
 
-template <int __LEVELS>
-class DenseDepthTrackerSettings
-{
-public:
-	inline DenseDepthTrackerSettings()
-	{
-		// Set default settings
-		if (PYRAMID_LEVELS > 6)
-			printf("WARNING: Sim3Tracker(): default settings are intended for a maximum of 6 levels!");
-
-		lambdaSuccessFac = 0.5f;
-		lambdaFailFac = 2.0f;
-
-		const float stepSizeMinc[6] = {1e-8, 1e-8, 1e-8, 1e-8, 1e-8, 1e-8};
-		const int maxIterations[6] = {5, 20, 50, 100, 100, 100};
-
-
-		for (int level = 0; level < __LEVELS; ++ level)
-		{
-			lambdaInitial[level] = 0;
-			stepSizeMin[level] = stepSizeMinc[level];
-			convergenceEps[level] = 0.999f;
-			maxItsPerLvl[level] = maxIterations[level];
-		}
-
-		lambdaInitialTestTrack = 0;
-		stepSizeMinTestTrack = 1e-3;
-		convergenceEpsTestTrack = 0.98;
-		maxItsTestTrack = 5;
-
-		var_weight = 1.0;
-		huber_d = 3;
-	}
-
-	float lambdaSuccessFac;
-	float lambdaFailFac;
-	float lambdaInitial[__LEVELS];
-	float stepSizeMin[__LEVELS];
-	float convergenceEps[__LEVELS];
-	int maxItsPerLvl[__LEVELS];
-
-	float lambdaInitialTestTrack;
-	float stepSizeMinTestTrack;
-	float convergenceEpsTestTrack;
-	float maxItsTestTrack;
-
-	float huber_d;
-	float var_weight;
-};
 
 extern RunningStats runningStats;
 

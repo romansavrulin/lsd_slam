@@ -148,6 +148,7 @@ void DepthMap::initializeRandomly() {
   for (int y = 1; y < (Conf().slamImageSize.height - 1); y++) {
     for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
       int idx = x + y * Conf().slamImageSize.width;
+
       if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
         float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
         currentDepthMap[idx] = DepthMapPixelHypothesis(
@@ -178,6 +179,20 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
 
   resetCounters();
 
+  LOG(INFO) << "Virtual stereo baseline norm distance travled: "
+            << trav_KF.norm();
+
+  if (trav_KF.norm() < Conf().minVirtualBaselineLength) {
+    LOG(WARNING) << " ... too short, no stereo update";
+    return false;
+  }
+
+  updateFrame->prepareForStereoWith(frame(), refToKf, 0);
+
+  resetCounters();
+  if (Conf().plot.debugStereo)
+    _debugImages.initDepthMapUpdate(_frame, updateFrame);
+
   {
     Timer time;
     observeDepth(updateFrame);
@@ -198,12 +213,12 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
 
   _perf.update.update(timeAll);
 
-  if (plotStereoImages)
-    _debugImages.displayUpdateKeyFrame();
+  if (Conf().plot.debugStereo)
+    _debugImages.displayDepthMapUpdate();
 
   LOGF_IF(DEBUG, Conf().print.lineStereoStatistics,
           "ST: calls %6d, comp %6d, int %7d; good %6d (%.0f%%), neg %6d "
-          "(%.0f%%); interp %6d / %6d / %6d\n",
+          "(%.0f%%); interp %6d / %6d / %6d",
           runningStats.num_stereo_calls, runningStats.num_stereo_comparisons,
           runningStats.num_pixelInterpolations,
           runningStats.num_stereo_successfull,
@@ -215,26 +230,27 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
           runningStats.num_stereo_interpPre, runningStats.num_stereo_interpNone,
           runningStats.num_stereo_interpPost);
 
-  LOGF_IF(DEBUG, Conf().print.lineStereoFails,
-          "ST-ERR: oob %d (scale %d, inf %d, near %d); err %d (%d uncl; %d "
-          "end; zro: %d btw, %d no, %d two; %d big)\n",
-          runningStats.num_stereo_rescale_oob +
-              runningStats.num_stereo_inf_oob +
-              runningStats.num_stereo_near_oob,
-          runningStats.num_stereo_rescale_oob, runningStats.num_stereo_inf_oob,
-          runningStats.num_stereo_near_oob,
-          runningStats.num_stereo_invalid_unclear_winner +
-              runningStats.num_stereo_invalid_atEnd +
-              runningStats.num_stereo_invalid_inexistantCrossing +
-              runningStats.num_stereo_invalid_noCrossing +
-              runningStats.num_stereo_invalid_twoCrossing +
-              runningStats.num_stereo_invalid_bigErr,
-          runningStats.num_stereo_invalid_unclear_winner,
-          runningStats.num_stereo_invalid_atEnd,
-          runningStats.num_stereo_invalid_inexistantCrossing,
-          runningStats.num_stereo_invalid_noCrossing,
-          runningStats.num_stereo_invalid_twoCrossing,
-          runningStats.num_stereo_invalid_bigErr);
+  LOGF_IF(
+      DEBUG, Conf().print.lineStereoFails,
+      "ST-ERR: oob %d (scale %d, nan %d, inf %d, near %d); err %d (%d uncl; %d "
+      "end; zro: %d btw, %d no, %d two; %d big)",
+      runningStats.num_stereo_rescale_oob +
+          runningStats.num_stereo_rescale_nan +
+          runningStats.num_stereo_inf_oob + runningStats.num_stereo_near_oob,
+      runningStats.num_stereo_rescale_oob, runningStats.num_stereo_rescale_nan,
+      runningStats.num_stereo_inf_oob, runningStats.num_stereo_near_oob,
+      runningStats.num_stereo_invalid_unclear_winner +
+          runningStats.num_stereo_invalid_atEnd +
+          runningStats.num_stereo_invalid_inexistantCrossing +
+          runningStats.num_stereo_invalid_noCrossing +
+          runningStats.num_stereo_invalid_twoCrossing +
+          runningStats.num_stereo_invalid_bigErr,
+      runningStats.num_stereo_invalid_unclear_winner,
+      runningStats.num_stereo_invalid_atEnd,
+      runningStats.num_stereo_invalid_inexistantCrossing,
+      runningStats.num_stereo_invalid_noCrossing,
+      runningStats.num_stereo_invalid_twoCrossing,
+      runningStats.num_stereo_invalid_bigErr);
 
   return true;
 }
@@ -245,7 +261,6 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   resetCounters();
 
-  // TODO just remove rescaleFactor in this branch. Not needed
   rescaleFactor = 1.0;
 
   {
@@ -316,7 +331,7 @@ void DepthMap::propagateFrom(const DepthMap::SharedPtr &other,
 
   _perf.create.update(timeAll);
 
-  if (plotStereoImages)
+  if (Conf().plot.debugStereo)
     _debugImages.displayNewKeyFrame();
 }
 
@@ -344,6 +359,7 @@ void DepthMap::resetCounters() {
   runningStats.num_stereo_calls = 0;
 
   runningStats.num_stereo_rescale_oob = 0;
+  runningStats.num_stereo_rescale_nan = 0;
   runningStats.num_stereo_inf_oob = 0;
   runningStats.num_stereo_near_oob = 0;
   runningStats.num_stereo_invalid_unclear_winner = 0;
@@ -456,7 +472,7 @@ bool DepthMap::createNewStereoDepthPoint(const int &x, const int &y,
       *iDepth, *iDepth, VAR_RANDOM_INIT_INITIAL / 1000,
       VAR_RANDOM_INIT_INITIAL / 1000, 20, Conf().debugDisplay);
 
-  if (plotStereoImages)
+  if (Conf().plot.debugStereo)
     _debugImages.setHypothesisHandling(
         x, y, cv::Vec3b(255, 255, 255)); // white for GOT CREATED
   stats->num_observe_created++;
@@ -478,7 +494,7 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
                                (Conf().slamImageSize.width >>
                                 SE3TRACKING_MIN_LEVEL) *
                                    (y >> SE3TRACKING_MIN_LEVEL)]) {
-      if (plotStereoImages)
+      if (Conf().plot.debugStereo)
         _debugImages.setHypothesisHandling(
             x, y, cv::Vec3b(255, 0, 0)); // BLUE for SKIPPED NOT GOOD TRACKED
       return false;
@@ -512,9 +528,9 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
   *target = DepthMapPixelHypothesis(result_idepth, result_var,
                                     VALIDITY_COUNTER_INITIAL_OBSERVE,
                                     Conf().debugDisplay);
-  if (plotStereoImages)
+  if (Conf().plot.debugStereo)
     _debugImages.setHypothesisHandling(
-        x, y, cv::Vec3b(255, 255, 255)); // white for GOT CREATED
+        x, y, cv::Vec3b(255, 165, 0)); // Orange for GOT CREATED
   stats->num_observe_created++;
 
   return true;
@@ -523,7 +539,6 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
 bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
                                   const float *keyFrameMaxGradBuf,
                                   RunningStats *const &stats) {
-
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
 
   DepthMapPixelHypothesis *target = currentDepthMap + idx;
@@ -534,7 +549,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
                                (Conf().slamImageSize.width >>
                                 SE3TRACKING_MIN_LEVEL) *
                                    (y >> SE3TRACKING_MIN_LEVEL)]) {
-      if (plotStereoImages)
+      if (Conf().plot.debugStereo)
         _debugImages.setHypothesisHandling(
             x, y, cv::Vec3b(255, 0, 0)); // BLUE for SKIPPED NOT GOOD TRACKED
       return false;
@@ -576,7 +591,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     // want to try again.
     stats->num_observe_skip_oob++;
 
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(x, y,
                                          cv::Vec3b(0, 0, 255)); // RED FOR OOB
     return false;
@@ -587,7 +602,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   else if (error == -2) {
     stats->num_observe_skip_fail++;
 
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(255, 0, 255)); // PURPLE FOR NON-GOOD
 
@@ -595,7 +610,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     if (target->validity_counter < 0)
       target->validity_counter = 0;
 
-    target->nextStereoFrameMinID = 0;
+    // target->nextStereoFrameMinID = 0;
 
     target->idepth_var *= FAIL_VAR_INC_FAC;
     if (target->idepth_var > MAX_VAR) {
@@ -608,7 +623,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   // if not found (error too high)
   else if (error == -3) {
     stats->num_observe_notfound++;
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(0, 0, 0)); // BLACK FOR big not-found
 
@@ -616,41 +631,46 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
   }
 
   else if (error == -4) {
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(0, 0, 0)); // BLACK FOR big not-found
     return false;
   }
 
-  // if inconsistent
+  // if this result is very inconsistent with existing estimate
   else if (DIFF_FAC_OBSERVE * diff * diff >
            result_var + target->idepth_var_smoothed) {
+
+    // LOG(DEBUG) << "INCONS: " << x << "," << y << " : (" << result_idepth << "
+    // - " << target->idepth_smoothed << ")^2 > (" << result_var << " + " <<
+    // target->idepth_var_smoothed << ")";
+
     stats->num_observe_inconsistent++;
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
-          x, y, cv::Vec3b(255, 255, 0)); // Turkoise FOR big inconsistent
+          x, y, cv::Vec3b(255, 255, 0)); // TURQUOISE FOR big inconsistent
 
     target->idepth_var *= FAIL_VAR_INC_FAC;
     if (target->idepth_var > MAX_VAR)
       target->isValid = false;
 
     return false;
-  }
-
-  else {
+  } else {
     // one more successful observation!
     stats->num_observe_good++;
     stats->num_observe_updated++;
 
     // do textbook ekf update:
     // increase var by a little (prediction-uncertainty)
+    const float prev_var = target->idepth_var;
     float id_var = target->idepth_var * SUCC_VAR_INC_FAC;
 
     // update var with observation
 
     float w = result_var / (result_var + id_var);
-
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
+    LOG_IF(WARNING, isnan(new_idepth) && target->isValid)
+        << "Trying to update a DepthHypothesis, but it's NaN";
 
     if (!disparityValid && !Conf().supressLSDPoints &&
         trav_KF.norm() > Conf().minVirtualBaselineLength) {
@@ -678,23 +698,20 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
           absGrad * (VALIDITY_COUNTER_MAX_VARIABLE) / 255.0f;
 
     // increase Skip!
-    if (result_eplLength < MIN_EPL_LENGTH_CROP) {
+    if (result_eplLength < Conf().minEplLengthCrop) {
       float inc = 3;
-
-      if (inc < 3)
-        inc = 3;
 
       inc += ((int)(result_eplLength * 10000) % 2);
 
       stats->num_observe_addSkip++;
 
-      if (result_eplLength < 0.5 * MIN_EPL_LENGTH_CROP)
+      if (result_eplLength < 0.5 * Conf().minEplLengthCrop)
         inc *= 3;
 
       target->nextStereoFrameMinID = _observeFrame->id() + inc;
     }
 
-    if (plotStereoImages)
+    if (Conf().plot.debugStereo)
       _debugImages.setHypothesisHandling(
           x, y, cv::Vec3b(0, 255, 255)); // yellow for GOT UPDATED
 
@@ -710,10 +727,10 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
   const float fx = ref->fx(), fy = ref->fy(), cx = ref->cx(), cy = ref->cy();
 
   // ======= make epl ========
-  // calculate the plane spanned by the two camera centers and the point
-  // (x,y,1) intersect it with the keyframe's image plane (at depth=1)
-  float epx = -fx * ref->thisToOther_t[0] + ref->thisToOther_t[2] * (x - cx);
-  float epy = -fy * ref->thisToOther_t[1] + ref->thisToOther_t[2] * (y - cy);
+  float epx =
+      -fx * ref->sd().thisToOther_t[0] + ref->sd().thisToOther_t[2] * (x - cx);
+  float epy =
+      -fy * ref->sd().thisToOther_t[1] + ref->sd().thisToOther_t[2] * (y - cy);
 
   if (isnanf(epx + epy))
     return false;
@@ -746,12 +763,13 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
   }
 
   // ===== DONE - return "normalized" epl =====
-  float fac = GRADIENT_SAMPLE_DIST / sqrt(eplLengthSquared);
+  float fac = Conf().gradientSampleDistance / sqrt(eplLengthSquared);
   *pepx = epx * fac;
   *pepy = epy * fac;
 
   return true;
 }
+
 void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
                                      float &rescaleFactor) {
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
@@ -795,7 +813,6 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
               cxi = frame()->cxi(), cyi = frame()->cyi();
 
   // go through all pixels of OLD image, propagating forwards.
-
   for (int y = 0; y < Conf().slamImageSize.height; y++)
     for (int x = 0; x < Conf().slamImageSize.width; x++) {
       const DepthMapPixelHypothesis *source = other->hypothesisAt(x, y);
@@ -1195,8 +1212,10 @@ inline float DepthMap::doLineStereo(
   Eigen::Vector3f KinvP =
       Eigen::Vector3f(referenceFrame->fxi() * u + referenceFrame->cxi(),
                       referenceFrame->fyi() * v + referenceFrame->cyi(), 1.0f);
-  Eigen::Vector3f pInf = referenceFrame->K_otherToThis_R * KinvP;
-  Eigen::Vector3f pReal = pInf / prior_idepth + referenceFrame->K_otherToThis_t;
+  Eigen::Vector3f pInf = referenceFrame->sd().K_otherToThis_R *
+                         KinvP; // (u,v) mapped from referenceFrame to frame
+  Eigen::Vector3f pReal =
+      pInf / prior_idepth + referenceFrame->sd().K_otherToThis_t;
 
   float rescaleFactor = 1.0; // pReal[2] * prior_idepth;
 
@@ -1212,41 +1231,47 @@ inline float DepthMap::doLineStereo(
     return -1;
   }
 
-  if (!(rescaleFactor > 0.7f && rescaleFactor < 1.4f)) {
+  if (isnan(rescaleFactor)) {
+    stats->num_stereo_rescale_nan++;
+    return -1;
+  } else if (!(rescaleFactor > 0.7f && rescaleFactor < 1.4f)) {
     stats->num_stereo_rescale_oob++;
     return -1;
   }
 
   // calculate values to search for
   const float *currentKeyFrameImageData = activeKeyFrameImageData();
-  float realVal_p1 =
-      getInterpolatedElement(currentKeyFrameImageData, u + epxn * rescaleFactor,
-                             v + epyn * rescaleFactor, width);
-  float realVal_m1 =
-      getInterpolatedElement(currentKeyFrameImageData, u - epxn * rescaleFactor,
-                             v - epyn * rescaleFactor, width);
-  float realVal = getInterpolatedElement(currentKeyFrameImageData, u, v, width);
-  float realVal_m2 = getInterpolatedElement(
-      currentKeyFrameImageData, u - 2 * epxn * rescaleFactor,
-      v - 2 * epyn * rescaleFactor, width);
-  float realVal_p2 = getInterpolatedElement(
+  const float realVal_p2 = getInterpolatedElement(
       currentKeyFrameImageData, u + 2 * epxn * rescaleFactor,
       v + 2 * epyn * rescaleFactor, width);
+  const float realVal_p1 =
+      getInterpolatedElement(currentKeyFrameImageData, u + epxn * rescaleFactor,
+                             v + epyn * rescaleFactor, width);
+  const float realVal =
+      getInterpolatedElement(currentKeyFrameImageData, u, v, width);
+  const float realVal_m1 =
+      getInterpolatedElement(currentKeyFrameImageData, u - epxn * rescaleFactor,
+                             v - epyn * rescaleFactor, width);
+  const float realVal_m2 = getInterpolatedElement(
+      currentKeyFrameImageData, u - 2 * epxn * rescaleFactor,
+      v - 2 * epyn * rescaleFactor, width);
 
   //	if(referenceFrame->K_otherToThis_t[2] * max_idepth + pInf[2] <
   // 0.01)
 
-  Eigen::Vector3f pClose = pInf + referenceFrame->K_otherToThis_t * max_idepth;
+  Eigen::Vector3f pClose =
+      pInf + referenceFrame->sd().K_otherToThis_t * max_idepth;
   // if the assumed close-point lies behind the
   // image, have to change that.
   if (pClose[2] < 0.001f) {
-    max_idepth = (0.001f - pInf[2]) / referenceFrame->K_otherToThis_t[2];
-    pClose = pInf + referenceFrame->K_otherToThis_t * max_idepth;
+    max_idepth = (0.001f - pInf[2]) / referenceFrame->sd().K_otherToThis_t[2];
+    pClose = pInf + referenceFrame->sd().K_otherToThis_t * max_idepth;
   }
   pClose =
       pClose / pClose[2]; // pos in new image of point (xy), assuming max_idepth
 
-  Eigen::Vector3f pFar = pInf + referenceFrame->K_otherToThis_t * min_idepth;
+  Eigen::Vector3f pFar =
+      pInf + referenceFrame->sd().K_otherToThis_t * min_idepth;
   // if the assumed far-point lies behind the image or closter than the
   // near-point, we moved past the Point it and should stop.
   if (pFar[2] < 0.001f || max_idepth < min_idepth) {
@@ -1267,13 +1292,15 @@ inline float DepthMap::doLineStereo(
   if (!(eplLength > 0) || std::isinf(eplLength))
     return -4;
 
-  if (eplLength > MAX_EPL_LENGTH_CROP) {
-    pClose[0] = pFar[0] + incx * MAX_EPL_LENGTH_CROP / eplLength;
-    pClose[1] = pFar[1] + incy * MAX_EPL_LENGTH_CROP / eplLength;
+  const float MaxEplLengthCrop = Conf().maxEplLengthCrop;
+  if (eplLength > MaxEplLengthCrop) {
+    pClose[0] = pFar[0] + incx * MaxEplLengthCrop / eplLength;
+    pClose[1] = pFar[1] + incy * MaxEplLengthCrop / eplLength;
   }
 
-  incx *= GRADIENT_SAMPLE_DIST / eplLength;
-  incy *= GRADIENT_SAMPLE_DIST / eplLength;
+  const float GradientSampleDistance = Conf().gradientSampleDistance;
+  incx *= GradientSampleDistance / eplLength;
+  incy *= GradientSampleDistance / eplLength;
 
   // extend one sample_dist to left & right.
   pFar[0] -= incx;
@@ -1282,8 +1309,9 @@ inline float DepthMap::doLineStereo(
   pClose[1] += incy;
 
   // make epl long enough (pad a little bit).
-  if (eplLength < MIN_EPL_LENGTH_CROP) {
-    float pad = (MIN_EPL_LENGTH_CROP - (eplLength)) / 2.0f;
+  const float MinEplLengthCrop = Conf().minEplLengthCrop;
+  if (eplLength < MinEplLengthCrop) {
+    float pad = (MinEplLengthCrop - (eplLength)) / 2.0f;
     pFar[0] -= incx * pad;
     pFar[1] -= incy * pad;
 
@@ -1501,7 +1529,7 @@ inline float DepthMap::doLineStereo(
   }
 
   bool didSubpixel = false;
-  if (useSubpixelStereo) {
+  if (Conf().doSubpixelStereo) {
     // ================== compute exact match =========================
     // compute gradients (they are actually only half the real gradient)
     float gradPre_pre = -(best_match_errPre - best_match_DiffErrPre);
@@ -1554,8 +1582,8 @@ inline float DepthMap::doLineStereo(
       best_match_y -= d * incy;
       best_match_err = best_match_err - 2 * d * gradPre_this -
                        (gradPre_pre - gradPre_this) * d * d;
-      if (enablePrintDebugInfo)
-        stats->num_stereo_interpPre++;
+      // if (enablePrintDebugInfo)
+      stats->num_stereo_interpPre++;
       didSubpixel = true;
 
     } else if (interpPost) {
@@ -1567,14 +1595,14 @@ inline float DepthMap::doLineStereo(
       stats->num_stereo_interpPost++;
       didSubpixel = true;
     } else {
-      if (enablePrintDebugInfo)
-        stats->num_stereo_interpNone++;
+      // if (enablePrintDebugInfo)
+      stats->num_stereo_interpNone++;
     }
   }
 
   // sampleDist is the distance in pixel at which the realVal's were
   // sampled
-  float sampleDist = GRADIENT_SAMPLE_DIST * rescaleFactor;
+  const float sampleDist = Conf().gradientSampleDistance * rescaleFactor;
 
   float gradAlongLine = 0;
   float tmp = realVal_p2 - realVal_p1;
@@ -1605,33 +1633,33 @@ inline float DepthMap::doLineStereo(
               cxi = referenceFrame->cxi(), cyi = referenceFrame->cyi();
 
   float idnew_best_match; // depth in the new image
-  float alpha; // d(idnew_best_match) / d(disparity in pixel) == conputed
+  float alpha; // d(idnew_best_match) / d(disparity in pixel) == computed
                // inverse depth derived by the pixel-disparity.
   if (incx * incx > incy * incy) {
     float oldX = fxi * best_match_x + cxi;
-    float nominator = (oldX * referenceFrame->otherToThis_t[2] -
-                       referenceFrame->otherToThis_t[0]);
-    float dot0 = KinvP.dot(referenceFrame->otherToThis_R_row0);
-    float dot2 = KinvP.dot(referenceFrame->otherToThis_R_row2);
+    float nominator = (oldX * referenceFrame->sd().otherToThis_t[2] -
+                       referenceFrame->sd().otherToThis_t[0]);
+    float dot0 = KinvP.dot(referenceFrame->sd().otherToThis_R_row0);
+    float dot2 = KinvP.dot(referenceFrame->sd().otherToThis_R_row2);
 
     idnew_best_match = (dot0 - oldX * dot2) / nominator;
     alpha = incx * fxi *
-            (dot0 * referenceFrame->otherToThis_t[2] -
-             dot2 * referenceFrame->otherToThis_t[0]) /
+            (dot0 * referenceFrame->sd().otherToThis_t[2] -
+             dot2 * referenceFrame->sd().otherToThis_t[0]) /
             (nominator * nominator);
 
   } else {
     float oldY = fyi * best_match_y + cyi;
 
-    float nominator = (oldY * referenceFrame->otherToThis_t[2] -
-                       referenceFrame->otherToThis_t[1]);
-    float dot1 = KinvP.dot(referenceFrame->otherToThis_R_row1);
-    float dot2 = KinvP.dot(referenceFrame->otherToThis_R_row2);
+    float nominator = (oldY * referenceFrame->sd().otherToThis_t[2] -
+                       referenceFrame->sd().otherToThis_t[1]);
+    float dot1 = KinvP.dot(referenceFrame->sd().otherToThis_R_row1);
+    float dot2 = KinvP.dot(referenceFrame->sd().otherToThis_R_row2);
 
     idnew_best_match = (dot1 - oldY * dot2) / nominator;
     alpha = incy * fyi *
-            (dot1 * referenceFrame->otherToThis_t[2] -
-             dot2 * referenceFrame->otherToThis_t[1]) /
+            (dot1 * referenceFrame->sd().otherToThis_t[2] -
+             dot2 * referenceFrame->sd().otherToThis_t[1]) /
             (nominator * nominator);
   }
 
@@ -1656,12 +1684,17 @@ inline float DepthMap::doLineStereo(
   // calibration)
   Eigen::Vector2f gradsInterp =
       getInterpolatedElement42(frame()->gradients(0), u, v, width);
-  float geoDispError =
+  const float geoDispErrorDenom =
       (gradsInterp[0] * epxn + gradsInterp[1] * epyn) + DIVISION_EPS;
-  geoDispError =
+  float geoDispError =
       trackingErrorFac * trackingErrorFac *
       (gradsInterp[0] * gradsInterp[0] + gradsInterp[1] * gradsInterp[1]) /
-      (geoDispError * geoDispError);
+      (geoDispErrorDenom * geoDispErrorDenom);
+
+  LOG_IF(DEBUG, isnan(geoDispError) || isinf(geoDispError))
+      << "trackingErrorFac: " << trackingErrorFac
+      << "; gradsInterp:" << gradsInterp[0] << ", " << gradsInterp[1]
+      << "; geoDispError: " << geoDispError;
 
   // geoDispError *= (0.5 + 0.5 *result_idepth) * (0.5 + 0.5
   // *result_idepth);
@@ -1672,7 +1705,11 @@ inline float DepthMap::doLineStereo(
                ((didSubpixel ? 0.05f : 0.5f) * sampleDist * sampleDist +
                 geoDispError + photoDispError); // square to make variance
 
-  if (plotStereoImages) {
+  // LOG(DEBUG) << "result_var: " << u << "," << v << " alpha: " << alpha << ";
+  // sampleDist: " << sampleDist << "; geoDispError: " << geoDispError << ";
+  // photoDispError: " << photoDispError;
+
+  if (Conf().plot.debugStereo) {
     if (rand() % 5 == 0) {
       // if(rand()%500 == 0)
       //	printf("geo: %f, photo: %f, alpha: %f\n", sqrt(geoDispError),
@@ -1698,7 +1735,7 @@ inline float DepthMap::doLineStereo(
       float fac = best_match_err /
                   ((float)MAX_ERROR_STEREO + sqrtf(gradAlongLine) * 20);
 
-      cv::Scalar color = cv::Scalar(255 * fac, 255 - 255 * fac, 0); // bw
+      cv::Scalar color = cv::Scalar(255 * fac, 255 * (1 - fac), 0); // bw
 
       /*
       if(rescaleFactor > 1)

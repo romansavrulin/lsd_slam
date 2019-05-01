@@ -49,7 +49,10 @@ const std::array< ImageSnippet, NUM_TEST_IMAGES > ImageSnippets{ $snippets };
 """
 
 
+## Input images to process
 images = [ "00001.png", "00002.png", "00003.png" ]
+
+## Extract a small subset of N x N subset of each image
 snippet_size = 4;
 
 

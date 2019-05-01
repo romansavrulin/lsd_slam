@@ -1,11 +1,5 @@
-
-set(GUI_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
-)
-
 # Set source files
 set(lsdslam_SOURCE_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/App/InputThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/Frame.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/ImageSet.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStructures/FramePoseStruct.cpp
@@ -33,7 +27,7 @@ set(lsdslam_SOURCE_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/TrackingThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem/ConstraintSearchThread.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/SlamSystem.cpp
-  ${GUI_SRCS}
+  ${CMAKE_CURRENT_SOURCE_DIR}/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
 )
 
 fips_begin_module( lsdslam )
@@ -47,6 +41,6 @@ fips_begin_module( lsdslam )
     ${OpenCV_LIBS}
     ${CSPARSE_LIBRARY} )
 
-  fips_deps( g3logger active_object videoio ${G2O_LIBRARIES} )
+  fips_deps( g3logger activeobject ${G2O_LIBRARIES} )
 
 fips_end_module()

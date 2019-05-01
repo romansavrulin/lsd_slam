@@ -46,18 +46,23 @@
 using namespace lsd_slam;
 
 SlamSystem::SlamSystem()
-    : _perf(), _outputWrappers(), _finalized(), _initialized(false),
-      //	_keyFrames(),
+    : _perf(),
+      _outputWrappers(),
+      _initialized(false),
+      _finalized(),
+      _trackingThread( new TrackingThread(*this, Conf().runRealTime ) ),
       _keyFrameGraph(new KeyFrameGraph),
-      _trackableKeyFrameSearch(new TrackableKeyFrameSearch(_keyFrameGraph)) {
+      _trackableKeyFrameSearch(new TrackableKeyFrameSearch(_keyFrameGraph))
+{
 
   // Because some of these rely on Conf(), need to explicitly call after
   // static initialization.  Is this true?
   const bool threaded = Conf().runRealTime;
+
   _optThread.reset(new OptimizationThread(*this, threaded));
   _mapThread.reset(new MappingThread(*this, threaded));
   _constraintThread.reset(new ConstraintSearchThread(*this, threaded));
-  _trackingThread.reset(new TrackingThread(*this, threaded));
+  //_trackingThread.reset(new TrackingThread(*this, threaded));
 
   timeLastUpdate.start();
 }
@@ -102,9 +107,6 @@ void SlamSystem::finalize() {
 
   LOG(INFO) << "Done Finalizing Graph.!!";
   _finalized.notify();
-
-  LOG(INFO) << "Done Finalizing Graph.!!";
-  _finalized.notify();
 }
 
 // std::shared_ptr<KeyFrame> &SlamSystem::currentKeyFrame()
@@ -116,13 +118,22 @@ void SlamSystem::nextImage(unsigned int id, const cv::Mat &img,
 }
 
 void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
+  LOG(WARNING) << "== Processing frame " << set->id() << " ==";
+
   if (!_initialized) {
+    LOG(WARNING) << " ~~ First frame, initializing system";
     _mapThread->createFirstKeyFrame(set);
     _initialized = true;
     return;
   }
-
   _trackingThread->doTrackSet(set);
+
+  LOG(DEBUG) << "== Completed frame " << set->id() << " ==";
+
+  if( Conf().plot.doWaitKey >= 0 ) {
+    LOG_IF( WARNING, Conf().plot.doWaitKey == 0 ) << "   --- waitKey(0);  Press a key in an OpenCV window to continue ---";
+    cv::waitKey( Conf().plot.doWaitKey );
+  }
 
   logPerformanceData();
 }
@@ -232,13 +243,14 @@ void SlamSystem::logPerformanceData() {
   }
 }
 
-void SlamSystem::updateDisplayDepthMap() {
-  if (!Conf().displayDepthMap)
-    return;
+void SlamSystem::updateDisplayDepthMap()
+{
 
-  const double scale = (bool)currentKeyFrame()
-                           ? currentKeyFrame()->frame()->getCamToWorld().scale()
-                           : 1.0;
+  if (!Conf().displayDepthMap) return;
+
+  // const double scale = (bool)currentKeyFrame()
+  //                          ? currentKeyFrame()->frame()->getCamToWorld().scale()
+  //                          : 1.0;
 
   // debug plot depthmap
   char buf1[200] = "";
@@ -306,6 +318,7 @@ void SlamSystem::publishKeyframe(const Frame::SharedPtr &frame) {
 
 void SlamSystem::publishCurrentKeyframe() {
   if (currentKeyFrame()) {
+    //LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id() << " at " << currentKeyFrame()->frame();
     OUTPUT_FOR_EACH(publishKeyframe(currentKeyFrame()->frame()))
     OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()->frame()))
   } else {

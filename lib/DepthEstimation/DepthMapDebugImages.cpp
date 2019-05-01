@@ -23,31 +23,30 @@ namespace lsd_slam {
   {;}
 
 
-  void DepthMapDebugImages::plotUpdateKeyFrame( const Frame::SharedPtr &activeKeyFrame,
-    const Frame::SharedPtr &oldestReferenceFrame,
-    const Frame::SharedPtr &newestReferenceFrame )
+  void DepthMapDebugImages::initDepthMapUpdate( const Frame::SharedPtr &activeKeyFrame,
+                                                const Frame::SharedPtr &currentFrame )
   {
     cv::Mat keyFrameImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(activeKeyFrame->image(0)));
     keyFrameImage.convertTo(_debugImageHypothesisHandling, CV_8UC1);
-    cv::cvtColor(_debugImageHypothesisHandling, _debugImageHypothesisHandling, CV_GRAY2RGB);
+    cv::cvtColor(_debugImageHypothesisHandling, _debugImageHypothesisHandling, cv::COLOR_GRAY2RGB);
 
-    cv::Mat oldest_refImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(oldestReferenceFrame->image(0)));
-    cv::Mat newest_refImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(newestReferenceFrame->image(0)));
-    cv::Mat rfimg = 0.5f*oldest_refImage + 0.5f*newest_refImage;
+    // cv::Mat oldest_refImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(oldestReferenceFrame->image(0)));
+    cv::Mat rfimg(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(currentFrame->image(0)));
+    // cv::Mat rfimg = 0.5f*oldest_refImage + 0.5f*newest_refImage;
     rfimg.convertTo(_debugImageStereoLines, CV_8UC1);
-    cv::cvtColor(_debugImageStereoLines, _debugImageStereoLines, CV_GRAY2RGB);
+    cv::cvtColor(_debugImageStereoLines, _debugImageStereoLines, cv::COLOR_GRAY2RGB);
   }
 
-  void DepthMapDebugImages::displayUpdateKeyFrame() {
+  void DepthMapDebugImages::displayDepthMapUpdate() {
     Util::displayImage( "Stereo Key Frame", _debugImageHypothesisHandling, false );
-    Util::displayImage( "Stereo Reference Frame", _debugImageStereoLines, false );
+    Util::displayImage( "Stereo Lines", _debugImageStereoLines, false );
   }
 
 
   void DepthMapDebugImages::plotNewKeyFrame( const Frame::SharedPtr &newKeyFrame ) {
     cv::Mat keyFrameImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(newKeyFrame->image(0)));
     keyFrameImage.convertTo(_debugImageHypothesisPropagation, CV_8UC1);
-    cv::cvtColor(_debugImageHypothesisPropagation, _debugImageHypothesisPropagation, CV_GRAY2RGB);
+    cv::cvtColor(_debugImageHypothesisPropagation, _debugImageHypothesisPropagation, cv::COLOR_GRAY2RGB);
   }
 
   void DepthMapDebugImages::displayNewKeyFrame() {
@@ -70,7 +69,7 @@ namespace lsd_slam {
     cv::Mat keyFrameImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(activeKeyFrame->image(0)));
     cv::Mat keyFrameGray( keyFrameImage.size(), CV_8UC1 );
     keyFrameImage.convertTo(keyFrameGray, CV_8UC1);
-    cv::cvtColor(keyFrameGray, _debugImageDepth, CV_GRAY2RGB);
+    cv::cvtColor(keyFrameGray, _debugImageDepth, cv::COLOR_GRAY2RGB);
 
     // debug plot & publish sparse version?
 
@@ -105,7 +104,7 @@ namespace lsd_slam {
     cv::Mat keyFrameImage(_imageSize.height, _imageSize.width, CV_32F, const_cast<float*>(activeKeyFrame->image(0)));
     cv::Mat keyFrameGray( keyFrameImage.size(), CV_8UC1 );
     keyFrameImage.convertTo(keyFrameGray, CV_8UC1);
-    cv::cvtColor(keyFrameGray, _debugImageDepth, CV_GRAY2RGB);
+    cv::cvtColor(keyFrameGray, _debugImageDepth, cv::COLOR_GRAY2RGB);
 
     // debug plot & publish sparse version?
 

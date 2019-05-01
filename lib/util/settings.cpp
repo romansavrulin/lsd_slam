@@ -54,20 +54,13 @@ bool printOverallTiming = true;
 
 bool plotTrackingIterationInfo = false;
 bool plotSim3TrackingIterationInfo = false;
-bool plotStereoImages = false;
+//bool plotStereoImages = false;
 bool plotTracking = false;
-
-
-float freeDebugParam1 = 1;
-float freeDebugParam2 = 1;
-float freeDebugParam3 = 1;
-float freeDebugParam4 = 1;
-float freeDebugParam5 = 1;
 
 float KFUsageWeight = 4;
 float KFDistWeight = 3;
 
-float minUseGrad = 5;
+float minUseGrad = 10;
 float cameraPixelNoise2 = 4*4;
 float depthSmoothingFactor = 1;
 

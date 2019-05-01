@@ -26,20 +26,10 @@
 #include "SlamSystem.h"
 
 #include "DataStructures/KeyFrame.h"
-#include "Tracking/SE3Tracker.h"
-// #include "Tracking/Sim3Tracker.h"
-// #include "DepthEstimation/DepthMap.h"
-#include "Tracking/TrackingReference.h"
-// #include "util/globalFuncs.h"
 #include "GlobalMapping/KeyFrameGraph.h"
 #include "GlobalMapping/TrackableKeyFrameSearch.h"
-//#include "ros/ros.h"
-// #include "GlobalMapping/g2oTypeSim3Sophus.h"
-// #include "IOWrapper/ImageDisplay.h"
-// #include "IOWrapper/Output3DWrapper.h"
-// #include <g2o/core/robust_kernel_impl.h>
-// #include "DataStructures/FrameMemory.h"
-// #include "deque
+#include "Tracking/SE3Tracker.h"
+#include "Tracking/TrackingReference.h"
 
 #include "SlamSystem/MappingThread.h"
 
@@ -61,7 +51,6 @@ using active_object::Active;
 
 TrackingThread::TrackingThread(SlamSystem &system, bool threaded)
     : _system(system), _perf(), _tracker(new SE3Tracker(Conf().slamImageSize)),
-      //_trackingReference( new TrackingReference() ),
       _trackingIsGood(true), _newKeyFramePending(false),
       _latestGoodPoseCamToWorld(),
       _thread(threaded ? Active::createActive() : NULL),
@@ -91,7 +80,7 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
       << "TRACKING frame " << set->refFrame()->id() << " onto ref. "
       << _currentKeyFrame->id();
 
-  SE3 frameToReference_initialEstimate =
+  SE3 frameToParentEstimate =
       se3FromSim3(_currentKeyFrame->pose()->getCamToWorld().inverse() *
                   _latestGoodPoseCamToWorld);
   // Temp debug
@@ -112,12 +101,35 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
   // LOG(WARNING) << "Current frame pose estimate" << R;
   Timer timer;
 
-  LOG(DEBUG) << "Start tracking...";
-  SE3 newRefToFrame_poseUpdate = _tracker->trackFrame(
-      _currentKeyFrame, set->refFrame(), frameToReference_initialEstimate);
-
-  LOG(DEBUG) << "Done tracking, took " << timer.stop() * 1000 << " ms";
+  LOG(DEBUG) << "Tracking from " << set->id() << " against "
+             << _currentKeyFrame->id() << "...";
+  SE3 updatedFrameToParent = _tracker->trackFrame(
+      _currentKeyFrame, set->refFrame(), frameToParentEstimate);
+  LOG(DEBUG) << "   ... done. Tracking took " << timer.stop() * 1000 << " ms";
   _perf.track.update(timer);
+
+  const bool doTrackImageSetFrames = false;
+  if (doTrackImageSetFrames && set->size() > 1) {
+    Frame::SharedPtr other = set->getFrame(1);
+    Sophus::SE3d otherToRef = set->getSE3ToRef(1);
+
+    //    Sophus::SE3d otherToParentEstimate = otherToRef *
+    //    updatedParentToFrame.inverse();
+    Sophus::SE3d otherToParentEstimate = otherToRef * updatedFrameToParent;
+
+    LOG(WARNING) << "Before tracking, estimate:\n"
+                 << otherToParentEstimate.matrix3x4();
+
+    LOG(DEBUG) << "Tracking frame 1...";
+    SE3 updatedOtherToParent =
+        _tracker->trackFrame(_currentKeyFrame, other, otherToParentEstimate);
+
+    LOG(WARNING) << "After tracking, gets:\n"
+                 << updatedOtherToParent.matrix3x4();
+  }
+
+  LOG(DEBUG) << "Propagating pose from refFrame to others in set";
+  set->propagatePoseFromRefFrame();
 
   tracking_lastResidual = _tracker->lastResidual;
   tracking_lastUsage = _tracker->pointUsage;
@@ -162,7 +174,8 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
 
   if (!_newKeyFramePending &&
       _currentKeyFrame->numMappedOnThisTotal > MIN_NUM_MAPPED) {
-    Sophus::Vector3d dist = newRefToFrame_poseUpdate.translation() *
+
+    Sophus::Vector3d dist = updatedFrameToParent.translation() *
                             _currentKeyFrame->frame()->meanIdepth;
     float minVal = fmin(0.2f + _system.keyFrameGraph()->size() * 0.8f /
                                    INITIALIZATION_PHASE_COUNT,

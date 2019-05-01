@@ -101,14 +101,6 @@ private:
 
   void useNewKeyFrameImpl(const std::shared_ptr<KeyFrame> &kf);
 
-  // ============= EXCLUSIVELY TRACKING THREAD (+ init) ===============
-
-  // std::shared_ptr<TrackingReference> _trackingReference; // tracking
-  // reference for current keyframe. only used by tracking. Frame::SharedPtr
-  // _trackingReferenceFrameSharedPT;	// only used in odometry-mode, to keep a
-  // keyframe alive until it is deleted. ONLY accessed whithin
-  // currentKeyFrameMutex lock.
-
   bool _trackingIsGood;
   bool _newKeyFramePending;
 
@@ -117,17 +109,6 @@ private:
 
   Sim3 _latestGoodPoseCamToWorld;
 
-  //
-  //
-  // // ============= EXCLUSIVELY MAPPING THREAD (+ init) =============
-  //
-  //
-  //
-  // // ============= EXCLUSIVELY FIND-CONSTRAINT THREAD (+ init) =============
-  //
-  //
-  //
-  //
   // // ============= SHARED ENTITIES =============
   float tracking_lastResidual;
   float tracking_lastUsage;
@@ -136,88 +117,6 @@ private:
 
   std::unique_ptr<active_object::Active> _thread;
 
-  //
-  // int lastNumConstraintsAddedOnFullRetrack;
-  // bool doFinalOptimization;
-  //
-  // // for sequential operation. Set in Mapping, read in Tracking.
-  // // std::condition_variable  newFrameMappedSignal;
-  // // std::mutex newFrameMappedMutex;
-  //
-  //
-  //
-
-  //
-  //
-  //
-  //
-  //
-  // // Tracking: if (!create) set candidate, set create.
-  // // Mapping: if (create) use candidate, reset create.
-  // // => no locking required.
-  // std::shared_ptr<Frame> latestTrackedFrame;
-  // bool createNewKeyFrame;
-  //
-  //
-  //
-  // // PUSHED in tracking, READ & CLEARED in mapping
-  // // std::deque< std::shared_ptr<Frame> > unmappedTrackedFrames;
-  // // ThreadSynchronizer unmappedTrackedFramesSynchro;
-  // // std::mutex unmappedTrackedFramesMutex;
-  // // std::condition_variable  unmappedTrackedFramesSignal;
-  //
-  //
-  // // PUSHED by Mapping, READ & CLEARED by constraintFinder
-  // ThreadMutexObject< std::deque< Frame* > > newKeyFrames;
-  // // std::deque< Frame* > newKeyFrames;
-  // // std::mutex newKeyFrameMutex;
-  // // std::condition_variable newKeyFrameCreatedSignal;
-  //
-  //
-  //
-  //
-  // // threads
-  // // std::thread thread_mapping;
-  // // std::thread thread_constraint_search;
-  // //std::thread thread_optimization;
-  //
-  // // bool keepRunning; // used only on destruction to signal threads to
-  // finish.
-  //
-  //
-  //
-  // // optimization thread
-  // // bool newConstraintAdded;
-  // // std::mutex newConstraintMutex;
-  // // std::condition_variable newConstraintCreatedSignal;
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  //
-  // bool depthMapScreenshotFlag;
-  // std::string depthMapScreenshotFilename;
-  //
-
-  //
-
-  //
-  //
-  // void changeKeyframe(bool noCreate, bool force, float maxScore);
-  // void createNewCurrentKeyframe(std::shared_ptr<Frame> newKeyframeCandidate);
-  // void loadNewCurrentKeyframe(Frame* keyframeToLoad);
-  //
-
-  //
-  // void constraintSearchThreadLoop();
-
-  // /** Calculates a scale independent error norm for reciprocal tracking
-  // results a and b with associated information matrices. */
-
-  // void optimizationThreadLoop();
 };
 
 } // namespace lsd_slam
