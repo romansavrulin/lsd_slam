@@ -2,7 +2,7 @@
 
 #include <opencv2/core.hpp>
 
-#include "libvideoio/ImageSize.h"
+#include "libvideoio/types/ImageSize.h"
 
 #include "DataStructures/Frame.h"
 #include "DepthMapPixelHypothesis.h"

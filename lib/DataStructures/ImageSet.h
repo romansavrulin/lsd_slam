@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "DataStructures/Frame.h"
-#include "libvideoio/Camera.h"
+#include <libvideoio/types/Camera.h>
 #include "util/SophusUtil.h"
 
 namespace lsd_slam {
