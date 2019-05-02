@@ -673,7 +673,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     float w = result_var / (result_var + id_var);
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
-    LOG_IF(WARNING, isnan(new_idepth) && target->isValid)
+    LOG_IF(WARNING, std::isnan(new_idepth) && target->isValid)
         << "Trying to update a DepthHypothesis, but it's NaN";
 
     if (!disparityValid && !Conf().supressLSDPoints &&
@@ -1235,7 +1235,7 @@ inline float DepthMap::doLineStereo(
     return -1;
   }
 
-  if (isnan(rescaleFactor)) {
+  if (std::isnan(rescaleFactor)) {
     stats->num_stereo_rescale_nan++;
     return -1;
   } else if (!(rescaleFactor > 0.7f && rescaleFactor < 1.4f)) {
@@ -1695,7 +1695,7 @@ inline float DepthMap::doLineStereo(
       (gradsInterp[0] * gradsInterp[0] + gradsInterp[1] * gradsInterp[1]) /
       (geoDispErrorDenom * geoDispErrorDenom);
 
-  LOG_IF(DEBUG, isnan(geoDispError) || isinf(geoDispError))
+  LOG_IF(DEBUG, std::isnan(geoDispError) || std::isinf(geoDispError))
       << "trackingErrorFac: " << trackingErrorFac
       << "; gradsInterp:" << gradsInterp[0] << ", " << gradsInterp[1]
       << "; geoDispError: " << geoDispError;
