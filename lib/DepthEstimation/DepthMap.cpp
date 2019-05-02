@@ -909,7 +909,7 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
   float epx = -fx * ref->thisToOther_t[0] + ref->thisToOther_t[2] * (x - cx);
   float epy = -fy * ref->thisToOther_t[1] + ref->thisToOther_t[2] * (y - cy);
 
-  if (isnanf(epx + epy))
+  if (std::isnan(epx + epy))
     return false;
 
   // ======== check epl length =========
@@ -1689,7 +1689,7 @@ inline float DepthMap::doLineStereo(
   pFar = pFar / pFar[2]; // pos in new image of point (xy), assuming min_idepth
 
   // check for nan due to eg division by zero.
-  if (isnanf((float)(pFar[0] + pClose[0])))
+  if (std::isnan((float)(pFar[0] + pClose[0])))
     return -4;
 
   // calculate increments in which we will step through the epipolar line.
