@@ -70,6 +70,9 @@ void ImageSet::propagatePoseFromRefFrame() {
 
     LOG(DEBUG) << "   SetImage " << i << " to Parent:\n"
                << thisFrame->pose->thisToParent_raw.matrix3x4();
+
+    // LOG(WARNING) << sim3FromSE3(_se3ToRef[i]).matrix3x4();
+
     thisFrame->setTrackingParent(refFrame()->trackingParent());
 
     // Stopgap for now.   How to set a good value if the secondary frames

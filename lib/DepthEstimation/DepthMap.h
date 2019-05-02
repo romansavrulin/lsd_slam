@@ -82,7 +82,7 @@ public:
   void activateExistingKF(const Frame::SharedPtr &kf);
 
   //==
-  bool updateDepthFrom(const Frame::SharedPtr &frame);
+  bool updateDepthFrom(const Frame::SharedPtr &frame, const bool _useDisparity);
 
   struct PerformanceData {
     PerformanceData(void) { ; }
@@ -104,6 +104,8 @@ public:
 
 private:
   IndexThreadReduce threadReducer;
+
+  bool useDisparity;
 
   Eigen::Vector3f trav_KF;
 

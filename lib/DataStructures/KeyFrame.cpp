@@ -86,7 +86,7 @@ void KeyFrame::updateDepthFrom(const Frame::SharedPtr &frame) {
          id(), frame->id(), frame->trackingParent()->id());
   }
 
-  if (!_depthMap->updateDepthFrom(frame)) {
+  if (!_depthMap->updateDepthFrom(frame, false)) {
     // TODO Handle error
 
     return;
@@ -100,7 +100,7 @@ void KeyFrame::updateDepthFrom(const Frame::SharedPtr &frame) {
 
 void KeyFrame::updateDepthFrom(const ImageSet::SharedPtr &set) {
 
-  Frame::SharedPtr refFrame( set->refFrame() );
+  Frame::SharedPtr refFrame(set->refFrame());
 
   assert(refFrame->hasTrackingParent());
 
@@ -111,28 +111,32 @@ void KeyFrame::updateDepthFrom(const ImageSet::SharedPtr &set) {
          id(), refFrame->id(), refFrame->trackingParent()->id());
   }
 
-  LOG(DEBUG) << "Updating depth in KF " << id() << " from frame " << refFrame->id();
-  if (!_depthMap->updateDepthFrom(refFrame) ) {
-    // TODO Handle error.  Have to disambiguiate between an error and "baseline too short, didn't update"
+  LOG(DEBUG) << "Updating depth in KF " << id() << " from frame "
+             << refFrame->id();
+  if (!_depthMap->updateDepthFrom(refFrame, true)) {
+    // TODO Handle error.  Have to disambiguiate between an error and "baseline
+    // too short, didn't update"
     LOG(WARNING) << "Error while updating depth map from image set " << id();
-    //return;
+    // return;
   }
 
-  if( Conf().doLeftRightStereo ) {
+  if (Conf().doLeftRightStereo) {
     LOG(DEBUG) << "Doing ImageSet stereo";
 
     const size_t numFrames = set->size();
 
-    for( size_t i = 0; i < numFrames; ++i ) {
-      if( set->isRefFrame(i) ) continue;
-      Frame::SharedPtr otherFrame( set->getFrame(i) );
+    for (size_t i = 0; i < numFrames; ++i) {
+      if (set->isRefFrame(i))
+        continue;
+      Frame::SharedPtr otherFrame(set->getFrame(i));
 
-      LOG(DEBUG) << "   mapping from the " << i << "'th image in set " << set->id();
+      LOG(DEBUG) << "   mapping from the " << i << "'th image in set "
+                 << set->id();
 
       // TODO: Check if this frame is too far away from the keyframe?
       // Depends on the pose of the otherFrame being set
 
-      _depthMap->updateDepthFrom( otherFrame );
+      _depthMap->updateDepthFrom(otherFrame, false);
     }
   }
 

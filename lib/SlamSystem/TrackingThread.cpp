@@ -127,9 +127,10 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
     LOG(WARNING) << "After tracking, gets:\n"
                  << updatedOtherToParent.matrix3x4();
   }
-
-  LOG(DEBUG) << "Propagating pose from refFrame to others in set";
-  set->propagatePoseFromRefFrame();
+  if (Conf().doLeftRightStereo) {
+    LOG(DEBUG) << "Propagating pose from refFrame to others in set";
+    set->propagatePoseFromRefFrame();
+  }
 
   tracking_lastResidual = _tracker->lastResidual;
   tracking_lastUsage = _tracker->pointUsage;

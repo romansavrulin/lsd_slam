@@ -43,7 +43,7 @@ namespace lsd_slam {
 // Constructor when unable to proagate from previous
 DepthMap::DepthMap(const Frame::SharedPtr &frame)
     : _perf(), _debugImages(Conf().slamImageSize), _frame(frame), _set(nullptr),
-      activeKeyFrameIsReactivated(false) {
+      activeKeyFrameIsReactivated(false), useDisparity(false) {
   const size_t imgArea(Conf().slamImageSize.area());
 
   trav_KF << 0, 0, 0;
@@ -57,7 +57,8 @@ DepthMap::DepthMap(const Frame::SharedPtr &frame)
 
 DepthMap::DepthMap(const ImageSet::SharedPtr &set)
     : _perf(), _debugImages(Conf().slamImageSize), _set(set),
-      _frame(set->refFrame()), activeKeyFrameIsReactivated(false) {
+      _frame(set->refFrame()), activeKeyFrameIsReactivated(false),
+      useDisparity(true) {
   const size_t imgArea(Conf().slamImageSize.area());
 
   trav_KF << 0, 0, 0;
@@ -163,8 +164,11 @@ void DepthMap::initializeRandomly() {
 }
 
 //=== "Public interface" functions ==
-bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame) {
+bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame,
+                               const bool _useDisparity) {
   LOG(INFO) << "Updating depth from frame";
+
+  useDisparity = true; //_useDisparity;
 
   Timer timeAll;
 
@@ -679,8 +683,8 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
       target->idepth = UNZERO(new_idepth);
     }
 
-    else if (disparityValid) {
-      // Always add disparity map points
+    else if (disparityValid && useDisparity) {
+      // Always add disparity map points when in left image, never in right
       target->idepth = UNZERO(new_idepth);
     }
     id_var = id_var * w;
