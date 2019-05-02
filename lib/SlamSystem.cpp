@@ -296,8 +296,8 @@ void SlamSystem::publishPose(const Sophus::Sim3f &pose) {
   Eigen::Vector3f T = pose.translation();
   // R = q.toRotationMatrix().cast<float>();
   //
-  // LOG(WARNING) << "R" << R;
-  // LOG(WARNING) << "T" << T;
+  LOG(WARNING) << "R" << R;
+  LOG(WARNING) << "T" << T;
 
   OUTPUT_FOR_EACH(publishPose(pose))
 }

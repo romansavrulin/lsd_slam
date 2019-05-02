@@ -83,6 +83,9 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
   SE3 frameToParentEstimate =
       se3FromSim3(_currentKeyFrame->pose()->getCamToWorld().inverse() *
                   _latestGoodPoseCamToWorld);
+
+  LOG(DEBUG) << "frame to parent estimate\n: "
+             << sim3FromSE3(frameToParentEstimate).matrix3x4();
   // Temp debug
   // Eigen::Matrix3f R;
   // Eigen::Quaterniond q;
