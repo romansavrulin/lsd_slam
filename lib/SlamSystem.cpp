@@ -46,14 +46,10 @@
 using namespace lsd_slam;
 
 SlamSystem::SlamSystem()
-    : _perf(),
-      _outputWrappers(),
-      _initialized(false),
-      _finalized(),
-      _trackingThread( new TrackingThread(*this, Conf().runRealTime ) ),
+    : _perf(), _outputWrappers(), _initialized(false), _finalized(),
+      _trackingThread(new TrackingThread(*this, Conf().runRealTime)),
       _keyFrameGraph(new KeyFrameGraph),
-      _trackableKeyFrameSearch(new TrackableKeyFrameSearch(_keyFrameGraph))
-{
+      _trackableKeyFrameSearch(new TrackableKeyFrameSearch(_keyFrameGraph)) {
 
   // Because some of these rely on Conf(), need to explicitly call after
   // static initialization.  Is this true?
@@ -130,9 +126,11 @@ void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
 
   LOG(DEBUG) << "== Completed frame " << set->id() << " ==";
 
-  if( Conf().plot.doWaitKey >= 0 ) {
-    LOG_IF( WARNING, Conf().plot.doWaitKey == 0 ) << "   --- waitKey(0);  Press a key in an OpenCV window to continue ---";
-    cv::waitKey( Conf().plot.doWaitKey );
+  if (Conf().plot.doWaitKey >= 0) {
+    LOG_IF(WARNING, Conf().plot.doWaitKey == 0)
+        << "   --- waitKey(0);  Press a key in an OpenCV window to continue "
+           "---";
+    cv::waitKey(Conf().plot.doWaitKey);
   }
 
   logPerformanceData();
@@ -243,13 +241,14 @@ void SlamSystem::logPerformanceData() {
   }
 }
 
-void SlamSystem::updateDisplayDepthMap()
-{
+void SlamSystem::updateDisplayDepthMap() {
 
-  if (!Conf().displayDepthMap) return;
+  if (!Conf().displayDepthMap)
+    return;
 
   // const double scale = (bool)currentKeyFrame()
-  //                          ? currentKeyFrame()->frame()->getCamToWorld().scale()
+  //                          ?
+  //                          currentKeyFrame()->frame()->getCamToWorld().scale()
   //                          : 1.0;
 
   // debug plot depthmap
@@ -296,6 +295,9 @@ void SlamSystem::publishPose(const Sophus::Sim3f &pose) {
   Eigen::Matrix3f R = pose.rotationMatrix();
   Eigen::Vector3f T = pose.translation();
   // R = q.toRotationMatrix().cast<float>();
+  //
+  // LOG(WARNING) << "R" << R;
+  // LOG(WARNING) << "T" << T;
 
   OUTPUT_FOR_EACH(publishPose(pose))
 }
@@ -318,7 +320,8 @@ void SlamSystem::publishKeyframe(const Frame::SharedPtr &frame) {
 
 void SlamSystem::publishCurrentKeyframe() {
   if (currentKeyFrame()) {
-    //LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id() << " at " << currentKeyFrame()->frame();
+    // LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id() << " at "
+    // << currentKeyFrame()->frame();
     OUTPUT_FOR_EACH(publishKeyframe(currentKeyFrame()->frame()))
     OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()->frame()))
   } else {

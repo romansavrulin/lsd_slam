@@ -168,7 +168,7 @@ bool DepthMap::updateDepthFrom(const Frame::SharedPtr &updateFrame,
                                const bool _useDisparity) {
   LOG(INFO) << "Updating depth from frame";
 
-  useDisparity = true; //_useDisparity;
+  useDisparity = _useDisparity;
 
   Timer timeAll;
 
