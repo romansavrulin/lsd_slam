@@ -688,7 +688,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     float w = result_var / (result_var + id_var);
     float new_idepth = (1 - w) * result_idepth + w * target->idepth;
-    LOG_IF(WARNING, isnan(new_idepth) && target->isValid)
+    LOG_IF(WARNING, std::isnan(new_idepth) && target->isValid)
         << "Trying to update a DepthHypothesis, but it's NaN";
 
     if (!disparityValid && !Conf().supressLSDPoints &&
@@ -756,7 +756,7 @@ bool DepthMap::makeAndCheckEPL(const int x, const int y, const Frame *const ref,
   float epy =
       -fy * ref->sd().thisToOther_t[1] + ref->sd().thisToOther_t[2] * (y - cy);
 
-  if (isnanf(epx + epy))
+  if (std::isnan(epx + epy))
     return false;
 
   // ======== check epl length =========
@@ -1255,7 +1255,7 @@ inline float DepthMap::doLineStereo(
     return -1;
   }
 
-  if (isnan(rescaleFactor)) {
+  if (std::isnan(rescaleFactor)) {
     stats->num_stereo_rescale_nan++;
     return -1;
   } else if (!(rescaleFactor > 0.7f && rescaleFactor < 1.4f)) {
@@ -1305,7 +1305,7 @@ inline float DepthMap::doLineStereo(
   pFar = pFar / pFar[2]; // pos in new image of point (xy), assuming min_idepth
 
   // check for nan due to eg division by zero.
-  if (isnanf((float)(pFar[0] + pClose[0])))
+  if (std::isnan((float)(pFar[0] + pClose[0])))
     return -4;
 
   // calculate increments in which we will step through the epipolar line.
@@ -1715,7 +1715,7 @@ inline float DepthMap::doLineStereo(
       (gradsInterp[0] * gradsInterp[0] + gradsInterp[1] * gradsInterp[1]) /
       (geoDispErrorDenom * geoDispErrorDenom);
 
-  LOG_IF(DEBUG, isnan(geoDispError) || isinf(geoDispError))
+  LOG_IF(DEBUG, std::isnan(geoDispError) || std::isinf(geoDispError))
       << "trackingErrorFac: " << trackingErrorFac
       << "; gradsInterp:" << gradsInterp[0] << ", " << gradsInterp[1]
       << "; geoDispError: " << geoDispError;
