@@ -64,6 +64,10 @@ public:
   float minEplLengthCrop, maxEplLengthCrop;
   float gradientSampleDistance;
 
+  // ROS params
+  std::string lsdFrame;
+  std::string globalFrame;
+
   struct PrintConfiguration {
     PrintConfiguration();
 

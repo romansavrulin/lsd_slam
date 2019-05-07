@@ -23,7 +23,7 @@ Configuration::Configuration()
 
       minEplLengthCrop(3.0f), maxEplLengthCrop(30.0f),
 
-      gradientSampleDistance(1.0f),
+      gradientSampleDistance(1.0f), lsdFrame("camera_left"), globalFrame("map"),
 
       print(), plot() {}
 

@@ -59,14 +59,15 @@ void MappingThread::createFirstKeyFrame(const ImageSet::SharedPtr &set) {
 }
 
 // void MappingThread::createNewKeyFrameImpl(
-//     const KeyFrame::SharedPtr &currentKeyFrame, const Frame::SharedPtr &frame) {
+//     const KeyFrame::SharedPtr &currentKeyFrame, const Frame::SharedPtr
+//     &frame) {
 //   LOG(WARNING) << "Making " << frame->id() << " into new keyframe!";
 //
 //   CHECK(frame->isTrackingParent(currentKeyFrame))
 //       << "New keyframe does not track on current keyframe!";
 //
-//   KeyFrame::SharedPtr kf(KeyFrame::PropagateAndCreate(currentKeyFrame, frame));
-//   _system.keyFrameGraph()->addKeyFrame(kf);
+//   KeyFrame::SharedPtr kf(KeyFrame::PropagateAndCreate(currentKeyFrame,
+//   frame)); _system.keyFrameGraph()->addKeyFrame(kf);
 //   _system.trackingThread()->doUseNewKeyFrame(kf);
 //   _system.constraintThread()->doCheckNewKeyFrame(kf);
 // }
@@ -80,9 +81,14 @@ void MappingThread::createNewKeyFrameImplSet(
       << "New keyframe does not track on current keyframe!";
 
   KeyFrame::SharedPtr kf(KeyFrame::PropagateAndCreate(currentKeyFrame, set));
+
   _system.keyFrameGraph()->addKeyFrame(kf);
   _system.trackingThread()->doUseNewKeyFrame(kf);
   _system.constraintThread()->doCheckNewKeyFrame(kf);
+
+  // Publish outputs
+  _system.publishKeyframeGraph();
+  _system.publishCurrentKeyframe();
 }
 
 // TODO.  Not updated post-move_current_keyframe

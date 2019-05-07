@@ -296,8 +296,8 @@ void SlamSystem::publishPose(const Sophus::Sim3f &pose) {
   Eigen::Vector3f T = pose.translation();
   // R = q.toRotationMatrix().cast<float>();
   //
-  LOG(WARNING) << "R" << R;
-  LOG(WARNING) << "T" << T;
+  // LOG(WARNING) << "R" << R;
+  // LOG(WARNING) << "T" << T;
 
   OUTPUT_FOR_EACH(publishPose(pose))
 }
@@ -320,8 +320,8 @@ void SlamSystem::publishKeyframe(const Frame::SharedPtr &frame) {
 
 void SlamSystem::publishCurrentKeyframe() {
   if (currentKeyFrame()) {
-    // LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id() << " at "
-    // << currentKeyFrame()->frame();
+    LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id() << " at "
+               << currentKeyFrame()->frame();
     OUTPUT_FOR_EACH(publishKeyframe(currentKeyFrame()->frame()))
     OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()->frame()))
   } else {
@@ -332,7 +332,7 @@ void SlamSystem::publishCurrentKeyframe() {
 void SlamSystem::publishCurrentFrame() {
   if (currentKeyFrame()) {
     Eigen::Matrix4f G = frameToWorld();
-    OUTPUT_FOR_EACH(publishFrame(currentKeyFrame()->frame(), G))
+    OUTPUT_FOR_EACH(publishFrame(currentKeyFrame()->frame(), G.inverse()))
     // OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()))
   } else {
     LOG(DEBUG) << "No currentKeyframe, unable to publish";
@@ -341,12 +341,12 @@ void SlamSystem::publishCurrentFrame() {
 
 Eigen::Matrix4f SlamSystem::frameToWorld() {
   Eigen::Matrix4f G = Eigen::Matrix4f::Identity();
-  Sim3 refToKf = currentFrame()->pose->thisToParent_raw;
-  SE3 KFToW = se3FromSim3(refToKf);
-  Eigen::Vector3f T = KFToW.translation().cast<float>();
-  Eigen::Matrix3f R = KFToW.rotationMatrix().cast<float>();
-  G.block<3, 3>(0, 0) = R;
-  G.block<3, 1>(0, 3) = T;
+  // Sim3 refToKf = currentFrame()->pose->thisToParent_raw;
+  // SE3 KFToW = se3FromSim3(refToKf);
+  // Eigen::Vector3f T = KFToW.translation().cast<float>();
+  // Eigen::Matrix3f R = KFToW.rotationMatrix().cast<float>();
+  // G.block<3, 3>(0, 0) = R;
+  // G.block<3, 1>(0, 3) = T;
 
   return G;
 }
