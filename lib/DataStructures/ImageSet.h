@@ -18,12 +18,13 @@
  */
 
 #pragma once
-#include <opencv2/core.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <vector>
 
 #include "DataStructures/Frame.h"
-#include <libvideoio/types/Camera.h>
 #include "util/SophusUtil.h"
+#include <libvideoio/types/Camera.h>
 
 namespace lsd_slam {
 

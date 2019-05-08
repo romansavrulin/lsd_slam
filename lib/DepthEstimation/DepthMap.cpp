@@ -67,10 +67,12 @@ DepthMap::DepthMap(const ImageSet::SharedPtr &set)
   currentDepthMap = new DepthMapPixelHypothesis[imgArea];
   validityIntegralBuffer = new int[imgArea];
 
-  debugDepthImg = cv::Mat::zeros(Conf().slamImageSize.height,
-                                 Conf().slamImageSize.width, CV_32FC1);
-  debugImg = cv::Mat(Conf().slamImageSize.height, Conf().slamImageSize.width,
-                     CV_32FC1);
+  if (Conf().displayDepthMap)
+    debugDepthImg = cv::Mat::zeros(Conf().slamImageSize.height,
+                                   Conf().slamImageSize.width, CV_32FC1);
+  if (Conf().displayGradientMap)
+    debugGradientImg = cv::Mat::zeros(Conf().slamImageSize.height,
+                                      Conf().slamImageSize.width, CV_32FC1);
 
   reset();
 }
@@ -418,15 +420,15 @@ void DepthMap::resetCounters() {
 //=== Actual working functions ====
 void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
   _observeFrame = updateFrame;
-  // debugDepthImg = cv::Mat::zeros(Conf().slamImageSize.height,
-  //                                Conf().slamImageSize.width, CV_32FC1);
   threadReducer.reduce(
       boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3,
       Conf().slamImageSize.height - 3, 10);
-  debugImg = updateFrame->getCvImage();
-  // cv::imshow("current image", debugImg);
-  // cv::imshow("debug depth", debugDepthImg);
-  cv::waitKey(1);
+
+  if (Conf().displayDepthMap) {
+    cv::imshow("debug depth", debugDepthImg);
+    cv::imshow("debug gradient", debugGradientImg);
+    cv::waitKey(1);
+  }
   LOGF_IF(DEBUG, Conf().print.observeStatistics,
           "OBSERVE (%d): %d / %d created; %d / %d updated; %d skipped; %d "
           "init-blacklisted",
@@ -453,9 +455,12 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
     for (int x = 3; x < Conf().slamImageSize.width - 3; x++) {
       int idx = x + y * Conf().slamImageSize.width;
       uint8_t *iDepthValid = _set->disparity.iDepthValid + idx;
+      float *iDepth = _set->disparity.iDepth + idx;
       bool valid = *iDepthValid;
       DepthMapPixelHypothesis *target = currentDepthMap + idx;
       bool hasHypothesis = target->isValid;
+      if (hasHypothesis && Conf().displayGradientMap)
+        debugGradientImg.at<float>(y, x) = 1.0;
 
       // ======== 1. check absolute grad =========
       if (hasHypothesis && keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE) {
@@ -557,7 +562,6 @@ bool DepthMap::observeDepthCreate(const int &x, const int &y, const int &idx,
 bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
                                   const float *keyFrameMaxGradBuf,
                                   RunningStats *const &stats) {
-  debugDepthImg.at<float>(y, x) = 0.0;
   CHECK(_set != nullptr) << "SET HAS NOT BEEN SET";
 
   DepthMapPixelHypothesis *target = currentDepthMap + idx;
@@ -696,17 +700,15 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
       // If sufficient motion has occured (and the spcidied by the user), add
       // points determined by LSD SLAM that are NOT valid in the disparity map
       target->idepth = UNZERO(new_idepth);
-      debugDepthImg.at<float>(y, x) = new_idepth * 10;
+      debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
 
     else if (disparityValid && useDisparity) {
       // Always add disparity map points when in left image, never in right
       target->idepth = UNZERO(new_idepth);
-      debugDepthImg.at<float>(y, x) = new_idepth * 10;
+      if (Conf().displayDepthMap)
+        debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
-    // } else {
-    //   return false;
-    // }
     id_var = id_var * w;
     if (id_var < target->idepth_var)
       target->idepth_var = id_var;

@@ -14,8 +14,8 @@ Configuration::Configuration()
       SLAMEnabled(true), doKFReActivation(true), doMapping(true),
       continuousPCOutput(true),
 
-      debugDisplay(0), displayDepthMap(true), onSceenInfoDisplay(true),
-      dumpMap(false), doFullReConstraintTrack(false),
+      debugDisplay(0), displayDepthMap(false), displayGradientMap(false),
+      onSceenInfoDisplay(true), dumpMap(false), doFullReConstraintTrack(false),
 
       doSubpixelStereo(true), doLeftRightStereo(false),
 
@@ -25,6 +25,7 @@ Configuration::Configuration()
 
       gradientSampleDistance(1.0f), lsdFrame("camera_left"), globalFrame("map"),
 
+      doImageSaturation(false), saturationAlpha(1.0), saturationBeta(1),
       print(), plot() {}
 
 const ImageSize &Configuration::setSlamImageSize(const ImageSize &sz) {

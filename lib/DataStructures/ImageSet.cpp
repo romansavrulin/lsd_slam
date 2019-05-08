@@ -45,6 +45,8 @@ void ImageSet::setFrameToRef(const int frame, const Sophus::SE3d &frameToRef) {
 void ImageSet::setDisparityMap(float *_iDepth, uint8_t *_iDepthValid,
                                float _iDepthMean, int _size) {
 
+  cv::Mat depthImg = cv::Mat::zeros(Conf().slamImageSize.height,
+                                    Conf().slamImageSize.width, CV_32FC1);
   disparity.iDepth = _iDepth;
   disparity.iDepthValid = _iDepthValid;
   disparity.iDepthSize = _size;

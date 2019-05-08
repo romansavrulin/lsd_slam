@@ -104,7 +104,7 @@ public:
 
 private:
   cv::Mat debugDepthImg;
-  cv::Mat debugImg;
+  cv::Mat debugGradientImg;
   IndexThreadReduce threadReducer;
 
   bool useDisparity;

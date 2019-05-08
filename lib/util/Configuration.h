@@ -49,6 +49,7 @@ public:
   // controlled via keystrokes
   int debugDisplay;
   bool displayDepthMap;
+  bool displayGradientMap;
   bool onSceenInfoDisplay;
   bool dumpMap;
   bool doFullReConstraintTrack;
@@ -64,7 +65,12 @@ public:
   float minEplLengthCrop, maxEplLengthCrop;
   float gradientSampleDistance;
 
-  // ROS params
+  // Image saturation
+  bool doImageSaturation;
+  double saturationAlpha;
+  int saturationBeta;
+
+  // ROS frames
   std::string lsdFrame;
   std::string globalFrame;
 
