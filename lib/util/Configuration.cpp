@@ -19,7 +19,7 @@ Configuration::Configuration()
 
       doSubpixelStereo(true), doLeftRightStereo(false),
 
-      minVirtualBaselineLength(0.001), supressLSDPoints(false),
+      minVirtualBaselineLength(0.001), suppressLSDPoints(false),
 
       minEplLengthCrop(3.0f), maxEplLengthCrop(30.0f),
 

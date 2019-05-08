@@ -59,7 +59,7 @@ public:
 
   // Variables to control depth mapping
   float minVirtualBaselineLength;
-  bool supressLSDPoints;
+  bool suppressLSDPoints;
 
   // Stereo and gradient calculations
   float minEplLengthCrop, maxEplLengthCrop;

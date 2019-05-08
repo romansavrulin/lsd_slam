@@ -695,7 +695,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
     LOG_IF(WARNING, std::isnan(new_idepth) && target->isValid)
         << "Trying to update a DepthHypothesis, but it's NaN";
 
-    if (!disparityValid && !Conf().supressLSDPoints &&
+    if (!disparityValid && !Conf().suppressLSDPoints &&
         trav_KF.norm() > Conf().minVirtualBaselineLength) {
       // If sufficient motion has occured (and the spcidied by the user), add
       // points determined by LSD SLAM that are NOT valid in the disparity map
