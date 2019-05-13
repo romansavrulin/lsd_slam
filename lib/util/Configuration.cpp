@@ -26,7 +26,7 @@ Configuration::Configuration()
       gradientSampleDistance(1.0f), lsdFrame("camera_left"), globalFrame("map"),
 
       doImageSaturation(false), saturationAlpha(1.0), saturationBeta(1),
-      print(), plot() {}
+      useRectificationFrame(false), displayInputFusedImage(false), displayInputImage(false), print(), plot() {}
 
 const ImageSize &Configuration::setSlamImageSize(const ImageSize &sz) {
   CHECK(sz.width % 16 == 0 && sz.height % 16 == 0)

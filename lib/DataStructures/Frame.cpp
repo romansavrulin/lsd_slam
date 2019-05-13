@@ -50,6 +50,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
   LOG_IF(INFO, Conf().print.memoryDebugInfo)
       << "ALLOCATED frame " << id() << ", now there are "
       << privateFrameAllocCount;
+
+      rectificationMatrix = Eigen::Matrix3f::Identity();
 }
 
 Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
@@ -67,6 +69,8 @@ Frame::Frame(int frameId, const Camera &cam, const ImageSize &sz,
   LOG_IF(INFO, Conf().print.memoryDebugInfo)
       << "ALLOCATED frame " << id() << ", now there are "
       << privateFrameAllocCount;
+
+      rectificationMatrix = Eigen::Matrix3f::Identity();
 }
 
 Frame::~Frame() {
@@ -693,6 +697,10 @@ void Frame::buildIDepthAndIDepthVar(int level) {
 
   data.idepthValid[level] = true;
   data.idepthVarValid[level] = true;
+}
+
+void Frame::setRectificationMatrix(const Eigen::Matrix3f R){
+  rectificationMatrix = R;
 }
 
 void Frame::releaseIDepth(int level) {

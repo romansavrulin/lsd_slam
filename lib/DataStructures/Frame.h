@@ -30,6 +30,8 @@
 #include <boost/thread/shared_mutex.hpp>
 #include <mutex>
 
+#include <Eigen/Dense>
+
 #include "FrameData.h"
 
 namespace lsd_slam {
@@ -85,6 +87,8 @@ public:
   //(computes some intermediate values that will be needed) */
   void prepareForStereoWith(const Frame::SharedPtr &other, Sim3 thisToOther,
                             const int level);
+
+  void setRectificationMatrix(const Eigen::Matrix3f R);
 
   // Accessors
   /** Returns the unique frame id. */
@@ -181,6 +185,10 @@ public:
     return _trackingParent;
   }
 
+  Eigen::Matrix3f getRectificationMatrix() {
+    return rectificationMatrix;
+  }
+
   bool isTrackingParent(const std::shared_ptr<Frame> &other) const;
   bool isTrackingParent(const std::shared_ptr<KeyFrame> &other) const;
   bool isTrackingParent(int id) const;
@@ -226,7 +234,7 @@ public:
 
   const StereoData &sd() const { return _sd; }
 
-  
+
 
   // statistics
   float initialTrackedResidual;
@@ -239,6 +247,8 @@ public:
 
 private:
   std::shared_ptr<KeyFrame> _trackingParent;
+
+  Eigen::Matrix3f rectificationMatrix;
 
   int _id;
   double _timestamp;

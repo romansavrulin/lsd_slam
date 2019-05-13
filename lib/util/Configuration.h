@@ -49,7 +49,10 @@ public:
   // controlled via keystrokes
   int debugDisplay;
   bool displayDepthMap;
+  bool displayInputFusedImage;
+  bool displayInputImage;
   bool displayGradientMap;
+
   bool onSceenInfoDisplay;
   bool dumpMap;
   bool doFullReConstraintTrack;
@@ -73,6 +76,7 @@ public:
   // ROS frames
   std::string lsdFrame;
   std::string globalFrame;
+  bool useRectificationFrame;
 
   struct PrintConfiguration {
     PrintConfiguration();

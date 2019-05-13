@@ -42,6 +42,10 @@ void ImageSet::setFrameToRef(const int frame, const Sophus::SE3d &frameToRef) {
   _se3ToRef.at(frame) = frameToRef;
 }
 
+void ImageSet::setRectificationMatrix(const Eigen::Matrix3f R) {
+refFrame()->setRectificationMatrix(R);
+}
+
 void ImageSet::setDisparityMap(float *_iDepth, uint8_t *_iDepthValid,
                                float _iDepthMean, int _size) {
 

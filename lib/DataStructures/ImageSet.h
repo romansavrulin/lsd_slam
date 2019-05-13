@@ -80,6 +80,7 @@ public:
   void addFrame(const cv::Mat &img, const libvideoio::Camera &cam,
                 const Sophus::SE3d &frameToRef);
   void setFrameToRef(const int frame, const Sophus::SE3d &frameToRef);
+  void setRectificationMatrix(const Eigen::Matrix3f R);
 
   Disparity disparity;
 
