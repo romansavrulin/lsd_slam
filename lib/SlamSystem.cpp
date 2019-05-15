@@ -332,7 +332,7 @@ void SlamSystem::publishCurrentKeyframe() {
 void SlamSystem::publishCurrentFrame() {
   if (currentKeyFrame()) {
     Eigen::Matrix4f G = frameToWorld();
-    //OUTPUT_FOR_EACH(publishFrame(currentKeyFrame()->frame(), G.inverse()))
+    OUTPUT_FOR_EACH(publishFrame(currentKeyFrame()->frame(), G.inverse()))
     // OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()))
   } else {
     LOG(DEBUG) << "No currentKeyframe, unable to publish";
