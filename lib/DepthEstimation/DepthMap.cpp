@@ -701,14 +701,14 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
       // If sufficient motion has occured (and the spcidied by the user), add
       // points determined by LSD SLAM that are NOT valid in the disparity map
       target->idepth = UNZERO(new_idepth);
-      debugDepthImg.at<float>(y, x) = new_idepth * 100;
+      //debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
 
     else if (disparityValid && useDisparity) {
       // Always add disparity map points when in left image, never in right
       target->idepth = UNZERO(new_idepth);
-      if (Conf().displayDepthMap)
-        debugDepthImg.at<float>(y, x) = new_idepth * 100;
+      //if (Conf().displayDepthMap)
+        //debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
     id_var = id_var * w;
     if (id_var < target->idepth_var)
