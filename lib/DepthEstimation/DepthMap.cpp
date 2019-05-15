@@ -419,7 +419,7 @@ void DepthMap::resetCounters() {
 
 //=== Actual working functions ====
 void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
-  LOG(DEBUG) << "Observe Depth";
+  //LOG(DEBUG) << "Observe Depth";
   _observeFrame = updateFrame;
   threadReducer.reduce(
       boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3,
@@ -450,7 +450,6 @@ void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
 }
 
 void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
-  LOG(DEBUG) << "Observe Depth Row";
   const float *keyFrameMaxGradBuf = frame()->maxGradients(0);
   int successes = 0;
   for (int y = yMin; y < yMax; y++)
