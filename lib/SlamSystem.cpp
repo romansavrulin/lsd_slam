@@ -292,8 +292,8 @@ void SlamSystem::updateDisplayDepthMap() {
   }
 
 void SlamSystem::publishPose(const Sophus::Sim3f &pose) {
-  Eigen::Matrix3f R = pose.rotationMatrix();
-  Eigen::Vector3f T = pose.translation();
+  //Eigen::Matrix3f R = pose.rotationMatrix();
+  //Eigen::Vector3f T = pose.translation();
   // R = q.toRotationMatrix().cast<float>();
   //
   // LOG(WARNING) << "R" << R;
@@ -332,7 +332,7 @@ void SlamSystem::publishCurrentKeyframe() {
 void SlamSystem::publishCurrentFrame() {
   if (currentKeyFrame()) {
     Eigen::Matrix4f G = frameToWorld();
-    OUTPUT_FOR_EACH(publishFrame(currentKeyFrame()->frame(), G.inverse()))
+    //OUTPUT_FOR_EACH(publishFrame(currentKeyFrame()->frame(), G.inverse()))
     // OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()))
   } else {
     LOG(DEBUG) << "No currentKeyframe, unable to publish";
