@@ -51,6 +51,9 @@ public:
   virtual void publishFrame(const Frame::SharedPtr &kf,
                             const Eigen::MatrixXf G) = 0;
 
+  virtual void publishFrame(const Frame::SharedPtr &kf, const Eigen::MatrixXf G,
+                            const DepthMap::SharedPtr &depthMap) = 0;
+
   virtual void updateDepthImage(unsigned char *data) = 0;
 
   // published a tracked frame that did not become a keyframe (yet; i.e. has no
