@@ -9,6 +9,7 @@
 #include "Tracking/TrackingReference.h"
 
 #include "SlamSystem/ConstraintSearchThread.h"
+#include "SlamSystem/OptimizationThread.h"
 #include "SlamSystem/TrackingThread.h"
 
 #include "SlamSystem.h"
@@ -83,6 +84,7 @@ void MappingThread::createNewKeyFrameImplSet(
   KeyFrame::SharedPtr kf(KeyFrame::PropagateAndCreate(currentKeyFrame, set));
 
   _system.keyFrameGraph()->addKeyFrame(kf);
+  _system.optThread()->doNewConstraint();
   _system.trackingThread()->doUseNewKeyFrame(kf);
   _system.constraintThread()->doCheckNewKeyFrame(kf);
 
