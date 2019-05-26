@@ -142,7 +142,7 @@ void SlamSystem::nextImageSet(const std::shared_ptr<ImageSet> &set) {
 // {
 // 	_keyFrames.push_back( keyframe );
 //
-//
+
 // 	keyFrameGraph()->idToKeyFrame.insert(std::make_pair(keyframe->id(),
 // keyframe));
 // }

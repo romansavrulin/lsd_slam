@@ -319,6 +319,7 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
 
 bool KeyFrameGraph::addElementsFromBuffer()
 {
+	LOG(DEBUG) << "Adding elements from buffer to keyframe graph";
 	std::lock_guard< std::mutex > lock( newKeyFrameMutex );
 
 	bool added = false;

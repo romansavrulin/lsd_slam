@@ -47,7 +47,8 @@ void OptimizationThread::newConstraintImpl( void )
 	_system.keyFrameGraph()->addElementsFromBuffer();
 
 	//!!TODO.  Why does this happen in mapThread?
-	while(optimizationIteration(5, 0.02)) { ; } //_system._mapThread->doMergeOptimizationUpdate(); }
+	while(optimizationIteration(5, 0.02)) { ; }
+	 _system.mapThread()->doMergeOptimizationUpdate(); 
 }
 
 void OptimizationThread::finalOptimizationImpl( void )

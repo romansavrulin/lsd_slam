@@ -88,6 +88,8 @@ void MappingThread::createNewKeyFrameImplSet(
   _system.trackingThread()->doUseNewKeyFrame(kf);
   _system.constraintThread()->doCheckNewKeyFrame(kf);
 
+  _system.keyFrameGraph()->keyframesAll.push_back(kf);
+
   // Publish outputs
   _system.publishKeyframeGraph();
   _system.publishCurrentKeyframe();
