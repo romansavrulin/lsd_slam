@@ -280,6 +280,7 @@ void KeyFrameGraph::addKeyFrame( const KeyFrame::SharedPtr &keyframe)
 
 void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
 {
+	LOG(DEBUG) << "Entering insertConstraint";
 	EdgeSim3* edge = new EdgeSim3();
 	edge->setId(nextEdgeId);
 	++ nextEdgeId;
@@ -298,6 +299,7 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct* constraint)
 
 	constraint->edge = edge;
 	newEdgeBuffer.push_back(constraint);
+	LOG(DEBUG) << "newEdgeBuffer inital size" << newEdgeBuffer.size();
 
 
 	constraint->firstFrame->neighbors.insert(constraint->secondFrame);
@@ -338,6 +340,7 @@ bool KeyFrameGraph::addElementsFromBuffer()
 	keyframesForRetrackMutex.unlock();
 
 	newKeyframesBuffer.clear();
+	LOG(DEBUG) << "newEdgeBuffer final size" << newEdgeBuffer.size();
 	for (auto edge : newEdgeBuffer)
 	{
 		graph.addEdge(edge->edge);
@@ -351,8 +354,11 @@ bool KeyFrameGraph::addElementsFromBuffer()
 int KeyFrameGraph::optimize(int num_iterations)
 {
 	// Abort if graph is empty, g2o shows an error otherwise
-	if (graph.edges().size() == 0)
+	if (graph.edges().size() == 0){
+		LOG(WARNING) << "Empty graph, not optimizing";
 		return 0;
+	}
+	LOG(DEBUG) << "Optimizing graph with " << graph.edges().size() << " edges";
 
 	graph.setVerbose(false); // printOptimizationInfo
 	graph.initializeOptimization();

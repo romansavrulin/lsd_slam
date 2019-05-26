@@ -204,6 +204,7 @@ void ConstraintSearchThread::checkNewKeyFrameImpl( const KeyFrame::SharedPtr &ke
 
 int ConstraintSearchThread::findConstraintsForNewKeyFrames(const KeyFrame::SharedPtr &newKeyFrame, bool forceParent, bool useFABMAP, float closeCandidatesTH)
 {
+	LOG(DEBUG) << "Entering findConstraintsForNewKeyFrames";
 	if(!newKeyFrame->frame()->hasTrackingParent()) {
 		// {
 		// 	std::lock_guard<std::mutex> lock( _system.optThread->newConstraintMutex );
@@ -556,6 +557,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const KeyFrame::Share
 	{
 		// std::lock_guard< std::mutex > lock(_system.keyFrameGraph->newConstraintMutex);
 		_system.keyFrameGraph()->addKeyFrame(newKeyFrame);
+		LOG(WARNING) << "Constraints size" << constraints.size();
 		for(unsigned int i=0;i<constraints.size();i++)
 			_system.keyFrameGraph()->insertConstraint(constraints[i]);
 	}

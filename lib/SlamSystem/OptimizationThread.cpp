@@ -48,7 +48,7 @@ void OptimizationThread::newConstraintImpl( void )
 
 	//!!TODO.  Why does this happen in mapThread?
 	while(optimizationIteration(5, 0.02)) { ; }
-	 _system.mapThread()->doMergeOptimizationUpdate(); 
+	 _system.mapThread()->doMergeOptimizationUpdate();
 }
 
 void OptimizationThread::finalOptimizationImpl( void )
@@ -71,6 +71,7 @@ void OptimizationThread::finalOptimizationImpl( void )
 bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange)
 {
 	Timer timer;
+	LOG(DEBUG) << "Entering optimizationIteration";
 
 	// std::lock_guard< std::mutex > lock(g2oGraphAccessMutex);
 
@@ -89,7 +90,8 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange)
 		_system.keyFrameGraph()->keyframesAll[i]->frame()->edgeErrorSum = 0;
 		_system.keyFrameGraph()->keyframesAll[i]->frame()->edgesNum = 0;
 
-		if(!_system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph) continue;
+		LOG(DEBUG) << "System in graph " << _system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph;
+		//if(!_system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph) continue;
 
 
 
@@ -97,7 +99,6 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange)
 		Sim3 a = _system.keyFrameGraph()->keyframesAll[i]->frame()->pose->graphVertex->estimate();
 		Sim3 b = _system.keyFrameGraph()->keyframesAll[i]->frame()->getCamToWorld();
 		Sophus::Vector7f diff = (a*b.inverse()).log().cast<float>();
-
 
 		for(int j=0;j<7;j++)
 		{
