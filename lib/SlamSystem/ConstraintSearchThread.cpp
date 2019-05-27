@@ -39,6 +39,7 @@ ConstraintSearchThread::~ConstraintSearchThread( void )
 void ConstraintSearchThread::idleImpl( void )
 {
 	// bool doneSomething = false;
+	LOG(DEBUG) << "Entering idle constraint function";
 
 	{
 		std::lock_guard< std::mutex > lock( _system.keyFrameGraph()->keyframesForRetrackMutex );
@@ -224,6 +225,7 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const KeyFrame::Share
 	std::vector<KFConstraintStruct*> constraints;
 	KeyFrame::SharedPtr fabMapResult(nullptr);
 	std::unordered_set< KeyFrame::SharedPtr > candidates = _system.trackableKeyFrameSearch()->findCandidates(newKeyFrame, fabMapResult, useFABMAP, closeCandidatesTH);
+	LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,"candidate size: %i", candidates.size());
 	std::map< KeyFrame::SharedPtr, Sim3 > candidateToFrame_initialEstimateMap;
 
 
@@ -244,17 +246,17 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const KeyFrame::Share
 		boost::shared_lock_guard<boost::shared_mutex> lock(_system.poseConsistencyMutex);
 		for (auto candidate : candidates)
 		{
+			LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,"Calculating candidate to frame estimate");
 			Sim3 candidateToFrame_initialEstimate = newKeyFrame->frame()->getCamToWorld().inverse() * candidate->frame()->getCamToWorld();
 			candidateToFrame_initialEstimateMap[candidate] = candidateToFrame_initialEstimate;
 		}
 
-		if(newKeyFrame->frame()->hasTrackingParent())
+		if(newKeyFrame->frame()->hasTrackingParent()){
+				LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,"Calculating Graph Distances To Frame");
 			_system.keyFrameGraph()->calculateGraphDistancesToFrame(newKeyFrame->frame()->trackingParent(), distancesToNewKeyFrame);
+
+		}
 	}
-
-
-
-
 
 	// =============== distinguish between close and "far" candidates in Graph =================
 	// Do a first check on trackability of close candidates.
@@ -271,14 +273,23 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const KeyFrame::Share
 
 	for (auto candidate : candidates)
 	{
-		if (candidate->id() == newKeyFrame->id())
+		if (candidate->id() == newKeyFrame->id()){
+			LOG(DEBUG) << "Candiate is equal to new key frame ID";
 			continue;
-		if(!candidate->pose()->isInGraph)
+		}
+		if(!candidate->pose()->isInGraph){
+			LOG(DEBUG) << "Candiate pose not in graph";
 			continue;
+		}
 		if(newKeyFrame->frame()->isTrackingParent( candidate ) )
+		{
+			LOG(DEBUG) << "Candidate is tracking parent";
 			continue;
-		if(candidate->frame()->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
+		}
+		if(candidate->frame()->idxInKeyframes < INITIALIZATION_PHASE_COUNT){
+		  LOG(DEBUG) << "Candiate idx is less than INITIALIZATION_PHASE_COUNT";
 			continue;
+		}
 
 		SE3 c2f_init = se3FromSim3(candidateToFrame_initialEstimateMap[candidate].inverse()).inverse();
 		c2f_init.so3() = c2f_init.so3() * disturbance;
@@ -302,32 +313,44 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const KeyFrame::Share
 	int farInconsistent = 0;
 	for (auto candidate : candidates)
 	{
-		if (candidate->id() == newKeyFrame->id())
+		if (candidate->id() == newKeyFrame->id()){
+			LOG(DEBUG) << "Candiate is equal to new key frame ID";
 			continue;
-		if(!candidate->pose()->isInGraph)
+		}
+		if(!candidate->pose()->isInGraph){
+			LOG(DEBUG) << "Candiate pose not in graph";
 			continue;
+		}
 		if(newKeyFrame->frame()->isTrackingParent( candidate ))
-			continue;
-		if(candidate->frame()->idxInKeyframes < INITIALIZATION_PHASE_COUNT)
-			continue;
-
-		if(candidate == fabMapResult)
 		{
-			farCandidates.push_back(candidate);
+			LOG(DEBUG) << "Candidate is tracking parent";
+			continue;
+		}
+		if(candidate->frame()->idxInKeyframes < INITIALIZATION_PHASE_COUNT){
+			LOG(DEBUG) << "Candiate idx is less than INITIALIZATION_PHASE_COUNT";
 			continue;
 		}
 
-		if(distancesToNewKeyFrame.at(candidate) < 4)
+		if(candidate == fabMapResult)
+		{
+			LOG(DEBUG) << "Candidate equals fab map results";
+			farCandidates.push_back(candidate);
 			continue;
+		}
+		else{
+			LOG(DEBUG) << "Candidate does NOT equal fab map results";
+		}
+
+		//if(distancesToNewKeyFrame.at(candidate) < 4)
+			//continue;
 
 		farCandidates.push_back(candidate);
 	}
 
-
-
-
 	int closeAll = closeCandidates.size();
 	int farAll = farCandidates.size();
+
+	LOG(WARNING) << "Close candidate size: " << closeAll << "far candidate size: " << farAll;
 
 	// erase the ones that we tried already before (close)
 	for( auto c = closeCandidates.begin(); c != closeCandidates.end(); )
