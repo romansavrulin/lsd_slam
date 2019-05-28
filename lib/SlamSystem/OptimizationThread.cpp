@@ -37,7 +37,8 @@ void OptimizationThread::idleImpl( void )
 	LOG(DEBUG) << "Running short optimization";
 
 	//!!TODO.  Why does this happen in mapThread?
-	while(optimizationIteration(5, 0.02)) { ; } //_system.mapThread()->doMergeOptimizationUpdate(); }
+	while(optimizationIteration(5, 0.02)) { ; }
+	_system.mapThread()->doMergeOptimizationUpdate();
 }
 
 void OptimizationThread::newConstraintImpl( void )

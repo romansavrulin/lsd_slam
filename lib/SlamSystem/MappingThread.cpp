@@ -116,7 +116,7 @@ void MappingThread::mergeOptimizationOffsetImpl() {
           ->frame()
           ->pose->applyPoseGraphOptResult();
 
-    // _optThread->clearUnmergedOptimizationOffset();
+    //_optThread->clearUnmergedOptimizationOffset();
 
     didUpdate = true;
   }

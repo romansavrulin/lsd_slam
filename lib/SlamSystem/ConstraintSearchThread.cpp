@@ -40,11 +40,12 @@ void ConstraintSearchThread::idleImpl( void )
 {
 	// bool doneSomething = false;
 	LOG(DEBUG) << "Entering idle constraint function";
-
+	bool doneSomething = false;
 	{
 		std::lock_guard< std::mutex > lock( _system.keyFrameGraph()->keyframesForRetrackMutex );
-
-		if(_system.keyFrameGraph()->keyframesForRetrack.size() > 10) {
+		LOG(DEBUG) << "Total keyframe size: " << _system.keyFrameGraph()->keyframesAll.size();
+		LOG(DEBUG) << "Retrack frame size: " << _system.keyFrameGraph()->keyframesForRetrack.size();
+		if(_system.keyFrameGraph()->keyframesForRetrack.size() > 5) {
 			std::deque< KeyFrame::SharedPtr >::iterator toReTrack = _system.keyFrameGraph()->keyframesForRetrack.begin() + (rand() % (_system.keyFrameGraph()->keyframesForRetrack.size()/3));
 			KeyFrame::SharedPtr toReTrackFrame( *toReTrack );
 
@@ -59,12 +60,36 @@ void ConstraintSearchThread::idleImpl( void )
 			else
 				_failedToRetrack=0;
 
-//			if(_failedToRetrack < (int)_system.keyFrameGraph()->keyframesForRetrack.size() - 5) doIdle();
-
-				// doneSomething = true;
+			if(_failedToRetrack < (int)_system.keyFrameGraph()->keyframesForRetrack.size() - 5);
+				doneSomething = true;
 		}
 	}
+	if (doneSomething)
+	{
+		//_thread->send( std::bind( &ConstraintSearchThread::idleImpl, this ));
+	}
+	else
+	{
+		LOGF_IF(DEBUG, Conf().print.constraintSearchInfo,"nothing to re-track");
+	}
+	{
+		std::lock_guard< std::mutex > lock( _system.keyFrameGraph()->keyframesForRetrackMutex );
+		LOG(INFO) << "Optimizing Full Map!";
 
+		int added = 0;
+		for(unsigned int i=0;i<_system.keyFrameGraph()->keyframesAll.size();i++)
+		{
+			// if(_system.keyFrameGraph()->keyframesAll[i]->pose()->isInGraph)
+				added += findConstraintsForNewKeyFrames(_system.keyFrameGraph()->keyframesAll[i], false, false, 1.0);
+				LOG(DEBUG) << "added: " << added;
+		}
+
+		LOG(INFO) << "Done optimizing Full Map! Added " << added << " constraints.";
+
+		// doFullReConstraintTrack = false;
+
+		// lastNumConstraintsAddedOnFullRetrack = added;
+	}
 	// If you did something, go again immediately
 	// if( doneSomething ) _thread->send( std::bind( &ConstraintSearchThread::callbackIdle, this ) );
 }
@@ -105,7 +130,7 @@ void ConstraintSearchThread::checkNewKeyFrameImpl( const KeyFrame::SharedPtr &ke
 
 //=== Meat =====
 
-
+//
 // void ConstraintSearchThread::constraintSearchThreadLoop()
 // {
 // 	LOG(INFO) << "Started constraint search thread!";
@@ -209,16 +234,19 @@ int ConstraintSearchThread::findConstraintsForNewKeyFrames(const KeyFrame::Share
 	if(!newKeyFrame->frame()->hasTrackingParent()) {
 		// {
 		// 	std::lock_guard<std::mutex> lock( _system.optThread->newConstraintMutex );
+		  LOG(DEBUG) << "Frame does not have tracking parent";
 			_system.keyFrameGraph()->addKeyFrame(newKeyFrame);
 		// }
 		_system.optThread()->doNewConstraint();
 		return 0;
 	}
 
-	if(!forceParent && (newKeyFrame->frame()->lastConstraintTrackedCamToWorld * newKeyFrame->frame()->getCamToWorld().inverse()).log().norm() < 0.01)
+	if(!forceParent && (newKeyFrame->frame()->lastConstraintTrackedCamToWorld * newKeyFrame->frame()->getCamToWorld().inverse()).log().norm() < 0.01){
+	  LOG(DEBUG) << "No movement";
 		return 0;
+	}
 
-
+	//LOG(DEBUG) << "HEREzzz";
 	newKeyFrame->frame()->lastConstraintTrackedCamToWorld = newKeyFrame->frame()->getCamToWorld();
 
 	// =============== get all potential candidates and their initial relative pose. =================
