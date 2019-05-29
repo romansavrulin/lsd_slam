@@ -475,8 +475,8 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
 
       bool success;
       if (!hasHypothesis && valid) {
-        // success = observeDepthCreate(x, y, idx, stats);
-        success = createNewStereoDepthPoint(x, y, idx, stats);
+        success = observeDepthCreate(x, y, idx, stats);
+        // success = createNewStereoDepthPoint(x, y, idx, stats);
       } else if (hasHypothesis) {
         success = observeDepthUpdate(x, y, idx, keyFrameMaxGradBuf, stats);
       }
@@ -704,7 +704,8 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
       // debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
 
-    else if (disparityValid && useDisparity) {
+    // else if (disparityValid && useDisparity) {
+    else if (useDisparity) {
       // Always add disparity map points when in left image, never in right
       target->idepth = UNZERO(new_idepth);
       // if (Conf().displayDepthMap)
