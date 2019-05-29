@@ -131,9 +131,9 @@ void DepthMap::initializeFromStereo() {
       for (int x = 0; x < Conf().slamImageSize.width; x++) {
         bool valid = *iDepthValid;
         int idx = x + y * Conf().slamImageSize.width;
-        if (valid) {
-          depthImg.at<float>(y, x) = *iDepth;
-        }
+        // if (valid) {
+        //   depthImg.at<float>(y, x) = *iDepth;
+        // }
         if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
@@ -419,7 +419,7 @@ void DepthMap::resetCounters() {
 
 //=== Actual working functions ====
 void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
-  //LOG(DEBUG) << "Observe Depth";
+  // LOG(DEBUG) << "Observe Depth";
   _observeFrame = updateFrame;
   threadReducer.reduce(
       boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3,
@@ -698,17 +698,17 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     if (!disparityValid && !Conf().suppressLSDPoints &&
         trav_KF.norm() > Conf().minVirtualBaselineLength) {
-      // If sufficient motion has occured (and the spcidied by the user), add
+      // If sufficient motion has occured (specified by the user), add
       // points determined by LSD SLAM that are NOT valid in the disparity map
       target->idepth = UNZERO(new_idepth);
-      //debugDepthImg.at<float>(y, x) = new_idepth * 100;
+      // debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
 
     else if (disparityValid && useDisparity) {
       // Always add disparity map points when in left image, never in right
       target->idepth = UNZERO(new_idepth);
-      //if (Conf().displayDepthMap)
-        //debugDepthImg.at<float>(y, x) = new_idepth * 100;
+      // if (Conf().displayDepthMap)
+      // debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
     id_var = id_var * w;
     if (id_var < target->idepth_var)

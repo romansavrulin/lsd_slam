@@ -73,7 +73,7 @@ KeyFrameGraph::KeyFrameGraph() : nextEdgeId(0) {
           std::unique_ptr<BlockSolver>(blockSolver));
   graph.setAlgorithm(algorithm);
 
-  graph.setVerbose(true); // printOptimizationInfo
+  graph.setVerbose(false); // printOptimizationInfo
   solver->setWriteDebug(true);
   blockSolver->setWriteDebug(true);
   algorithm->setWriteDebug(true);
@@ -265,10 +265,7 @@ void KeyFrameGraph::addKeyFrame(const KeyFrame::SharedPtr &keyframe) {
   Sophus::Sim3d camToWorld_estimate = keyframe->frame()->getCamToWorld();
 
   if (!keyframe->frame()->hasTrackingParent()) {
-    LOG(DEBUG) << "setting frame " << keyframe->id() << " to fixed";
     vertex->setFixed(true);
-  } else {
-    LOG(DEBUG) << "Frame " << keyframe->id() << " not fixed";
   }
 
   vertex->setEstimate(camToWorld_estimate);
@@ -280,7 +277,6 @@ void KeyFrameGraph::addKeyFrame(const KeyFrame::SharedPtr &keyframe) {
 }
 
 void KeyFrameGraph::insertConstraint(KFConstraintStruct *constraint) {
-  LOG(DEBUG) << "Entering insertConstraint";
   EdgeSim3 *edge = new EdgeSim3();
   edge->setId(nextEdgeId);
   ++nextEdgeId;
@@ -299,7 +295,6 @@ void KeyFrameGraph::insertConstraint(KFConstraintStruct *constraint) {
 
   constraint->edge = edge;
   newEdgeBuffer.push_back(constraint);
-  LOG(DEBUG) << "newEdgeBuffer inital size" << newEdgeBuffer.size();
 
   constraint->firstFrame->neighbors.insert(constraint->secondFrame);
   constraint->secondFrame->neighbors.insert(constraint->firstFrame);
@@ -340,13 +335,6 @@ bool KeyFrameGraph::addElementsFromBuffer() {
     graph.addEdge(edge->edge);
     added = true;
   }
-  LOG(DEBUG) << "vertex size: " << graph.activeVertices().size();
-  LOG(DEBUG) << "edge size: " << graph.activeEdges().size();
-  // for (int i = 0; i < graph.batchStatistics().size(); i++) {
-  //   LOG(DEBUG) << "Graph Vertex size: "
-  //              << graph.batchStatistics()[i].numVertices
-  //              << "Graph Edge size: " << graph.batchStatistics()[i].numEdges;
-  // }
   newEdgeBuffer.clear();
 
   return added;
@@ -360,7 +348,7 @@ int KeyFrameGraph::optimize(int num_iterations) {
   }
   LOG(DEBUG) << "Optimizing graph with " << graph.edges().size() << " edges";
 
-  graph.setVerbose(true); // printOptimizationInfo
+  graph.setVerbose(false); // printOptimizationInfo
   graph.initializeOptimization();
 
   return graph.optimize(num_iterations, false);
