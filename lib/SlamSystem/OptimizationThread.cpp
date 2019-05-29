@@ -84,9 +84,10 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange) {
     _system.keyFrameGraph()->keyframesAll[i]->frame()->edgeErrorSum = 0;
     _system.keyFrameGraph()->keyframesAll[i]->frame()->edgesNum = 0;
 
-    LOG(DEBUG)
-        << "System in graph "
-        << _system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph;
+    // LOG(DEBUG)
+    //     << "System in graph "
+    //     <<
+    //     _system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph;
     // if(!_system.keyFrameGraph()->keyframesAll[i]->frame()->pose->isInGraph)
     // continue;
 
@@ -97,6 +98,9 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange) {
                  ->pose->graphVertex->estimate();
     Sim3 b = _system.keyFrameGraph()->keyframesAll[i]->frame()->getCamToWorld();
     Sophus::Vector7f diff = (a * b.inverse()).log().cast<float>();
+    LOG(DEBUG) << "id" << _system.keyFrameGraph()->keyframesAll[i]->id();
+    LOG(DEBUG) << "a matrix: " << a.matrix();
+    LOG(DEBUG) << "b matrix: " << b.matrix();
 
     for (int j = 0; j < 7; j++) {
       float d = fabsf((float)(diff[j]));
