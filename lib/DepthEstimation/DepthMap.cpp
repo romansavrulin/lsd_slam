@@ -137,8 +137,8 @@ void DepthMap::initializeFromStereo() {
         if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
-              idepth, idepth, VAR_RANDOM_INIT_INITIAL / 1000,
-              VAR_RANDOM_INIT_INITIAL / 1000, 20, Conf().debugDisplay);
+              idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
+              20, Conf().debugDisplay);
         }
         iDepth++;
         iDepthValid++;
@@ -686,7 +686,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     // do textbook ekf update:
     // increase var by a little (prediction-uncertainty)
-    const float prev_var = target->idepth_var;
+    // const float prev_var = target->idepth_var;
     float id_var = target->idepth_var * SUCC_VAR_INC_FAC;
 
     // update var with observation
