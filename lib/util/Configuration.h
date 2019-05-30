@@ -91,6 +91,9 @@ public:
   float sparisityFactor;
   bool setsparisityFactor;
 
+  bool useVoxelFilter;
+  float pclLeafSize;
+
   struct PrintConfiguration {
     PrintConfiguration();
 
