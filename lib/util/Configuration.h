@@ -78,6 +78,19 @@ public:
   std::string globalFrame;
   bool useRectificationFrame;
 
+  // GUI paramaters
+  bool printGUIinfo;
+  float scale;
+  bool setScale;
+  float scaledTh;
+  bool setscaledTh;
+  float absTh;
+  bool setabsTh;
+  float nearSupport;
+  bool setnearSupport;
+  float sparisityFactor;
+  bool setsparisityFactor;
+
   struct PrintConfiguration {
     PrintConfiguration();
 
