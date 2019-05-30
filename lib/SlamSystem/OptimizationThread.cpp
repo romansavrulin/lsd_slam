@@ -66,8 +66,6 @@ void OptimizationThread::finalOptimizationImpl(void) {
 
 bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange) {
   Timer timer;
-  LOG(DEBUG) << "Entering optimizationIteration";
-
   // std::lock_guard< std::mutex > lock(g2oGraphAccessMutex);
 
   // Do the optimization. This can take quite some time!
@@ -98,9 +96,6 @@ bool OptimizationThread::optimizationIteration(int itsPerTry, float minChange) {
                  ->pose->graphVertex->estimate();
     Sim3 b = _system.keyFrameGraph()->keyframesAll[i]->frame()->getCamToWorld();
     Sophus::Vector7f diff = (a * b.inverse()).log().cast<float>();
-    LOG(DEBUG) << "id" << _system.keyFrameGraph()->keyframesAll[i]->id();
-    LOG(DEBUG) << "a matrix: " << a.matrix();
-    LOG(DEBUG) << "b matrix: " << b.matrix();
 
     for (int j = 0; j < 7; j++) {
       float d = fabsf((float)(diff[j]));

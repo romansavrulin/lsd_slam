@@ -131,14 +131,14 @@ void DepthMap::initializeFromStereo() {
       for (int x = 0; x < Conf().slamImageSize.width; x++) {
         bool valid = *iDepthValid;
         int idx = x + y * Conf().slamImageSize.width;
-        if (valid) {
-          depthImg.at<float>(y, x) = *iDepth;
-        }
+        // if (valid) {
+        //   depthImg.at<float>(y, x) = *iDepth;
+        // }
         if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
           float idepth = *iDepth;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
-              idepth, idepth, VAR_RANDOM_INIT_INITIAL / 1000,
-              VAR_RANDOM_INIT_INITIAL / 1000, 20, Conf().debugDisplay);
+              idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
+              20, Conf().debugDisplay);
         }
         iDepth++;
         iDepthValid++;
@@ -419,7 +419,7 @@ void DepthMap::resetCounters() {
 
 //=== Actual working functions ====
 void DepthMap::observeDepth(const Frame::SharedPtr &updateFrame) {
-  //LOG(DEBUG) << "Observe Depth";
+  // LOG(DEBUG) << "Observe Depth";
   _observeFrame = updateFrame;
   threadReducer.reduce(
       boost::bind(&DepthMap::observeDepthRow, this, _1, _2, _3), 3,
@@ -475,8 +475,8 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
 
       bool success;
       if (!hasHypothesis && valid) {
-        // success = observeDepthCreate(x, y, idx, stats);
-        success = createNewStereoDepthPoint(x, y, idx, stats);
+        success = observeDepthCreate(x, y, idx, stats);
+        // success = createNewStereoDepthPoint(x, y, idx, stats);
       } else if (hasHypothesis) {
         success = observeDepthUpdate(x, y, idx, keyFrameMaxGradBuf, stats);
       }
@@ -686,7 +686,7 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     // do textbook ekf update:
     // increase var by a little (prediction-uncertainty)
-    const float prev_var = target->idepth_var;
+    // const float prev_var = target->idepth_var;
     float id_var = target->idepth_var * SUCC_VAR_INC_FAC;
 
     // update var with observation
@@ -698,17 +698,18 @@ bool DepthMap::observeDepthUpdate(const int &x, const int &y, const int &idx,
 
     if (!disparityValid && !Conf().suppressLSDPoints &&
         trav_KF.norm() > Conf().minVirtualBaselineLength) {
-      // If sufficient motion has occured (and the spcidied by the user), add
+      // If sufficient motion has occured (specified by the user), add
       // points determined by LSD SLAM that are NOT valid in the disparity map
       target->idepth = UNZERO(new_idepth);
-      //debugDepthImg.at<float>(y, x) = new_idepth * 100;
+      // debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
 
-    else if (disparityValid && useDisparity) {
+    // else if (disparityValid && useDisparity) {
+    else if (useDisparity) {
       // Always add disparity map points when in left image, never in right
       target->idepth = UNZERO(new_idepth);
-      //if (Conf().displayDepthMap)
-        //debugDepthImg.at<float>(y, x) = new_idepth * 100;
+      // if (Conf().displayDepthMap)
+      // debugDepthImg.at<float>(y, x) = new_idepth * 100;
     }
     id_var = id_var * w;
     if (id_var < target->idepth_var)

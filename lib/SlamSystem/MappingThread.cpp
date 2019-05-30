@@ -88,10 +88,15 @@ void MappingThread::createNewKeyFrameImplSet(
   _system.trackingThread()->doUseNewKeyFrame(kf);
   _system.constraintThread()->doCheckNewKeyFrame(kf);
 
+  {
+    boost::shared_lock_guard<boost::shared_mutex> kfLock(
+        _system.keyFrameGraph()->keyframesAllMutex);
+    _system.keyFrameGraph()->keyframesAll.push_back(kf);
+  }
+
   // Publish outputs
   _system.publishKeyframeGraph();
   _system.publishCurrentKeyframe();
-  _system.keyFrameGraph()->keyframesAll.push_back(kf);
 }
 
 // TODO.  Not updated post-move_current_keyframe
