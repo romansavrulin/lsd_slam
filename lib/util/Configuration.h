@@ -91,6 +91,8 @@ public:
   float sparisityFactor;
   bool setsparisityFactor;
 
+  bool useVarianceFiltering;
+
   bool useVoxelFilter;
   float pclLeafSize;
 
