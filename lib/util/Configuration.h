@@ -79,6 +79,7 @@ public:
   bool useRectificationFrame;
 
   // GUI paramaters
+  float pointcloudSize;
   bool printGUIinfo;
   float scale;
   bool setScale;

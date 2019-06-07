@@ -28,7 +28,7 @@ Configuration::Configuration()
         doImageSaturation(false), saturationAlpha(1.0), saturationBeta(1),
         useRectificationFrame(false), displayInputFusedImage(false),
         minAbsGradCreate(10), minAbsGradDecrease(10),
-        displayInputImage(false), print(), plot() {
+        displayInputImage(false), pointcloudSize(1.0), print(), plot() {
 }
 
 const ImageSize &Configuration::setSlamImageSize(const ImageSize &sz) {

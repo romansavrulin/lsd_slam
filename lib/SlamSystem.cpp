@@ -299,7 +299,7 @@ void SlamSystem::publishPose(const Sophus::Sim3f &pose) {
   // LOG(WARNING) << "R" << R;
   // LOG(WARNING) << "T" << T;
 
-  //OUTPUT_FOR_EACH(publishPose(pose))
+  OUTPUT_FOR_EACH(publishPose(pose))
 }
 
 void SlamSystem::publishTrackedFrame(const Frame::SharedPtr &frame) {
