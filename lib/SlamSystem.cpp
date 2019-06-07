@@ -299,7 +299,7 @@ void SlamSystem::publishPose(const Sophus::Sim3f &pose) {
   // LOG(WARNING) << "R" << R;
   // LOG(WARNING) << "T" << T;
 
-  OUTPUT_FOR_EACH(publishPose(pose))
+  //OUTPUT_FOR_EACH(publishPose(pose))
 }
 
 void SlamSystem::publishTrackedFrame(const Frame::SharedPtr &frame) {
@@ -315,7 +315,7 @@ void SlamSystem::publishDepthImage(unsigned char *data) {
 }
 
 void SlamSystem::publishKeyframe(const Frame::SharedPtr &frame) {
-  OUTPUT_FOR_EACH(publishKeyframe(frame))
+  //OUTPUT_FOR_EACH(publishKeyframe(frame))
 }
 
 void SlamSystem::publishCurrentKeyframe() {
@@ -323,7 +323,7 @@ void SlamSystem::publishCurrentKeyframe() {
     LOG(DEBUG) << "Publishing keyframe " << currentKeyFrame()->id() << " at "
                << currentKeyFrame()->frame();
     OUTPUT_FOR_EACH(publishKeyframe(currentKeyFrame()->frame()))
-    OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()->frame()))
+    //OUTPUT_FOR_EACH(publishPointCloud(currentKeyFrame()->frame()))
   } else {
     LOG(DEBUG) << "No currentKeyframe, unable to publish";
   }

@@ -96,6 +96,10 @@ public:
   bool useVoxelFilter;
   float pclLeafSize;
 
+  //Gradint creation paramaters
+  float minAbsGradCreate;
+  float minAbsGradDecrease;
+
   struct PrintConfiguration {
     PrintConfiguration();
 

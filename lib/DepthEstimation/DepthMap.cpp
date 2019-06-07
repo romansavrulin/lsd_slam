@@ -134,7 +134,7 @@ void DepthMap::initializeFromStereo() {
         // if (valid) {
         //   depthImg.at<float>(y, x) = *iDepth;
         // }
-        if (maxGradients[idx] > MIN_ABS_GRAD_CREATE && valid) {
+        if (maxGradients[idx] > Conf().minAbsGradCreate && valid) {
           float idepth = *iDepth;
           currentDepthMap[idx] = DepthMapPixelHypothesis(
               idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
@@ -161,7 +161,7 @@ void DepthMap::initializeRandomly() {
     for (int x = 1; x < (Conf().slamImageSize.width - 1); x++) {
       int idx = x + y * Conf().slamImageSize.width;
 
-      if (maxGradients[idx] > MIN_ABS_GRAD_CREATE) {
+      if (maxGradients[idx] > Conf().minAbsGradCreate) {
         float idepth = 0.5f + 1.0f * ((rand() % 100001) / 100000.0f);
         currentDepthMap[idx] = DepthMapPixelHypothesis(
             idepth, idepth, VAR_RANDOM_INIT_INITIAL, VAR_RANDOM_INIT_INITIAL,
@@ -464,12 +464,12 @@ void DepthMap::observeDepthRow(int yMin, int yMax, RunningStats *stats) {
         debugGradientImg.at<float>(y, x) = 1.0;
 
       // ======== 1. check absolute grad =========
-      if (hasHypothesis && keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE) {
+      if (hasHypothesis && keyFrameMaxGradBuf[idx] < Conf().minAbsGradDecrease) {
         target->isValid = false;
         continue;
       }
 
-      if (keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_CREATE ||
+      if (keyFrameMaxGradBuf[idx] < Conf().minAbsGradCreate ||
           target->blacklisted < MIN_BLACKLIST)
         continue;
 
@@ -878,7 +878,7 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
                              (Conf().slamImageSize.width >>
                               SE3TRACKING_MIN_LEVEL) *
                                  (y >> SE3TRACKING_MIN_LEVEL)] ||
-            destAbsGrad < MIN_ABS_GRAD_DECREASE) {
+            destAbsGrad < Conf().minAbsGradDecrease) {
           runningStats.num_prop_removed_colorDiff++;
           continue;
         }
@@ -894,7 +894,7 @@ void DepthMap::propagateDepthFromSet(const DepthMap::SharedPtr &other,
                     (MAX_DIFF_CONSTANT +
                      MAX_DIFF_GRAD_MULT * destAbsGrad * destAbsGrad) >
                 1.0f ||
-            destAbsGrad < MIN_ABS_GRAD_DECREASE) {
+            destAbsGrad < Conf().minAbsGradDecrease) {
           runningStats.num_prop_removed_colorDiff++;
           continue;
         }
@@ -998,7 +998,7 @@ void DepthMap::regularizeDepthMapFillHolesRow(int yMin, int yMax,
       DepthMapPixelHypothesis *dest = otherDepthMap + idx;
       if (dest->isValid)
         continue;
-      if (keyFrameMaxGradBuf[idx] < MIN_ABS_GRAD_DECREASE)
+      if (keyFrameMaxGradBuf[idx] < Conf().minAbsGradDecrease)
         continue;
 
       int *io = validityIntegralBuffer + idx;
