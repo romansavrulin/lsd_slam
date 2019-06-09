@@ -14,7 +14,7 @@ Configuration::Configuration()
         SLAMEnabled(true), doKFReActivation(true), doMapping(true),
         continuousPCOutput(true),
 
-        debugDisplay(0), displayDepthMap(false), displayGradientMap(false),
+        debugDisplay(2), displayDepthMap(false), displayGradientMap(false),
         onSceenInfoDisplay(true), dumpMap(false), doFullReConstraintTrack(false),
 
         doSubpixelStereo(true), doLeftRightStereo(false),

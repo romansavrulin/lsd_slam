@@ -111,7 +111,7 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
   LOG(DEBUG) << "   ... done. Tracking took " << timer.stop() * 1000 << " ms";
   _perf.track.update(timer);
 
-  const bool doTrackImageSetFrames = false;
+  const bool doTrackImageSetFrames = true;
   if (doTrackImageSetFrames && set->size() > 1) {
     Frame::SharedPtr other = set->getFrame(1);
     Sophus::SE3d otherToRef = set->getSE3ToRef(1);
@@ -120,14 +120,14 @@ void TrackingThread::trackSetImpl(const std::shared_ptr<ImageSet> &set) {
     //    updatedParentToFrame.inverse();
     Sophus::SE3d otherToParentEstimate = otherToRef * updatedFrameToParent;
 
-    LOG(WARNING) << "Before tracking, estimate:\n"
+    LOG(DEBUG) << "Before tracking, estimate:\n"
                  << otherToParentEstimate.matrix3x4();
 
     LOG(DEBUG) << "Tracking frame 1...";
     SE3 updatedOtherToParent =
         _tracker->trackFrame(_currentKeyFrame, other, otherToParentEstimate);
 
-    LOG(WARNING) << "After tracking, gets:\n"
+    LOG(DEBUG) << "After tracking, gets:\n"
                  << updatedOtherToParent.matrix3x4();
   }
   if (Conf().doLeftRightStereo) {

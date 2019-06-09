@@ -2,7 +2,7 @@
 * This file is part of LSD-SLAM.
 *
 * Copyright 2013 Jakob Engel <engelj at in dot tum dot de> (Technical University of Munich)
-* For more information see <http://vision.in.tum.de/lsdslam> 
+* For more information see <http://vision.in.tum.de/lsdslam>
 *
 * LSD-SLAM is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ cv::Vec3b DepthMapPixelHypothesis::getVisualizationColor(int lastFrameID) const
 	// plot validity counter
 	if(debugDisplay == 2)
 	{
-		float f = validity_counter * (255.0 / (VALIDITY_COUNTER_MAX_VARIABLE+VALIDITY_COUNTER_MAX));
+		float f = validity_counter * (255.0 / (VALIDITY_COUNTER_MAX_VARIABLE+VALIDITY_COUNTER_MAX))*3;
 		uchar v = f < 0 ? 0 : (f > 255 ? 255 : f);
 		return cv::Vec3b(0,v,v);
 	}
