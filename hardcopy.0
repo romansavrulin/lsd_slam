@@ -1,0 +1,49 @@
+drwxrwxr-x 11 rs rs 4,0K A5= 11 13:48 .
+drwxrwxr-x 14 rs rs 4,0K A5= 11 13:03 ..
+drwxrwxr-x  2 rs rs 4,0K A5= 11 12:59 calib
+drwxrwxr-x  2 rs rs 4,0K A5= 11 12:59 cmake
+-rw-rw-r--  1 rs rs 2,7K A5= 11 13:48 CMakeLists.txt
+drwxrwxr-x  5 rs rs 4,0K A5= 11 13:48 doc
+drwxrwxr-x  3 rs rs 4,0K A5= 11 12:59 .docker
+-rw-rw-r--  1 rs rs  294 A5= 11 12:59 .drone.yml
+-rwxrwxr-x  1 rs rs  637 A5= 11 12:59 fips
+-rw-rw-r--  1 rs rs 4,7K A5= 11 13:48 .fips-imports.cmake
+-rw-rw-r--  1 rs rs  662 A5= 11 13:48 fips.yml
+drwxrwxr-x  8 rs rs 4,0K A5= 11 13:48 .git
+-rw-rw-r--  1 rs rs   73 A5= 11 12:59 .gitignore
+-rw-rw-r--  1 rs rs    0 A5= 11 12:59 .gitmodules
+drwxrwxr-x  9 rs rs 4,0K A5= 11 13:48 lib
+-rw-rw-r--  1 rs rs  35K A5= 11 12:59 LICENSE
+-rw-rw-r--  1 rs rs 3,4K A5= 11 13:48 README.md
+drwxr-xr-x 28 rs rs 4,0K 45: 23  2018 SuiteSparse
+-rw-rw-r--  1 rs rs  51M 45: 23  2018 SuiteSparse-5.4.0.tar.gz
+drwxrwxr-x  4 rs rs 4,0K A5= 11 12:59 test
+drwxrwxr-x  4 rs rs 4,0K A5= 11 12:59 thirdparty
+rs@rs-MS-7758:~/projects/lsd-slam$
+rs@rs-MS-7758:~/projects/lsd-slam$
+rs@rs-MS-7758:~/projects/lsd-slam$ rm -rf SuiteSparse*
+rs@rs-MS-7758:~/projects/lsd-slam$ ls -alh
+total 108K
+drwxrwxr-x 10 rs rs 4,0K A5= 11 14:01 .
+drwxrwxr-x 14 rs rs 4,0K A5= 11 13:03 ..
+drwxrwxr-x  2 rs rs 4,0K A5= 11 12:59 calib
+drwxrwxr-x  2 rs rs 4,0K A5= 11 12:59 cmake
+-rw-rw-r--  1 rs rs 2,7K A5= 11 13:48 CMakeLists.txt
+drwxrwxr-x  5 rs rs 4,0K A5= 11 13:48 doc
+drwxrwxr-x  3 rs rs 4,0K A5= 11 12:59 .docker
+-rw-rw-r--  1 rs rs  294 A5= 11 12:59 .drone.yml
+-rwxrwxr-x  1 rs rs  637 A5= 11 12:59 fips
+-rw-rw-r--  1 rs rs 4,7K A5= 11 13:48 .fips-imports.cmake
+-rw-rw-r--  1 rs rs  662 A5= 11 13:48 fips.yml
+drwxrwxr-x  8 rs rs 4,0K A5= 11 13:48 .git
+-rw-rw-r--  1 rs rs   73 A5= 11 12:59 .gitignore
+-rw-rw-r--  1 rs rs    0 A5= 11 12:59 .gitmodules
+drwxrwxr-x  9 rs rs 4,0K A5= 11 13:48 lib
+-rw-rw-r--  1 rs rs  35K A5= 11 12:59 LICENSE
+-rw-rw-r--  1 rs rs 3,4K A5= 11 13:48 README.md
+drwxrwxr-x  4 rs rs 4,0K A5= 11 12:59 test
+drwxrwxr-x  4 rs rs 4,0K A5= 11 12:59 thirdparty
+rs@rs-MS-7758:~/projects/lsd-slam$
+rs@rs-MS-7758:~/projects/lsd-slam$ git checkout low_motion_stereo_devel^C
+rs@rs-MS-7758:~/projects/lsd-slam$ ^C
+rs@rs-MS-7758:~/projects/lsd-slam$

@@ -37,6 +37,12 @@ high-level "CMake package manager".  I think it does a good job and fits
 the needs of LSD-SLAM reasonably well (organizing moderate collections of
 related git repos).
 
+Installing all apt-getable dependencies
+
+```bash
+sudo apt install libopencv-dev libboost-all-dev g++ libeigen3-dev libyaml-cpp-dev libcsp-dev libtinyxml2-dev libsuitesparse-dev gcc binutils cmake
+```
+
 Assuming all of the "standard" (apt-gettable/Brew-able) deps have been installed,
 
     ./fips gen
